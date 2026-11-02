@@ -457,6 +457,20 @@ body.parent{ background:#f1f5f9; }
 .spell-sentence{ font:22px 'Andika','Fredoka',sans-serif; margin:14px auto 0; max-width:640px; color:#334155; }
 .spell-summary{ display:flex; flex-wrap:wrap; justify-content:center; margin-top:8px; }
 
+/* ---- chapter books ---- */
+.bookshelf{ display:grid; grid-template-columns:repeat(auto-fill,minmax(260px,1fr)); gap:16px; margin-top:12px; }
+.book-card{ background:var(--card); border:4px solid var(--ink); border-radius:18px; box-shadow:6px 6px 0 var(--ink); padding:16px; display:flex; flex-direction:column; gap:6px; }
+.book-card.locked{ opacity:.6; }
+.book-card h3{ margin:0; font:22px 'Lilita One','Fredoka',sans-serif; }
+.book-card p{ margin:0; }
+.book-cover{ font-size:56px; line-height:1; }
+.chapter-dots{ display:flex; gap:5px; flex-wrap:wrap; }
+.chapter-list{ margin:4px 0 8px; padding-left:22px; font-size:16px; }
+.chapter-list li{ margin:3px 0; }
+.chapter-list li.done{ color:#16a34a; } .chapter-list li.now{ font-weight:700; }
+.chapter-link{ background:none; padding:2px 0; font:inherit; color:inherit; text-align:left; }
+.chapter-link:disabled{ color:#94a3b8; cursor:default; }
+
 /* ---- level progress bar ---- */
 .lvl-progress{ background:rgba(15,23,42,.45); border:3px solid var(--ink); border-radius:16px; box-shadow:4px 4px 0 var(--ink); padding:10px 14px; margin:4px 0 6px; max-width:560px; color:#fff; }
 .lvl-head{ display:flex; justify-content:space-between; font:18px 'Lilita One','Fredoka',sans-serif; text-shadow:2px 2px 0 var(--ink); }
@@ -3445,15 +3459,21 @@ function screenHome(msg){
   const cards = [];
   if (kid === 'daughter'){
     // Gianna: three sections, read quietly, 5 questions each
-    const quietCard = (section, tag, blurb) => { const st = nextQuietStory(section);
-      return st ? el('div',{class:'card next-card series-card'},
-        el('div',{class:'series-tag'}, tag),
-        el('h2',{}, st.emoji + ' ' + st.title),
-        el('p',{}, blurb),
-        el('button',{class:'btn big', onclick:()=>{ beep('tap'); startQuietStory(section); }},'▶ Read')) : null; };
+    const st = nextQuietStory(), book = currentBook(), bs = book && bookState(book.id);
     cards.push(
-      quietCard('short', '📖 Short Stories', 'Read it to yourself, then answer 5 questions. Highlight clues as you go!'),
-      quietCard('long', '📚 Longer Stories', 'A bigger story! Read it to yourself, then answer 5 questions.'),
+      st ? el('div',{class:'card next-card series-card'},
+        el('div',{class:'series-tag'},'📖 Short Stories'),
+        el('h2',{}, st.emoji + ' ' + st.title),
+        el('p',{},'Read it to yourself, then answer 5 questions. Highlight clues as you go!'),
+        el('button',{class:'btn big', onclick:()=>{ beep('tap'); startQuietStory(); }},'▶ Read')) : null,
+      book ? el('div',{class:'card next-card series-card'},
+        el('div',{class:'series-tag'},'📚 Chapter Books'),
+        el('h2',{}, book.emoji + ' ' + book.title),
+        el('p',{}, `Chapter ${bs.ch + 1} of ${book.chapters.length}: ${book.chapters[bs.ch].title}`),
+        el('div',{class:'chapter-dots', style:'margin:-8px 0 14px'}, ...book.chapters.map((_, i) => el('span',{class:'dot' + (i < bs.ch ? ' on' : '')}))),
+        el('div',{class:'row'},
+          el('button',{class:'btn big', onclick:()=>{ beep('tap'); startChapter(book, bs.ch); }}, bs.ch ? '▶ Keep reading' : '▶ Start'),
+          el('button',{class:'btn small blue', onclick:()=>{ beep('tap'); screenBookshelf(); }},'📚 Bookshelf'))) : null,
       el('div',{class:'card next-card spell-card'},
         el('div',{class:'series-tag'},'✏️ Spelling Check'),
         el('h2',{},'Spelling Check'),
@@ -3549,29 +3569,82 @@ function spellWords(n = 5, minLen = 3){
 }
 
 /* ---------- Gianna: quiet reading (no microphone) ----------
-   Short Stories = her level's shorter half + the level below; Longer Stories = her level's longer half +
-   the level above. She reads the story to herself and answers 5 questions with the story beside them;
-   only the questions are scored (4 or 5 right is a passing read). */
-const wordCount = s => s.text.split(/\s+/).length;
-function quietPool(section){
-  const lv = K.level, cur = levelDef(lv).stories;
-  const med = cur.map(wordCount).sort((a,b) => a - b)[Math.floor(cur.length / 2)];
-  if (section === 'short') return (lv > 1 ? levelDef(lv - 1).stories : []).concat(cur.filter(s => wordCount(s) <= med));
-  return cur.filter(s => wordCount(s) > med).concat(lv < T.levels.length ? levelDef(lv + 1).stories : []);
+   Short Stories = the standalone Academy Tales from her rank and the rank below.
+   Chapter Books = the Dragon Academy quest and the Sunny Day Club, read in order, chapter by chapter.
+   She reads to herself and answers 5 questions with the story beside them; only the questions are
+   scored (4 or 5 right is a passing read). */
+function quietPool(){
+  const lv = K.level;
+  return (lv > 1 ? DAUGHTER_EXTRA[lv - 1] || [] : []).concat(DAUGHTER_EXTRA[lv] || []);
 }
-function nextQuietStory(section){
-  const pool = quietPool(section);
-  return pool.length ? pool[(K.storyIdx['quiet_' + section] || 0) % pool.length] : null;
+function nextQuietStory(){
+  const pool = quietPool();
+  return pool.length ? pool[(K.storyIdx.quiet_short || 0) % pool.length] : null;
 }
-function startQuietStory(section){
+function startQuietRead(story, extra){
   stopAll();
-  const story = nextQuietStory(section);
-  if (!story) return screenHome();
   const pages = story.text.split(/\n\s*\n/).map(p => { const tokens = tokensOf(p.trim()); return { tokens, status: tokens.map(() => 'ok'), helped: tokens.map(() => false) }; });
-  const act = { kind:'story', level:K.level, title:story.title, emoji:story.emoji, story, storyKey:'quiet_' + section, series:story.series, pages, quiet:true };
+  const act = Object.assign({ kind:'story', level:K.level, title:story.title, emoji:story.emoji, story, series:story.series, pages, quiet:true }, extra);
   run = { act, opts:{ mode:'normal' }, page:0, micMs:0, micStart:null, startedAt:Date.now(), clips:[], sessionId: kid + '_' + Date.now(), marks:{} };
   run.reading = { total:0, correct:0, helped:0, missed:[], accuracy:1, wcpm:null, quiet:true };
   screenQuiz();
+}
+function startQuietStory(){
+  const story = nextQuietStory();
+  story ? startQuietRead(story, { storyKey:'quiet_short' }) : screenHome();
+}
+
+/* ---------- Gianna: chapter books ----------
+   Each book is a run of connected chapters from her story series, two ranks per book.
+   A book opens once she is within one rank of where it starts. Scoring 3+ of 5 on a chapter
+   moves her bookmark to the next chapter; otherwise she re-reads that chapter. */
+const BOOK_DEFS = [
+  { id:'quest1', title:'Pebble Can\'t Fly',          emoji:'🐉', series:'quest', from:1 },
+  { id:'club1',  title:'The Sunny Day Club',         emoji:'🌻', series:'club',  from:1 },
+  { id:'quest2', title:'The Golden Star Egg',        emoji:'🥚', series:'quest', from:3 },
+  { id:'club2',  title:'Club Troubles',              emoji:'📒', series:'club',  from:3 },
+  { id:'quest3', title:'Into the Whispering Woods',  emoji:'🌲', series:'quest', from:5 },
+  { id:'club3',  title:'Mysteries on Maple Lane',    emoji:'🍅', series:'club',  from:5 },
+  { id:'quest4', title:'The Storm Dragon',           emoji:'⛈️', series:'quest', from:7 },
+  { id:'club4',  title:'One Year of Sunshine',       emoji:'🎉', series:'club',  from:7 }
+];
+const TALES = new Set(Object.values(DAUGHTER_EXTRA).flat());
+const BOOKS = BOOK_DEFS.map(b => Object.assign({}, b, {
+  chapters: [b.from, b.from + 1].flatMap(n => DAUGHTER_TRACK.levels[n - 1].stories.filter(s => s.series === b.series && !TALES.has(s)))
+}));
+const bookState = id => { K.books = K.books || {}; return K.books[id] || (K.books[id] = { ch:0, finished:0 }); };
+const bookOpen = b => b.from <= K.level + 1;
+function currentBook(){
+  const open = BOOKS.filter(bookOpen);
+  const atRank = b => b.from <= K.level && K.level <= b.from + 1;
+  return BOOKS.find(b => b.id === K.currentBook && bookOpen(b))
+    || open.find(b => bookState(b.id).ch > 0)
+    || open.find(b => atRank(b) && !bookState(b.id).finished)
+    || open.find(b => !bookState(b.id).finished)
+    || open[0];
+}
+function startChapter(book, i){
+  K.currentBook = book.id; save();
+  startQuietRead(book.chapters[i], { storyKey:'book_' + book.id, book, chapterIndex:i });
+}
+function screenBookshelf(){
+  stopAll();
+  const shelf = el('div',{class:'bookshelf'}, ...BOOKS.map(b => {
+    const st = bookState(b.id), open = bookOpen(b), n = b.chapters.length;
+    if (!open) return el('div',{class:'book-card locked'}, el('div',{class:'book-cover'}, '🔒'), el('h3',{}, b.title), el('p',{class:'muted'}, `Opens at Rank ${b.from - 1}`));
+    return el('div',{class:'book-card'},
+      el('div',{class:'book-cover'}, b.emoji),
+      el('h3',{}, b.title),
+      el('p',{class:'muted'}, `${n} chapters · Ranks ${b.from}–${b.from + 1}` + (st.finished ? ` · ✅ finished${st.finished > 1 ? ' ×' + st.finished : ''}` : '')),
+      el('div',{class:'chapter-dots'}, ...b.chapters.map((_, i) => el('span',{class:'dot' + (i < st.ch ? ' on' : '')}))),
+      el('ol',{class:'chapter-list'}, ...b.chapters.map((c, i) => el('li',{class: i < st.ch ? 'done' : i === st.ch ? 'now' : ''},
+        el('button',{class:'chapter-link', disabled: i > st.ch, onclick:()=>startChapter(b, i)}, `${c.emoji} ${c.title}` + (i < st.ch ? ' ✓' : i === st.ch ? ' ◀ next' : ''))))),
+      el('button',{class:'btn', onclick:()=>startChapter(b, st.ch)}, st.ch === 0 ? (st.finished ? '🔁 Read it again' : '▶ Start reading') : `▶ Chapter ${st.ch + 1}`));
+  }));
+  show(el('div',{class:'screen'},
+    el('div',{class:'topbar'}, el('button',{class:'btn ghost small', onclick:()=>screenHome()},'← Back'), el('h1',{class:'title'},'📚 Bookshelf'), el('div')),
+    el('p',{class:'subtitle'},'Pick a chapter book. Your bookmark saves your place!'),
+    shelf));
 }
 
 /* ---------- Gianna: spelling check (typed) ---------- */
@@ -3987,7 +4060,10 @@ function renderQuestion(){
   const s = el('div',{class:'screen'},
     el('div',{class:'topbar'}, el('div',{class:'pageinfo'}, '🤔 Question ' + (Q.i+1) + ' of ' + Q.qs.length), el('div')),
     el('div',{class:'quiz-layout'},
-      passageCard((st.emoji ? st.emoji + ' ' : '') + st.title, st.text, run.marks || (run.marks = {})),
+      passageCard(run.act.book
+          ? `${run.act.book.emoji} ${run.act.book.title} · Chapter ${run.act.chapterIndex + 1} of ${run.act.book.chapters.length}: ${st.title}`
+          : (st.emoji ? st.emoji + ' ' : '') + st.title,
+        st.text, run.marks || (run.marks = {})),
       el('div',{class:'card'},
         el('div',{class:'row', style:'align-items:flex-start'},
           el('p',{class:'q-text grow'}, item.q),
@@ -4063,7 +4139,7 @@ function screenResults(){
     if (lvlNote){
       const have = Math.min((K.passStreak||0) + (st === 3 ? 1 : 0), LEVEL_UP_STREAK);
       lvlNote.textContent = st === 3
-        ? (have >= LEVEL_UP_STREAK ? '🎉 That\'s 3 in a row. Level up!' : `✅ This counts! ${have} of ${LEVEL_UP_STREAK} in a row toward the next level.`)
+        ? (have >= LEVEL_UP_STREAK ? `🎉 That's 3 in a row. ${kid === 'daughter' ? 'Rank' : 'Level'} up!` : `✅ This counts! ${have} of ${LEVEL_UP_STREAK} in a row toward the next ${kid === 'daughter' ? 'rank' : 'level'}.`)
         : a.quiet ? `Get 4 or 5 questions right for a story to count toward the next rank. (${LEVEL_UP_STREAK} in a row ranks you up!)`
         : `Get ⭐⭐⭐ for a read to count toward the next level. (${LEVEL_UP_STREAK} in a row levels you up!)`;
     }
@@ -4137,9 +4213,16 @@ async function commitResults(stars, quiz){
   K.sessions.unshift(rec); K.sessions = K.sessions.slice(0, 200);
   if (r.clips.length) idb.put(r.sessionId, r.clips);
 
-  let levelMsg = null, levelUp = false;
+  let levelMsg = null, levelUp = false, bookDone = null, bookMsg = null;
   if (r.opts.mode === 'normal'){
     if (a.kind === 'story') K.storyIdx[a.storyKey] = (K.storyIdx[a.storyKey]||0) + 1;
+    if (a.book){ // chapter books: move the bookmark on a decent score, otherwise re-read this chapter
+      const B = bookState(a.book.id);
+      if (quiz && quiz.c >= 3){
+        if (a.chapterIndex >= B.ch) B.ch = a.chapterIndex + 1;
+        if (B.ch >= a.book.chapters.length){ B.ch = 0; B.finished = (B.finished || 0) + 1; bookDone = a.book; K.stars += 10; }
+      } else bookMsg = `📖 Read Chapter ${a.chapterIndex + 1} of ${a.book.title} again, then you can go on to the next chapter!`;
+    }
     const passAcc = a.kind === 'story' ? 0.95 : (L.pass || 0.9);
     const failAcc = a.kind === 'story' ? 0.85 : (a.kind === 'letters' ? 0.6 : 0.7);
     const passed = R.accuracy >= passAcc && (!quiz || quiz.c / quiz.t >= 0.8);
@@ -4172,9 +4255,14 @@ async function commitResults(stars, quiz){
       K.level === AVATAR_UNLOCK_LEVEL ? el('p',{style:'font-weight:700;color:#7c3aed'}, '🎁 A new reading buddy is unlocked in the Star Shop!') : null,
       legendaryAt(K.level) ? el('p',{style:'font-weight:700;color:#d97706'}, '✨ A legendary ' + (kid==='daughter'?'dragon':'Pocket Pal') + ' can now appear!') : null), [['Awesome! ▶','',1]]);
   }
+  if (bookDone){
+    confetti(140); beep('level'); say(`You finished the book ${bookDone.title}!`);
+    await modal(el('div',{}, el('div',{class:'big-e'}, '📚' + bookDone.emoji), el('h2',{}, 'You finished a chapter book!'),
+      el('p',{}, `${bookDone.title}: all ${bookDone.chapters.length} chapters! +10 ⭐`)), [['Hooray! ▶','',1]]);
+  }
   await checkBadges();
   run = null;
-  screenHome(levelMsg);
+  screenHome([levelMsg, bookMsg].filter(Boolean).join(' ') || null);
 }
 
 function legendaryAt(level){ return T.rewards.find(r => r[3] === level); }
