@@ -3699,7 +3699,7 @@ function startSpellCheck(){
     const checkBtn = el('button',{class:'btn big green', onclick:check},'✓ Check');
     input.addEventListener('keydown', e => { if (e.key === 'Enter'){ e.preventDefault(); checked ? next.click() : check(); } });
     show(el('div',{class:'screen'},
-      el('div',{class:'topbar'}, el('button',{class:'btn ghost small', onclick:()=>screenHome()},'✕ Stop'),
+      el('div',{class:'topbar'}, el('button',{class:'btn ghost small', onclick:()=>screenHome()},'← Back'),
         el('div',{class:'pageinfo'}, `✏️ Spelling Check · ${i + 1} / ${words.length}`), el('div',{style:'width:80px'})),
       el('div',{class:'card center spell-card'},
         el('p',{class:'q-text'},'Listen, then type the word!'),
@@ -3719,7 +3719,7 @@ function startSpelling(){
   const words = spellWords();
   if (!words.length) return screenHome();
   const items = words.map(w => ({ word:w, parts:graphemes(w).map(g => g.g) }));
-  const header = () => el('div',{class:'topbar'}, el('button',{class:'btn ghost small', onclick:()=>screenHome()},'✕ Stop'),
+  const header = () => el('div',{class:'topbar'}, el('button',{class:'btn ghost small', onclick:()=>screenHome()},'← Back'),
     el('div',{class:'pageinfo'},'✏️ Spelling Practice'), el('div',{style:'width:80px'}));
   buildGame(items, words, header, async score => {
     const right = Math.round(score * items.length);
@@ -3856,7 +3856,7 @@ function renderReader(){
       p.heart ? el('div',{class:'heart-help'}, '❤️ Heart word! ', heartWordNode(p.tokens[0].disp), ' — ', p.heart.tip) : null));
   const s = el('div',{class:'screen'},
     el('div',{class:'topbar'},
-      el('button',{class:'btn ghost small', onclick:()=>{ stopAll(); r.opts.onStop ? r.opts.onStop() : a.kind==='placement' ? screenPlacementIntro() : screenHome(); }},'✕ Stop'),
+      el('button',{class:'btn ghost small', onclick:()=>{ stopAll(); r.opts.onStop ? r.opts.onStop() : a.kind==='placement' ? screenPlacementIntro() : screenHome(); }},'← Back'),
       el('div',{class:'pageinfo'}, (a.emoji ? a.emoji + ' ' : '') + a.title + ' · ' + (r.page+1) + ' / ' + a.pages.length),
       el('div',{style:'width:80px'})),
     el('div',{class:'reader-wrap'}, pageCard, hint, heard,
@@ -4058,7 +4058,9 @@ function renderQuestion(){
   });
   const st = run.act.story;
   const s = el('div',{class:'screen'},
-    el('div',{class:'topbar'}, el('div',{class:'pageinfo'}, '🤔 Question ' + (Q.i+1) + ' of ' + Q.qs.length), el('div')),
+    el('div',{class:'topbar'},
+      el('button',{class:'btn ghost small', onclick:()=>{ stopAll(); const book = run && run.act.book; run = null; book ? screenBookshelf() : screenHome(); }},'← Back'),
+      el('div',{class:'pageinfo'}, '🤔 Question ' + (Q.i+1) + ' of ' + Q.qs.length), el('div',{style:'width:80px'})),
     el('div',{class:'quiz-layout'},
       passageCard(run.act.book
           ? `${run.act.book.emoji} ${run.act.book.title} · Chapter ${run.act.chapterIndex + 1} of ${run.act.book.chapters.length}: ${st.title}`
@@ -4131,6 +4133,8 @@ function screenResults(){
   const statsBox = el('div',{class:'result-grid'});
   const fixBox = el('div',{class:'fixwords hidden'});
   const starsBox = el('div',{class:'stars'});
+  let committed = false;
+  const commitOnce = () => { if (committed) return; committed = true; commitResults(starsFor(), quiz); };
   const countsForLevel = r.opts.mode === 'normal' && a.level === K.level && K.level < T.levels.length;
   const lvlNote = countsForLevel ? el('div',{class:'lvl-note'}) : null;
   const paint = () => {
@@ -4168,7 +4172,10 @@ function screenResults(){
   };
   paint();
   const s = el('div',{class:'screen'},
-    el('div',{class:'topbar'}, el('h1',{class:'title'}, r.opts.mode==='practice' ? 'Practice done!' : 'You did it!'), el('div')),
+    el('div',{class:'topbar'},
+      // going back still saves the stars and progress from this read
+      el('button',{class:'btn ghost small', onclick:commitOnce},'← Back'),
+      el('h1',{class:'title'}, r.opts.mode==='practice' ? 'Practice done!' : 'You did it!'), el('div')),
     el('div',{class:'card'},
       el('div',{class:'result-avatar'}),
       starsBox,
@@ -4180,7 +4187,7 @@ function screenResults(){
           el('span',{class:'muted'}, skillKnown(r.opts.focus.id) ? ' · ✅ mastered' : ` · ${st.stories} of 2+ stories toward mastery`)); })() : null,
       a.quiet ? null : R.missed.length ? el('p',{style:'font-size:20px'}, 'Words to practice: ', ...[...new Set(R.missed)].slice(0,8).map(w => el('span',{class:'chip', onclick:()=>say(w)}, '🔊 ' + w))) : el('p',{style:'font-size:22px'},'Every word right! 🎉'),
       el('div',{class:'row', style:'margin-top:16px'},
-        el('button',{class:'btn big green', onclick:()=>commitResults(starsFor(), quiz)},'Continue ▶'),
+        el('button',{class:'btn big green', onclick:commitOnce},'Continue ▶'),
         a.quiet ? null : el('button',{class:'btn small gray', onclick:()=>{ if (fixBox.classList.contains('hidden')){ buildFix(); fixBox.classList.remove('hidden'); } else fixBox.classList.add('hidden'); }},'✎ Grown-up fix')),
       fixBox));
   show(s);
@@ -5224,7 +5231,7 @@ function screenLearn(done){
   say(L.say, { rate:0.85 });
 }
 function lessonTop(){
-  return el('div',{class:'topbar'}, el('button',{class:'btn ghost small', onclick:()=>{ stopAll(); LS = null; screenPath(); }},'✕ Stop'),
+  return el('div',{class:'topbar'}, el('button',{class:'btn ghost small', onclick:()=>{ stopAll(); LS = null; screenPath(); }},'← Back'),
     el('div',{class:'pageinfo'}, `Lesson ${LS.lesson.id}: ${LS.lesson.title}`), el('div',{style:'width:80px'}));
 }
 
@@ -5368,7 +5375,9 @@ async function lessonResults(){
       nxt && moveOn ? el('button',{class:'btn big green', onclick:()=>{ LS = null; runLesson(nxt); }},'Next lesson ▶') : null,
       !moveOn ? el('button',{class:'btn big', onclick:()=>{ LS = null; runLesson(L); }},'🔄 Try again') : null,
       el('button',{class:'btn gray', onclick:()=>{ LS = null; screenPath(); }},'🗺️ Path')));
-  show(el('div',{class:'screen'}, el('div',{class:'topbar'}, el('h1',{class:'title'}, mastered ? 'Mastered!' : 'Nice work!'), el('div')), card));
+  show(el('div',{class:'screen'}, el('div',{class:'topbar'},
+    el('button',{class:'btn ghost small', onclick:()=>{ LS = null; screenPath(); }},'← Back'),
+    el('h1',{class:'title'}, mastered ? 'Mastered!' : 'Nice work!'), el('div')), card));
   const av = $('.result-avatar'); if (av) av.append(avatarNode(110));
   await checkBadges();
 }
@@ -5471,7 +5480,9 @@ function storyBuilder(focus, done){
   const picks = shuffle(words.slice(0, 5)).slice(0, 2);
   if (!picks.length) return done();
   const items = picks.map(w => ({ word:w, parts:graphemes(w).map(g => g.g) }));
-  buildGame(items, focus.words, () => el('div',{class:'topbar'}, el('div',{class:'pageinfo'}, `🧱 Word Builder: ${focus.lesson.title}`), el('div')), () => done());
+  buildGame(items, focus.words, () => el('div',{class:'topbar'},
+    el('button',{class:'btn ghost small', onclick:()=>{ stopAll(); done(); }},'← Back'), // skips the builder, keeps the story's results
+    el('div',{class:'pageinfo'}, `🧱 Word Builder: ${focus.lesson.title}`), el('div',{style:'width:80px'})), () => done());
 }
 
 /* Skill progress after a story */
