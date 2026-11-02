@@ -407,6 +407,16 @@ body.parent{ background:#f1f5f9; }
   .next-card h2{ font-size:26px; }
 }
 
+/* ---- level progress bar ---- */
+.lvl-progress{ background:rgba(15,23,42,.45); border:3px solid var(--ink); border-radius:16px; box-shadow:4px 4px 0 var(--ink); padding:10px 14px; margin:4px 0 6px; max-width:560px; color:#fff; }
+.lvl-head{ display:flex; justify-content:space-between; font:18px 'Lilita One','Fredoka',sans-serif; text-shadow:2px 2px 0 var(--ink); }
+.lvl-bar{ display:grid; grid-template-columns:repeat(3,1fr); gap:6px; margin:8px 0; }
+.lvl-seg{ height:32px; border:3px solid var(--ink); border-radius:10px; background:rgba(255,255,255,.22); display:flex; align-items:center; justify-content:center; font-size:14px; }
+.lvl-seg.on{ background:linear-gradient(180deg,#4ade80,#16a34a); }
+.lvl-tip{ font:16px 'Lilita One','Fredoka',sans-serif; text-shadow:2px 2px 0 var(--ink); }
+.lvl-note{ text-align:center; font-size:20px; font-weight:600; margin:6px 0 4px; }
+@media (max-width: 480px){ .lvl-progress{ margin:4px auto 6px; } }
+
 /* ---- Home button + story beside the questions ---- */
 .topbar .btn.home-btn{ font-size:18px; min-height:52px; padding:8px 18px; background:linear-gradient(180deg,#fde047,#f59e0b); color:var(--ink); border-color:var(--ink); }
 .quiz-layout{ display:grid; grid-template-columns:minmax(0,1fr) minmax(0,1fr); gap:18px; align-items:start; }
@@ -3295,6 +3305,11 @@ function screenHome(msg){
     el('h2',{}, `${todo.length} tricky word${todo.length>1?'s':''} to practice`),
     el('p',{}, todo.slice(0,6).map(w => K.words[w].disp||w).join(' · ')),
     el('button',{class:'btn big blue', onclick:()=>{ beep('tap'); startPractice(); }},'💪 Practice')));
+  if (spellWords().length) cards.push(el('div',{class:'card next-card spell-card'},
+    el('div',{class:'series-tag'},'✏️ Spelling'),
+    el('h2',{},'Spelling Practice'),
+    el('p',{},'Hear a word, then build it with letter tiles! +1 ⭐ for each word you spell on the first try.'),
+    el('button',{class:'btn big blue', onclick:()=>{ beep('tap'); startSpelling(); }},'✏️ Spell')));
   const avatar = avatarNode(150);
   avatar.classList.add('mascot-av');
   avatar.onclick = () => screenShop();
@@ -3318,8 +3333,8 @@ function screenHome(msg){
           el('span',{class:'pill'},'⭐ ' + balance()),
           el('span',{class:'pill'},'🔥 ' + (K.streak.count||0) + ' day streak'),
           el('span',{class:'pill'},'🏆 ' + K.trophies.length + ' · 🎖️ ' + K.badges.length),
-          el('span',{class:'pill'},(kid==='daughter'?'🐉 ':'🐾 ') + K.collection.length),
-          el('span',{class:'pill'},'✅ ' + K.passStreak + '/3 to level up')))),
+          el('span',{class:'pill'},(kid==='daughter'?'🐉 ':'🐾 ') + K.collection.length)),
+        levelProgress())),
     msg ? el('div',{class:'banner'}, msg) : null,
     doneToday ? el('div',{class:'banner'},'🎉 Great reading today! You did 10 minutes. You can stop here, or keep going!') : null,
     el('div',{class:'cards'}, ...cards),
@@ -3327,6 +3342,51 @@ function screenHome(msg){
     el('button',{class:'gear', onclick:()=>screenPin()},'⚙︎ Grown-ups')
   );
   show(s);
+}
+
+// How close the kid is to the next level: 3 passing (3-star) reads in a row levels up (see commitResults).
+const LEVEL_UP_STREAK = 3;
+function levelProgress(){
+  const word = kid==='daughter' ? 'Rank' : 'Level';
+  if (K.level >= T.levels.length) return el('div',{class:'lvl-progress'}, el('div',{class:'lvl-tip'}, `🏆 You reached the top ${word.toLowerCase()}! Amazing!`));
+  const have = Math.min(K.passStreak||0, LEVEL_UP_STREAK), left = LEVEL_UP_STREAK - have;
+  return el('div',{class:'lvl-progress'},
+    el('div',{class:'lvl-head'}, el('span',{}, `${word} ${K.level}`), el('span',{}, `${word} ${K.level+1} 🔓`)),
+    el('div',{class:'lvl-bar'}, ...Array.from({length:LEVEL_UP_STREAK}, (_,i) => el('div',{class:'lvl-seg' + (i < have ? ' on' : '')}, i < have ? '⭐⭐⭐' : ''))),
+    el('div',{class:'lvl-tip'}, `${left} more ⭐⭐⭐ read${left>1?'s':''} in a row to reach ${word} ${K.level+1}!`));
+}
+
+/* ---------- spelling practice ---------- */
+// Words come from the kid's tricky-word list first, then from their current level.
+function spellWords(){
+  const L = levelDef(K.level), maxLen = kid==='son' ? 6 : 8;
+  let pool;
+  if (L.kind === 'words') pool = L.items.slice();
+  else if (L.kind === 'letters') pool = levelDef(2).items.slice();
+  else pool = L.stories.flatMap(s => s.text.split(/\s+/)).map(w => w.replace(/[^A-Za-z]/g,'')).filter(w => /^[a-z]+$/.test(w));
+  pool = pool.filter(w => /^[a-z]+$/.test(w) && w.length >= 3 && w.length <= maxLen && !PROPER.has(w));
+  const tricky = practiceWords(K).filter(w => /^[a-z]+$/.test(w) && w.length >= 2 && w.length <= maxLen && !PROPER.has(w));
+  return [...new Set(shuffle(tricky).slice(0,2).concat(shuffle(pool)))].slice(0, 5);
+}
+function startSpelling(){
+  stopAll();
+  const words = spellWords();
+  if (!words.length) return screenHome();
+  const items = words.map(w => ({ word:w, parts:graphemes(w).map(g => g.g) }));
+  const header = () => el('div',{class:'topbar'}, el('button',{class:'btn ghost small', onclick:()=>screenHome()},'✕ Stop'),
+    el('div',{class:'pageinfo'},'✏️ Spelling Practice'), el('div',{style:'width:80px'}));
+  buildGame(items, words, header, async score => {
+    const right = Math.round(score * items.length);
+    K.stars += right;
+    K.sessions.unshift({ id: kid + '_' + Date.now(), date: new Date().toISOString(), level: K.level, title:'Spelling practice', kind:'spelling', mode:'spelling',
+      total: items.length, correct: right, helped: 0, accuracy: Math.round(score*1000)/10, wcpm: null, quiz: null, missed: [], stars: right });
+    save();
+    confetti(right === items.length ? 80 : 30); beep('level');
+    say(right === items.length ? 'Perfect spelling!' : `You spelled ${right} words on the first try!`);
+    const again = await modal(el('div',{}, el('div',{class:'big-e'},'✏️'), el('h2',{}, right === items.length ? 'Perfect spelling!' : 'Nice spelling!'),
+      el('p',{}, `${right} of ${items.length} on the first try · +${right} ⭐`)), [['Spell more ▶','',true],['Done','gray',false]]);
+    again ? startSpelling() : screenHome();
+  });
 }
 
 /* ---------- building passages ---------- */
@@ -3412,6 +3472,7 @@ function stopAll(){
   try { if (mediaStream) mediaStream.getTracks().forEach(t=>t.stop()); } catch(e){}
   mediaStream = null; recorder = null;
   try { speechSynthesis.cancel(); } catch(e){}
+  buildGen++; // stop any spelling/build game still waiting on a timer
 }
 
 function beginRun(act, opts){
@@ -3686,9 +3747,17 @@ function screenResults(){
   const statsBox = el('div',{class:'result-grid'});
   const fixBox = el('div',{class:'fixwords hidden'});
   const starsBox = el('div',{class:'stars'});
+  const countsForLevel = r.opts.mode === 'normal' && a.level === K.level && K.level < T.levels.length;
+  const lvlNote = countsForLevel ? el('div',{class:'lvl-note'}) : null;
   const paint = () => {
     const st = starsFor();
     starsBox.innerHTML = ''; for (let i=0;i<3;i++) starsBox.append(el('span',{}, i < st ? '⭐' : '☆'));
+    if (lvlNote){
+      const have = Math.min((K.passStreak||0) + (st === 3 ? 1 : 0), LEVEL_UP_STREAK);
+      lvlNote.textContent = st === 3
+        ? (have >= LEVEL_UP_STREAK ? '🎉 That\'s 3 in a row. Level up!' : `✅ This counts! ${have} of ${LEVEL_UP_STREAK} in a row toward the next level.`)
+        : `Get ⭐⭐⭐ for a read to count toward the next level. (${LEVEL_UP_STREAK} in a row levels you up!)`;
+    }
     statsBox.innerHTML = '';
     statsBox.append(el('div',{class:'stat'}, el('b',{}, Math.round(R.accuracy*100)+'%'), el('span',{},'words read right')));
     if (R.wcpm != null) statsBox.append(el('div',{class:'stat'}, el('b',{}, R.wcpm), el('span',{},'words per minute')));
@@ -3719,6 +3788,7 @@ function screenResults(){
       el('div',{class:'result-avatar'}),
       starsBox,
       el('h2',{class:'center', style:'margin:6px 0'}, (a.emoji||'') + ' ' + a.title),
+      lvlNote,
       statsBox,
       r.opts.focus ? (()=>{ const f = scoreFocus(a, r.opts.focus), st = skillsState()[r.opts.focus.id] || { reads:0, right:0, stories:0 };
         return el('div',{class:'skill-line'}, el('b',{}, `⚡ ${r.opts.focus.lesson.title} skill: `), `${f.right} of ${f.reads} pattern words read right this story`,
@@ -4408,8 +4478,14 @@ function screenWorld(visitKid){
     el('button',{class:'btn small', onclick:act(it => it.s = Math.max(0.5, +(it.s - 0.25).toFixed(2)))},'➖ Smaller'),
     el('button',{class:'btn small', onclick:act(it => it.f = !it.f)},'↔️ Flip'),
     el('button',{class:'btn small', onclick:act(it => it.z = Math.max(...W.items.map(i => i.z || 1)) + 1)},'⬆️ Front'),
-    el('button',{class:'btn small red', onclick:()=>{ const it = selected(); if (!it) return;
-      const def = WORLD_BY_ID[it.k]; const refund = def ? Math.floor(def[4] / 2) : 0;
+    el('button',{class:'btn small red', onclick:async()=>{ const it = selected(); if (!it) return;
+      // removing gives back only half of what the item cost
+      const def = WORLD_BY_ID[it.k], price = def ? def[4] : 0, refund = Math.floor(price / 2);
+      if (price){
+        const ok = await modal(el('div',{}, el('div',{class:'big-e'}, it.e), el('h2',{}, `Remove the ${def[3]}?`),
+          el('p',{}, `You paid ⭐ ${price}. If you remove it, you only get ⭐ ${refund} back.`)), [['Keep it','green',false],[`Remove (+${refund} ⭐)`,'red',true]]);
+        if (!ok) return;
+      }
       W.items = W.items.filter(i => i !== it); K.spent = Math.max(0, (K.spent||0) - refund);
       nodes[it.id].remove(); delete nodes[it.id]; worldSel = null; save(); refreshSel(); bal.textContent = '⭐ ' + balance();
       if (refund) say(`You got ${refund} stars back.`); }},'🗑️ Remove'));
@@ -4469,7 +4545,7 @@ function screenWorld(visitKid){
                : el('div',{class:'row'}, bal, el('button',{class:'btn small blue', onclick:()=>{ worldSel = null; screenWorld(otherKid); }}, `👀 Visit ${kidName(otherKid)}`))),
     readOnly && !DB.kids[owner].world?.items?.length ? el('div',{class:'banner'}, `${kidName(owner)} hasn't built anything here yet. (Visiting shows worlds saved on this iPad, for now.)`) : null,
     scroller,
-    readOnly ? null : el('div',{class:'world-hint'}, 'Tap something to buy it, then drag it anywhere! Tap a thing in your world to change it.'),
+    readOnly ? null : el('div',{class:'world-hint'}, 'Tap something to buy it, then drag it anywhere! Tap a thing in your world to change it. Removing something gives back only half its stars.'),
     readOnly ? null : tools,
     readOnly ? null : catTabs,
     readOnly ? null : palette);
@@ -4687,9 +4763,12 @@ function screenBuild(done){
   const items = L.build.map(b => Array.isArray(b) ? { word:b.join(''), parts:b } : { word:b, parts:graphemes(b).map(x => x.g) });
   buildGame(items, L.words, () => el('div',{}, lessonTop(), stepBar()), done);
 }
+let buildGen = 0;
 function buildGame(items, poolWords, header, done){
   let k = 0, right = 0;
+  const gen = ++buildGen;
   const render = () => {
+    if (gen !== buildGen) return;
     if (k >= items.length) return done(right / items.length);
     const it = items[k];
     const pool = [...new Set(poolWords.concat(items.map(x => x.word)).flatMap(w => graphemes(w).map(x => x.g)))];
