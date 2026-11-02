@@ -384,6 +384,39 @@ body.parent{ background:#f1f5f9; }
 .path-node.locked{ opacity:.55; }
 .topbar .btn.small{ padding:8px 12px; font-size:15px; white-space:nowrap; min-height:44px; }
 .topbar > .row{ gap:8px; justify-content:flex-end; }
+/* phone / narrow screens: nav becomes a tidy grid under the Switch button */
+@media (max-width: 760px){
+  .topbar{ flex-wrap:wrap; gap:10px; }
+  .topbar > .row{ width:100%; display:grid; grid-template-columns:repeat(3, 1fr); gap:10px; }
+  .topbar > .row .btn.small{ width:100%; justify-content:center; padding:8px 4px; font-size:14px; }
+  .topbar .btn.small{ min-height:42px; }
+  .title{ font-size:34px; }
+  .hero{ gap:14px; }
+  .tier{ width:40px; height:48px; } .tier .tier-e{ font-size:18px; }
+  .cards{ grid-template-columns:1fr; }
+  .pill{ font-size:16px; padding:6px 12px; }
+}
+@media (max-width: 480px){
+  .hero{ flex-direction:column; align-items:center; text-align:center; }
+  .hero .grow{ width:100%; }
+  .tier-track, .stats{ justify-content:center; }
+  .stats{ gap:8px; }
+  .tier{ width:36px; height:46px; } .tier-track{ gap:5px; }
+  .topbar > .row .btn.small{ font-size:12px; letter-spacing:.3px; }
+  .title{ font-size:30px; }
+  .next-card h2{ font-size:26px; }
+}
+
+/* ---- Home button + story beside the questions ---- */
+.topbar .btn.home-btn{ font-size:18px; min-height:52px; padding:8px 18px; background:linear-gradient(180deg,#fde047,#f59e0b); color:var(--ink); border-color:var(--ink); }
+.quiz-layout{ display:grid; grid-template-columns:minmax(0,1fr) minmax(0,1fr); gap:18px; align-items:start; }
+.quiz-passage{ position:sticky; top:12px; max-height:calc(100vh - 120px); overflow-y:auto; -webkit-overflow-scrolling:touch; }
+.quiz-passage h3{ margin:6px 0 10px; font-size:22px; }
+.quiz-passage p{ font-family:'Andika','Fredoka',system-ui,sans-serif; font-size:calc(var(--read-size) * .8); line-height:1.7; margin:0 0 14px; color:#111827; }
+@media (max-width: 860px){
+  .quiz-layout{ grid-template-columns:1fr; }
+  .quiz-passage{ position:static; max-height:42vh; }
+}
 
 </style>
 </head>
@@ -2988,10 +3021,27 @@ function beep(type){
   } catch(e){}
 }
 let voice = null;
+// Rank voices so the most human-sounding one wins: Natural/Neural (Edge), Premium/Enhanced (iPad, Mac), Google (Chrome).
+// Novelty and old robotic system voices are pushed to the bottom.
+const ROBOTIC = /compact|eloquence|albert|bad news|bahh|bells|boing|bubbles|cellos|jester|organ|superstar|trinoids|whisper|wobble|zarvox|good news|fred|junior|ralph|kathy|grandma|grandpa|rocko|shelley|flo\b|reed|sandy|eddy/i;
+function voiceScore(v){
+  if (!/^en/i.test(v.lang)) return -1;
+  let s = /^en[-_]US/i.test(v.lang) ? 50 : 20;
+  if (/natural|neural/i.test(v.name)) s += 40;
+  if (/premium/i.test(v.name)) s += 35;
+  if (/enhanced/i.test(v.name)) s += 30;
+  if (/google us english/i.test(v.name)) s += 25;
+  if (/\b(ava|zoe|samantha|allison|aria|jenny|michelle|nicky|evan|nathan|joelle|noelle)\b/i.test(v.name)) s += 10;
+  if (ROBOTIC.test(v.name)) s -= 80;
+  return s;
+}
+function englishVoices(){
+  try { return speechSynthesis.getVoices().filter(v => voiceScore(v) >= 0).sort((a,b) => voiceScore(b) - voiceScore(a)); } catch(e){ return []; }
+}
 function pickVoice(){
   try {
-    const vs = speechSynthesis.getVoices().filter(v => /^en(-|_)US/i.test(v.lang));
-    voice = vs.find(v => /Samantha|Ava|Allison|Nicky|Google US/i.test(v.name)) || vs[0] || null;
+    const vs = englishVoices();
+    voice = (DB.voiceName && vs.find(v => v.name === DB.voiceName)) || vs[0] || null;
   } catch(e){}
 }
 if ('speechSynthesis' in window){ pickVoice(); speechSynthesis.onvoiceschanged = pickVoice; }
@@ -3002,7 +3052,7 @@ function say(text, opts={}){
       speechSynthesis.cancel();
       const u = new SpeechSynthesisUtterance(text.replace(/[🌀-🫶☀-➿️]/gu,''));
       if (voice) u.voice = voice;
-      u.lang = 'en-US'; u.rate = opts.rate || (kid==='son' ? 0.85 : 0.95); u.pitch = 1.1;
+      u.lang = voice ? voice.lang : 'en-US'; u.rate = opts.rate || (kid==='son' ? 0.9 : 0.95); u.pitch = 1;
       u.onend = res; u.onerror = res;
       speechSynthesis.speak(u);
       setTimeout(res, 8000);
@@ -3192,6 +3242,9 @@ function screenProfiles(){
   show(s);
 }
 
+// back to the "Who is reading today?" screen
+function homeBtn(){ return el('button',{class:'btn small home-btn', onclick:()=>{ beep('tap'); screenProfiles(); }},'🏠 Home'); }
+
 function enterKid(k){
   setKid(k);
   if (!K.placed) screenPlacementIntro(); else if (!K.avatar.base) screenAvatarPick(); else screenHome();
@@ -3247,7 +3300,7 @@ function screenHome(msg){
   avatar.onclick = () => screenShop();
   const s = el('div',{class:'screen'},
     el('div',{class:'topbar'},
-      el('button',{class:'btn ghost small', onclick:screenProfiles},'← Switch'),
+      homeBtn(),
       el('div',{class:'row'},
         el('button',{class:'btn ghost small', onclick:()=>screenWorld()},'🏗️ My World'),
         el('button',{class:'btn ghost small', onclick:()=>{ ensureSkillStart(); screenPath(); }},'🧠 Skills'),
@@ -3316,6 +3369,7 @@ function placementProbes(){
 }
 function screenPlacementIntro(){
   const s = el('div',{class:'screen'},
+    el('div',{class:'topbar'}, homeBtn(), el('div')),
     el('div',{class:'hero'}, mascotNode(), el('div',{}, el('h1',{class:'title'}, kid==='daughter' ? 'Welcome to Skyfire Academy!' : `Hi! I'm ${CAT}!`),
       el('p',{class:'subtitle'}, kid==='daughter' ? 'Master Oona wants to hear you read, so she can pick the right rank for you.' : 'Let\'s read a little so I know where to start!'))),
     el('div',{class:'card', style:'margin-top:24px'},
@@ -3595,17 +3649,27 @@ function renderQuestion(){
     });
     opts.append(b);
   });
+  const st = run.act.story;
   const s = el('div',{class:'screen'},
     el('div',{class:'topbar'}, el('div',{class:'pageinfo'}, '🤔 Question ' + (Q.i+1) + ' of ' + Q.qs.length), el('div')),
-    el('div',{class:'card'},
-      el('div',{class:'row', style:'align-items:flex-start'},
-        el('p',{class:'q-text grow'}, item.q),
-        el('button',{class:'btn small blue', onclick:()=>say(item.q)},'🔊')),
-      opts, fb, el('div',{class:'row', style:'margin-top:10px'}, nextBtn)));
+    el('div',{class:'quiz-layout'},
+      passageCard((st.emoji ? st.emoji + ' ' : '') + st.title, st.text),
+      el('div',{class:'card'},
+        el('div',{class:'row', style:'align-items:flex-start'},
+          el('p',{class:'q-text grow'}, item.q),
+          el('button',{class:'btn small blue', onclick:()=>say(item.q)},'🔊')),
+        opts, fb, el('div',{class:'row', style:'margin-top:10px'}, nextBtn))));
   show(s);
   if (kid === 'son'){ (async()=>{ await say(item.q); })(); }
 }
 const pick = a => a[Math.floor(Math.random()*a.length)];
+// the story stays on screen during questions so kids can look back for the answer
+function passageCard(title, text){
+  return el('div',{class:'card quiz-passage'},
+    el('div',{class:'series-tag'},'📖 Look back in the story'),
+    el('h3',{}, title),
+    ...text.split(/\n\s*\n/).map(p => el('p',{}, p.trim())));
+}
 
 /* ---------- results + leveling ---------- */
 function screenResults(){
@@ -3968,6 +4032,7 @@ function screenAvatarPick(){
   const choices = Object.entries(AVATAR_BASES).filter(([,b]) => b.kid === kid);
   const name = kidName();
   const s = el('div',{class:'screen'},
+    el('div',{class:'topbar'}, homeBtn(), el('div')),
     el('div',{class:'topbar center'}, el('div',{}, el('h1',{class:'title center'}, `Pick your reading buddy, ${name}!`),
       el('p',{class:'subtitle center'}, `Choose one now. The ${choices.length > 2 ? 'others unlock' : 'other one unlocks'} at Level ${AVATAR_UNLOCK_LEVEL}!`))),
     el('div',{class:'profiles'}, ...choices.map(([id,b]) => {
@@ -4680,8 +4745,10 @@ function screenLessonQuiz(done){
         next.classList.remove('hidden'); };
       return b; }));
     show(el('div',{class:'screen'}, lessonTop(), stepBar(),
-      el('div',{class:'card'}, el('div',{class:'row', style:'align-items:flex-start'}, el('p',{class:'q-text grow'}, item.q), el('button',{class:'btn small blue', onclick:()=>say(item.q)},'🔊')),
-        opts, fb, el('div',{class:'row', style:'margin-top:10px'}, next))));
+      el('div',{class:'quiz-layout'},
+        passageCard('📖 ' + LS.lesson.title, LS.lesson.text),
+        el('div',{class:'card'}, el('div',{class:'row', style:'align-items:flex-start'}, el('p',{class:'q-text grow'}, item.q), el('button',{class:'btn small blue', onclick:()=>say(item.q)},'🔊')),
+          opts, fb, el('div',{class:'row', style:'margin-top:10px'}, next)))));
     if (kid === 'son') say(item.q);
   };
   render();
@@ -4955,6 +5022,12 @@ function screenParent(which){
       el('label',{class:'toggle'}, (()=>{ const c = el('input',{type:'checkbox'}); c.checked = !!DB.forceManual; c.onchange = () => { DB.forceManual = c.checked; save(); }; return c; })(),
         'Grown-up scoring mode (you tap missed words instead of the app listening)'),
       el('p',{class:'muted'}, 'Listening available in this browser: ' + (srSupported ? 'yes ✅' : 'no ❌ (open in Safari from an https:// address)')),
+      el('div',{class:'row', style:'margin-top:8px'}, (()=>{ const sel = el('select',{style:'max-width:100%'},
+          el('option',{value:''},'Reading voice: best available (auto)'),
+          ...englishVoices().map(v => el('option',{value:v.name}, v.name + ' (' + v.lang + ')')));
+          sel.value = DB.voiceName || ''; sel.onchange = () => { DB.voiceName = sel.value || null; save(); pickVoice(); say('Hi! This is how I will sound when I read to you.'); }; return sel; })(),
+        el('button',{class:'btn small blue', onclick:()=>{ pickVoice(); say('Hi! This is how I will sound when I read to you.'); }},'🔊 Test voice')),
+      el('p',{class:'muted'}, 'Now using: ' + (voice ? voice.name : 'device default') + '. For the most natural voice on iPad: Settings › Accessibility › Spoken Content › Voices › English, download an "Enhanced" or "Premium" voice (like Ava or Zoe), then pick it here.'),
       el('div',{class:'row'}, (()=>{ const i = el('input',{type:'text', value: DB.names[which]}); i.onchange = () => { if (i.value.trim()){ DB.names[which] = i.value.trim(); save(); } }; return i; })(), el('span',{class:'muted'},'Name shown in the app')),
       el('div',{class:'row', style:'margin-top:8px'}, (()=>{ const i = el('input',{type:'text', value: CAT}); return i; })(),
         el('button',{class:'btn small blue', onclick:ev=>{ const v = ev.currentTarget.previousSibling.value.trim().replace(/[^A-Za-z' -]/g,''); if (v){ DB.catName = v[0].toUpperCase() + v.slice(1); save(); location.reload(); } }},'Rename the cat'),
