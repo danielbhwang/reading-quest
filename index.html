@@ -445,6 +445,18 @@ body.parent{ background:#f1f5f9; }
 
 .cloud-status{ margin:18px auto 0; padding:6px 14px; border-radius:999px; background:rgba(15,23,42,.45); color:#fff; font-size:14px; text-align:center; width:fit-content; max-width:100%; }
 
+/* ---- marking clues in the story + typed spelling check ---- */
+.mark-tools{ display:flex; gap:6px; flex-wrap:wrap; margin:6px 0 10px; position:sticky; top:-26px; background:#fff; padding:6px 0; z-index:2; }
+.mark-tool{ font:15px 'Lilita One','Fredoka',sans-serif; padding:6px 12px; border:3px solid var(--ink); border-radius:12px; background:#f1f5f9; color:var(--ink); }
+.mark-tool.on{ background:#fde047; box-shadow:2px 2px 0 var(--ink); }
+.mw{ touch-action:pan-y; border-radius:4px; cursor:pointer; -webkit-user-select:none; user-select:none; }
+.mw.hl{ background:#fde047; box-shadow:0 0 0 2px #fde047; }
+.mw.ul{ text-decoration:underline; text-decoration-color:#dc2626; text-decoration-thickness:3px; text-underline-offset:4px; }
+.spell-input{ display:block; margin:14px auto 6px; width:min(420px,100%); font:32px 'Andika','Fredoka',sans-serif; text-align:center; padding:10px 14px; border:4px solid var(--ink); border-radius:16px; -webkit-user-select:text; user-select:text; }
+.spell-input.right{ background:#bbf7d0; } .spell-input.wrong{ background:#fecaca; }
+.spell-sentence{ font:22px 'Andika','Fredoka',sans-serif; margin:14px auto 0; max-width:640px; color:#334155; }
+.spell-summary{ display:flex; flex-wrap:wrap; justify-content:center; margin-top:8px; }
+
 /* ---- level progress bar ---- */
 .lvl-progress{ background:rgba(15,23,42,.45); border:3px solid var(--ink); border-radius:16px; box-shadow:4px 4px 0 var(--ink); padding:10px 14px; margin:4px 0 6px; max-width:560px; color:#fff; }
 .lvl-head{ display:flex; justify-content:space-between; font:18px 'Lilita One','Fredoka',sans-serif; text-shadow:2px 2px 0 var(--ink); }
@@ -3398,6 +3410,8 @@ function homeBtn(){ return el('button',{class:'btn small home-btn', onclick:()=>
 
 function enterKid(k){
   setKid(k);
+  // Gianna reads quietly, so she skips the read-aloud placement check (a grown-up can set her rank)
+  if (!K.placed && k === 'daughter'){ K.placed = true; K.level = K.level || 1; awardTrophiesUpTo(K.level); save(); }
   if (!K.placed) screenPlacementIntro(); else if (!K.avatar.base) screenAvatarPick(); else screenHome();
 }
 
@@ -3429,11 +3443,28 @@ function screenHome(msg){
   const rankWord = kid==='daughter' ? 'Rank' : 'Level';
   // one card per story series available at this level (or one card for word/letter rounds)
   const cards = [];
-  if (L.kind !== 'story') cards.push(el('div',{class:'card next-card'},
+  if (kid === 'daughter'){
+    // Gianna: three sections, read quietly, 5 questions each
+    const quietCard = (section, tag, blurb) => { const st = nextQuietStory(section);
+      return st ? el('div',{class:'card next-card series-card'},
+        el('div',{class:'series-tag'}, tag),
+        el('h2',{}, st.emoji + ' ' + st.title),
+        el('p',{}, blurb),
+        el('button',{class:'btn big', onclick:()=>{ beep('tap'); startQuietStory(section); }},'▶ Read')) : null; };
+    cards.push(
+      quietCard('short', '📖 Short Stories', 'Read it to yourself, then answer 5 questions. Highlight clues as you go!'),
+      quietCard('long', '📚 Longer Stories', 'A bigger story! Read it to yourself, then answer 5 questions.'),
+      el('div',{class:'card next-card spell-card'},
+        el('div',{class:'series-tag'},'✏️ Spelling Check'),
+        el('h2',{},'Spelling Check'),
+        el('p',{},'Hear a word, then type it. 8 words · +1 ⭐ for each one you spell right.'),
+        el('button',{class:'btn big blue', onclick:()=>{ beep('tap'); startSpellCheck(); }},'✏️ Start')));
+  }
+  if (kid !== 'daughter' && L.kind !== 'story') cards.push(el('div',{class:'card next-card'},
       el('div',{class:'series-tag'}, L.kind === 'letters' ? '🔤 Practice' : '⭐ Practice'),
       el('h2',{}, L.kind === 'letters' ? 'Letter Sounds Round' : L.title + ' Round'), el('p',{}, L.intro),
       el('button',{class:'btn big', onclick:()=>{ beep('tap'); startActivity(); }},'▶ Start')));
-  {
+  if (kid !== 'daughter'){
     seriesAt(K.level).forEach(sid => {
       const st = storyFor(K.level, sid).story, info = (T.series||{})[sid] || { name:'', emoji:'' };
       cards.push(el('div',{class:'card next-card series-card'},
@@ -3442,12 +3473,12 @@ function screenHome(msg){
         el('button',{class:'btn big', onclick:()=>{ beep('tap'); startActivity(sid); }},'▶ Read')));
     });
   }
-  if (todo.length) cards.push(el('div',{class:'card next-card practice-card'},
+  if (kid !== 'daughter' && todo.length) cards.push(el('div',{class:'card next-card practice-card'},
     el('div',{class:'series-tag'},'🎯 My Words'),
     el('h2',{}, `${todo.length} tricky word${todo.length>1?'s':''} to practice`),
     el('p',{}, todo.slice(0,6).map(w => K.words[w].disp||w).join(' · ')),
     el('button',{class:'btn big blue', onclick:()=>{ beep('tap'); startPractice(); }},'💪 Practice')));
-  if (spellWords().length) cards.push(el('div',{class:'card next-card spell-card'},
+  if (kid !== 'daughter' && spellWords().length) cards.push(el('div',{class:'card next-card spell-card'},
     el('div',{class:'series-tag'},'✏️ Spelling'),
     el('h2',{},'Spelling Practice'),
     el('p',{},'Hear a word, then build it with letter tiles! +1 ⭐ for each word you spell on the first try.'),
@@ -3465,7 +3496,7 @@ function screenHome(msg){
         el('button',{class:'btn ghost small', onclick:screenTrophies},'🏆 Trophies'),
         el('button',{class:'btn ghost small', onclick:screenCollection}, kid==='daughter' ? '🐉 Roost' : '📖 Pals'),
         el('button',{class:'btn ghost small', onclick:screenWords},'🎯 Words'),
-        el('button',{class:'btn ghost small', onclick:()=>{ beep('tap'); startSpelling(); }},'✏️ Spelling'))),
+        el('button',{class:'btn ghost small', onclick:()=>{ beep('tap'); kid === 'daughter' ? startSpellCheck() : startSpelling(); }},'✏️ Spelling'))),
     el('div',{class:'hero'}, avatar,
       el('div',{class:'grow'},
         el('h1',{class:'title'}, `Hi, ${kidName()}!`),
@@ -3498,20 +3529,117 @@ function levelProgress(){
   return el('div',{class:'lvl-progress'},
     el('div',{class:'lvl-head'}, el('span',{}, `${word} ${K.level}`), el('span',{}, `${word} ${K.level+1} 🔓`)),
     el('div',{class:'lvl-bar'}, ...Array.from({length:LEVEL_UP_STREAK}, (_,i) => el('div',{class:'lvl-seg' + (i < have ? ' on' : '')}, i < have ? '⭐⭐⭐' : ''))),
-    el('div',{class:'lvl-tip'}, `${left} more ⭐⭐⭐ read${left>1?'s':''} in a row to reach ${word} ${K.level+1}!`));
+    el('div',{class:'lvl-tip'}, kid === 'daughter'
+      ? `${left} more stor${left>1?'ies':'y'} in a row with 4 or 5 questions right to reach ${word} ${K.level+1}!`
+      : `${left} more ⭐⭐⭐ read${left>1?'s':''} in a row to reach ${word} ${K.level+1}!`));
 }
 
 /* ---------- spelling practice ---------- */
 // Words come from the kid's tricky-word list first, then from their current level.
-function spellWords(){
-  const L = levelDef(K.level), maxLen = kid==='son' ? 6 : 8;
+function spellWords(n = 5, minLen = 3){
+  const L = levelDef(K.level), maxLen = kid==='son' ? 6 : 9;
   let pool;
   if (L.kind === 'words') pool = L.items.slice();
   else if (L.kind === 'letters') pool = levelDef(2).items.slice();
   else pool = L.stories.flatMap(s => s.text.split(/\s+/)).map(w => w.replace(/[^A-Za-z]/g,'')).filter(w => /^[a-z]+$/.test(w));
   pool = pool.filter(w => /^[a-z]+$/.test(w) && w.length >= 3 && w.length <= maxLen && !PROPER.has(w));
   const tricky = practiceWords(K).filter(w => /^[a-z]+$/.test(w) && w.length >= 2 && w.length <= maxLen && !PROPER.has(w));
-  return [...new Set(shuffle(tricky).slice(0,2).concat(shuffle(pool)))].slice(0, 5);
+  pool = pool.filter(w => w.length >= minLen);
+  return [...new Set(shuffle(tricky).slice(0,2).concat(shuffle(pool)))].slice(0, n);
+}
+
+/* ---------- Gianna: quiet reading (no microphone) ----------
+   Short Stories = her level's shorter half + the level below; Longer Stories = her level's longer half +
+   the level above. She reads the story to herself and answers 5 questions with the story beside them;
+   only the questions are scored (4 or 5 right is a passing read). */
+const wordCount = s => s.text.split(/\s+/).length;
+function quietPool(section){
+  const lv = K.level, cur = levelDef(lv).stories;
+  const med = cur.map(wordCount).sort((a,b) => a - b)[Math.floor(cur.length / 2)];
+  if (section === 'short') return (lv > 1 ? levelDef(lv - 1).stories : []).concat(cur.filter(s => wordCount(s) <= med));
+  return cur.filter(s => wordCount(s) > med).concat(lv < T.levels.length ? levelDef(lv + 1).stories : []);
+}
+function nextQuietStory(section){
+  const pool = quietPool(section);
+  return pool.length ? pool[(K.storyIdx['quiet_' + section] || 0) % pool.length] : null;
+}
+function startQuietStory(section){
+  stopAll();
+  const story = nextQuietStory(section);
+  if (!story) return screenHome();
+  const pages = story.text.split(/\n\s*\n/).map(p => { const tokens = tokensOf(p.trim()); return { tokens, status: tokens.map(() => 'ok'), helped: tokens.map(() => false) }; });
+  const act = { kind:'story', level:K.level, title:story.title, emoji:story.emoji, story, storyKey:'quiet_' + section, series:story.series, pages, quiet:true };
+  run = { act, opts:{ mode:'normal' }, page:0, micMs:0, micStart:null, startedAt:Date.now(), clips:[], sessionId: kid + '_' + Date.now(), marks:{} };
+  run.reading = { total:0, correct:0, helped:0, missed:[], accuracy:1, wcpm:null, quiet:true };
+  screenQuiz();
+}
+
+/* ---------- Gianna: spelling check (typed) ---------- */
+function sentenceWith(word){
+  const re = new RegExp('\\b' + word + '\\b', 'i');
+  for (const s of levelDef(K.level).stories){
+    const hit = (s.text.replace(/\n+/g,' ').match(/[^.!?]+[.!?]+["”]?/g) || []).find(x => re.test(x) && x.length < 160);
+    if (hit) return hit.trim();
+  }
+  return '';
+}
+function startSpellCheck(){
+  stopAll();
+  const words = spellWords(8, 4);
+  if (!words.length) return screenHome();
+  let i = 0, right = 0;
+  const results = [];
+  const finish = async () => {
+    K.stars += right;
+    K.sessions.unshift({ id: kid + '_' + Date.now(), date: new Date().toISOString(), level: K.level, title:'Spelling check', kind:'spelling', mode:'spelling',
+      total: words.length, correct: right, helped: 0, accuracy: Math.round(right / words.length * 1000) / 10, wcpm: null, quiz: null,
+      missed: results.filter(r => !r.ok).map(r => r.w), stars: right });
+    save();
+    confetti(right === words.length ? 90 : 35); beep('level');
+    say(right === words.length ? 'Perfect spelling check!' : `You spelled ${right} out of ${words.length} words!`);
+    const again = await modal(el('div',{}, el('div',{class:'big-e'},'✏️'), el('h2',{}, right === words.length ? 'Perfect spelling!' : 'Spelling check done!'),
+      el('p',{}, `${right} of ${words.length} right · +${right} ⭐`),
+      el('div',{class:'spell-summary'}, ...results.map(r => el('span',{class:'chip' + (r.ok ? ' ok' : '')}, (r.ok ? '✓ ' : '✗ ') + r.w)))),
+      [['Another check ▶','',true],['Done','gray',false]]);
+    again ? startSpellCheck() : screenHome();
+  };
+  const render = () => {
+    if (i >= words.length) return finish();
+    const w = words[i], sent = sentenceWith(w);
+    const blanked = sent ? sent.replace(new RegExp('\\b' + w + '\\b', 'i'), '_____') : '';
+    let checked = false;
+    const input = el('input',{type:'text', class:'spell-input', autocomplete:'off', autocapitalize:'off', autocorrect:'off', spellcheck:'false', placeholder:'Type the word'});
+    const fb = el('div',{class:'feedback'});
+    const next = el('button',{class:'btn big hidden', onclick:()=>{ i++; render(); }}, i < words.length - 1 ? 'Next word ▶' : 'Finish ▶');
+    const check = () => {
+      if (checked || !input.value.trim()) return;
+      checked = true; input.disabled = true;
+      const ok = input.value.trim().toLowerCase() === w;
+      results.push({ w, ok });
+      if (ok){ right++; beep('ok'); burst(pick(['YES!','WOW!','NICE!'])); fb.textContent = '✅ Correct!'; fb.style.color = 'var(--ok)'; input.classList.add('right'); }
+      else {
+        beep('bad'); fb.textContent = `It's spelled: ${w}`; fb.style.color = 'var(--bad)'; input.classList.add('wrong'); say(`${w} is spelled ${w.split('').join(', ')}`, { rate:0.8 });
+        const r = K.words[w] || (K.words[w] = { miss:0, streak:0, mastered:null, last:null, disp:w }); r.miss++; r.streak = 0; r.mastered = null; r.last = todayStr(); save();
+      }
+      checkBtn.classList.add('hidden'); next.classList.remove('hidden');
+    };
+    const checkBtn = el('button',{class:'btn big green', onclick:check},'✓ Check');
+    input.addEventListener('keydown', e => { if (e.key === 'Enter'){ e.preventDefault(); checked ? next.click() : check(); } });
+    show(el('div',{class:'screen'},
+      el('div',{class:'topbar'}, el('button',{class:'btn ghost small', onclick:()=>screenHome()},'✕ Stop'),
+        el('div',{class:'pageinfo'}, `✏️ Spelling Check · ${i + 1} / ${words.length}`), el('div',{style:'width:80px'})),
+      el('div',{class:'card center spell-card'},
+        el('p',{class:'q-text'},'Listen, then type the word!'),
+        el('div',{class:'row center'},
+          el('button',{class:'btn blue big', onclick:()=>say(w, { rate:0.8 })},'🔊 Hear word'),
+          sent ? el('button',{class:'btn', onclick:()=>say(sent, { rate:0.9 })},'🔊 Hear it in a sentence') : null),
+        blanked ? el('p',{class:'spell-sentence'}, blanked) : null,
+        input, fb,
+        el('div',{class:'row center', style:'margin-top:10px'}, checkBtn, next))));
+    say(w, { rate:0.8 });
+    setTimeout(() => { try { input.focus(); } catch(e){} }, 50);
+  };
+  render();
 }
 function startSpelling(){
   stopAll();
@@ -3831,7 +3959,7 @@ function finishReading(){
 
 /* ---------- quiz ---------- */
 function screenQuiz(){
-  const qs = run.act.story.qs.map(([q, opts, ans]) => ({ q, opts: shuffle(opts.map((o,i)=>({ t:o, right:i===ans }))) }));
+  const qs = run.act.story.qs.slice(0, 5).map(([q, opts, ans]) => ({ q, opts: shuffle(opts.map((o,i)=>({ t:o, right:i===ans }))) }));
   run.quiz = { qs, i:0, correct:0 };
   renderQuestion();
 }
@@ -3859,7 +3987,7 @@ function renderQuestion(){
   const s = el('div',{class:'screen'},
     el('div',{class:'topbar'}, el('div',{class:'pageinfo'}, '🤔 Question ' + (Q.i+1) + ' of ' + Q.qs.length), el('div')),
     el('div',{class:'quiz-layout'},
-      passageCard((st.emoji ? st.emoji + ' ' : '') + st.title, st.text),
+      passageCard((st.emoji ? st.emoji + ' ' : '') + st.title, st.text, run.marks || (run.marks = {})),
       el('div',{class:'card'},
         el('div',{class:'row', style:'align-items:flex-start'},
           el('p',{class:'q-text grow'}, item.q),
@@ -3870,11 +3998,46 @@ function renderQuestion(){
 }
 const pick = a => a[Math.floor(Math.random()*a.length)];
 // the story stays on screen during questions so kids can look back for the answer
-function passageCard(title, text){
+// Kids can highlight or underline words to mark clues. `marks` ({ "para-word": {h, u} }) lives on the run,
+// so marks stay put from one question to the next.
+let markTool = 'h';
+function passageCard(title, text, marks){
+  marks = marks || {};
+  const paint = (n, m) => { n.classList.toggle('hl', !!(m && m.h)); n.classList.toggle('ul', !!(m && m.u)); };
+  const apply = (n, toggle) => {
+    const k = n.dataset.k, m = marks[k] || (marks[k] = {});
+    if (markTool === 'e'){ m.h = false; m.u = false; } else m[markTool] = toggle ? !m[markTool] : true;
+    paint(n, m);
+  };
+  const body = el('div',{class:'mark-body'});
+  text.split(/\n\s*\n/).forEach((p, pi) => {
+    const para = el('p',{});
+    p.trim().split(/\s+/).forEach((w, wi) => { const n = el('span',{class:'mw', 'data-k': pi + '-' + wi}, w); paint(n, marks[pi + '-' + wi]); para.append(n, ' '); });
+    body.append(para);
+  });
+  const tools = el('div',{class:'mark-tools'});
+  const drawTools = () => {
+    tools.innerHTML = '';
+    [['h','🖍️ Highlight'],['u','U̲ Underline'],['e','🧽 Erase']].forEach(([t, label]) =>
+      tools.append(el('button',{class:'mark-tool' + (markTool === t ? ' on' : ''), onclick:()=>{ markTool = t; drawTools(); }}, label)));
+    tools.append(el('button',{class:'mark-tool', onclick:()=>{ Object.keys(marks).forEach(k => delete marks[k]); body.querySelectorAll('.mw').forEach(n => paint(n, null)); }},'↺ Clear'));
+  };
+  drawTools();
+  // tap a word to toggle; slide sideways across words to mark a phrase (up/down still scrolls)
+  let dragging = false, moved = false, last = null;
+  body.addEventListener('pointerdown', e => { const n = e.target.closest('.mw'); if (!n) return; dragging = true; moved = false; last = n; });
+  body.addEventListener('pointermove', e => {
+    if (!dragging) return;
+    const t = document.elementFromPoint(e.clientX, e.clientY), n = t && t.closest ? t.closest('.mw') : null;
+    if (n && n !== last && body.contains(n)){ if (!moved){ apply(last, false); moved = true; } apply(n, false); last = n; }
+  });
+  body.addEventListener('pointerup', () => { if (dragging && !moved && last) apply(last, true); dragging = false; });
+  body.addEventListener('pointercancel', () => { dragging = false; });
   return el('div',{class:'card quiz-passage'},
     el('div',{class:'series-tag'},'📖 Look back in the story'),
     el('h3',{}, title),
-    ...text.split(/\n\s*\n/).map(p => el('p',{}, p.trim())));
+    el('p',{class:'muted', style:'margin:0 0 4px'},'Tap a word or slide across words to mark clues.'),
+    tools, body);
 }
 
 /* ---------- results + leveling ---------- */
@@ -3901,10 +4064,11 @@ function screenResults(){
       const have = Math.min((K.passStreak||0) + (st === 3 ? 1 : 0), LEVEL_UP_STREAK);
       lvlNote.textContent = st === 3
         ? (have >= LEVEL_UP_STREAK ? '🎉 That\'s 3 in a row. Level up!' : `✅ This counts! ${have} of ${LEVEL_UP_STREAK} in a row toward the next level.`)
+        : a.quiet ? `Get 4 or 5 questions right for a story to count toward the next rank. (${LEVEL_UP_STREAK} in a row ranks you up!)`
         : `Get ⭐⭐⭐ for a read to count toward the next level. (${LEVEL_UP_STREAK} in a row levels you up!)`;
     }
     statsBox.innerHTML = '';
-    statsBox.append(el('div',{class:'stat'}, el('b',{}, Math.round(R.accuracy*100)+'%'), el('span',{},'words read right')));
+    if (!a.quiet) statsBox.append(el('div',{class:'stat'}, el('b',{}, Math.round(R.accuracy*100)+'%'), el('span',{},'words read right')));
     if (R.wcpm != null) statsBox.append(el('div',{class:'stat'}, el('b',{}, R.wcpm), el('span',{},'words per minute')));
     if (quiz) statsBox.append(el('div',{class:'stat'}, el('b',{}, quiz.c + '/' + quiz.t), el('span',{},'questions right')));
     if (R.helped) statsBox.append(el('div',{class:'stat'}, el('b',{}, R.helped), el('span',{},'words helped')));
@@ -3938,10 +4102,10 @@ function screenResults(){
       r.opts.focus ? (()=>{ const f = scoreFocus(a, r.opts.focus), st = skillsState()[r.opts.focus.id] || { reads:0, right:0, stories:0 };
         return el('div',{class:'skill-line'}, el('b',{}, `⚡ ${r.opts.focus.lesson.title} skill: `), `${f.right} of ${f.reads} pattern words read right this story`,
           el('span',{class:'muted'}, skillKnown(r.opts.focus.id) ? ' · ✅ mastered' : ` · ${st.stories} of 2+ stories toward mastery`)); })() : null,
-      R.missed.length ? el('p',{style:'font-size:20px'}, 'Words to practice: ', ...[...new Set(R.missed)].slice(0,8).map(w => el('span',{class:'chip', onclick:()=>say(w)}, '🔊 ' + w))) : el('p',{style:'font-size:22px'},'Every word right! 🎉'),
+      a.quiet ? null : R.missed.length ? el('p',{style:'font-size:20px'}, 'Words to practice: ', ...[...new Set(R.missed)].slice(0,8).map(w => el('span',{class:'chip', onclick:()=>say(w)}, '🔊 ' + w))) : el('p',{style:'font-size:22px'},'Every word right! 🎉'),
       el('div',{class:'row', style:'margin-top:16px'},
         el('button',{class:'btn big green', onclick:()=>commitResults(starsFor(), quiz)},'Continue ▶'),
-        el('button',{class:'btn small gray', onclick:()=>{ if (fixBox.classList.contains('hidden')){ buildFix(); fixBox.classList.remove('hidden'); } else fixBox.classList.add('hidden'); }},'✎ Grown-up fix')),
+        a.quiet ? null : el('button',{class:'btn small gray', onclick:()=>{ if (fixBox.classList.contains('hidden')){ buildFix(); fixBox.classList.remove('hidden'); } else fixBox.classList.add('hidden'); }},'✎ Grown-up fix')),
       fixBox));
   show(s);
   beep('star'); if (starsFor() === 3) confetti(40);
@@ -3962,13 +4126,13 @@ async function commitResults(stars, quiz){
     K.streak.last = todayStr();
   }
   // word tracker: misses go on the practice list; 3 correct reads in a row = mastered
-  const mastered = trackWords(a);
+  const mastered = a.quiet ? [] : trackWords(a); // quiet reading isn't scored word by word
   K.stars += stars;
   if (quiz) K.quizStreak = quiz.c === quiz.t ? (K.quizStreak||0) + 1 : 0;
 
   // session record
   const rec = { id:r.sessionId, date: now.toISOString(), level:a.level, title:a.title, kind:a.kind, mode:r.opts.mode, series:a.series||null,
-    total:R.total, correct:R.correct, helped:R.helped, accuracy:Math.round(R.accuracy*1000)/10, wcpm:R.wcpm,
+    total:R.total, correct:R.correct, helped:R.helped, accuracy: a.quiet && quiz ? Math.round(quiz.c / quiz.t * 1000)/10 : Math.round(R.accuracy*1000)/10, wcpm:R.wcpm,
     quiz: quiz ? quiz.c + '/' + quiz.t : null, missed:[...new Set(R.missed)].slice(0,20), stars, hasRec: r.clips.length > 0 };
   K.sessions.unshift(rec); K.sessions = K.sessions.slice(0, 200);
   if (r.clips.length) idb.put(r.sessionId, r.clips);
@@ -5070,7 +5234,7 @@ function screenLessonQuiz(done){
       return b; }));
     show(el('div',{class:'screen'}, lessonTop(), stepBar(),
       el('div',{class:'quiz-layout'},
-        passageCard('📖 ' + LS.lesson.title, LS.lesson.text),
+        passageCard('📖 ' + LS.lesson.title, LS.lesson.text, LS.marks || (LS.marks = {})),
         el('div',{class:'card'}, el('div',{class:'row', style:'align-items:flex-start'}, el('p',{class:'q-text grow'}, item.q), el('button',{class:'btn small blue', onclick:()=>say(item.q)},'🔊')),
           opts, fb, el('div',{class:'row', style:'margin-top:10px'}, next)))));
     if (kid === 'son') say(item.q);
