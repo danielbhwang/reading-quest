@@ -2994,6 +2994,16 @@ function load(){
 function save(){ try { localStorage.setItem(STORE_KEY, JSON.stringify(DB)); } catch(e){} }
 DB = load();
 
+// One-time gifts from a grown-up. Each id is granted once per device and announced on the kid's home screen.
+const GIFTS = [{ id:'world-refund-2026-11', stars:70, msg:'🎁 Surprise! You got 70 bonus stars to rebuild your world. Sorry your things went missing!' }];
+DB.gifts = DB.gifts || [];
+GIFTS.forEach(g => {
+  if (DB.gifts.includes(g.id)) return;
+  for (const k of ['son','daughter']){ DB.kids[k].stars = (DB.kids[k].stars||0) + g.stars; DB.kids[k].giftMsg = g.msg; }
+  DB.gifts.push(g.id);
+  save();
+});
+
 /* IndexedDB for recordings */
 const idb = {
   db:null,
@@ -3279,6 +3289,7 @@ function screenHome(msg){
   stopAll();
   if (!K.avatar.base || !AVATAR_BASES[K.avatar.base] || !AVATAR_BASES[K.avatar.base].kid) return screenAvatarPick();
   if (awardTrophiesUpTo(K.level).length) save();
+  if (K.giftMsg){ msg = msg ? K.giftMsg + ' ' + msg : K.giftMsg; delete K.giftMsg; save(); confetti(80); beep('level'); }
   const L = levelDef(K.level);
   const max = T.levels.length;
   const today = K.today.date === todayStr() ? K.today.ms : 0;
