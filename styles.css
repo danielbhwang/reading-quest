@@ -509,3 +509,10 @@ body.parent{ background:#f1f5f9; }
   .quiz-passage{ position:static; max-height:42vh; }
 }
 
+
+/* ---- holiday decorations ---- */
+.world-item.inflatable{ transform-origin:50% 100%; animation:itSway 3.4s ease-in-out var(--wdl,0s) infinite; filter:saturate(1.25) drop-shadow(3px 4px 0 rgba(0,0,0,.25)); }
+.world-item.inflatable::after{ content:''; position:absolute; left:18%; right:18%; bottom:-6px; height:10px; border-radius:50%; background:rgba(15,23,42,.45); }
+@keyframes itSway{ 0%,100%{ rotate:-4deg; scale:1 1; } 50%{ rotate:4deg; scale:1.03 .97; } }
+.world-item.act-burst{ animation:itBurst .8s ease-out 3; }
+@keyframes itBurst{ 0%{ scale:1; filter:brightness(1); } 50%{ scale:1.6; filter:brightness(1.6) drop-shadow(0 0 18px #fde047); } 100%{ scale:1; filter:brightness(1); } }

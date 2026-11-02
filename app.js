@@ -1910,6 +1910,9 @@ SHOP.push(
   ['head','tiara','Sparkle Tiara',30], ['head','unicorn','Unicorn Horn',40], ['head','catears','Kitty Ears',15], ['head','bunny','Bunny Ears',15],
   ['head','knight','Knight Helmet',35], ['head','viking','Viking Helmet',30], ['head','pirate','Pirate Hat',25], ['head','cowboy','Cowboy Hat',20],
   ['head','cap','Ball Cap',10], ['head','halo','Golden Halo',45,4], ['head','tophat','Top Hat',20], ['head','beanie','Cozy Beanie',10], ['head','flowerclip','Flower Clip',10],
+  // holiday costumes
+  ['head','witchhat','Witch Hat',20], ['head','santahat','Santa Hat',15], ['head','antlers','Reindeer Antlers',15], ['head','pumpkinhat','Pumpkin Head',20],
+  ['back','vampcape','Vampire Cape',25],
   // faces
   ['face','hearts','Heart Glasses',15], ['face','rainbowshades','Rainbow Shades',25], ['face','goggles','Pilot Goggles',20],
   ['face','eyepatch','Pirate Eye Patch',10], ['face','mustache','Silly Mustache',10], ['face','heromask','Hero Mask',20], ['face','facepaint','Star Face Paint',10],
@@ -1938,7 +1941,8 @@ Object.assign(BACK, {
   angel: () => `<g fill="#fff" stroke="#cbd5e1" stroke-width="3">${[0,1,2].map(i=>`<ellipse cx="${44-i*6}" cy="${130+i*16}" rx="${30-i*4}" ry="11" transform="rotate(${-20+i*10} ${44-i*6} ${130+i*16})"/><ellipse cx="${156+i*6}" cy="${130+i*16}" rx="${30-i*4}" ry="11" transform="rotate(${20-i*10} ${156+i*6} ${130+i*16})"/>`).join('')}</g>`,
   batwings: () => `<path d="M70 140 Q40 100 6 112 Q22 124 16 140 Q30 136 34 152 Q46 142 70 168Z" fill="#4c1d95" stroke="#1e1b4b" stroke-width="4" stroke-linejoin="round"/><path d="M130 140 Q160 100 194 112 Q178 124 184 140 Q170 136 166 152 Q154 142 130 168Z" fill="#4c1d95" stroke="#1e1b4b" stroke-width="4" stroke-linejoin="round"/>`,
   goldcape: () => `<path d="M58 130 Q100 118 142 130 L172 214 Q100 228 28 214Z" fill="#facc15" stroke="#a16207" stroke-width="4" stroke-linejoin="round"/><path d="M60 140 Q100 128 140 140" stroke="#fef08a" stroke-width="4" fill="none"/><g class="sparkle"><circle cx="50" cy="200" r="3" fill="#fff"/><circle cx="150" cy="196" r="3" fill="#fff"/></g>`,
-  jetpack: () => `<rect x="60" y="120" width="80" height="62" rx="14" fill="#64748b" stroke="#1e293b" stroke-width="4"/><g class="flame"><path d="M66 182 q10 30 20 0z M114 182 q10 30 20 0z" fill="#f97316"/><path d="M71 182 q5 16 10 0z M119 182 q5 16 10 0z" fill="#fde047"/></g>`
+  jetpack: () => `<rect x="60" y="120" width="80" height="62" rx="14" fill="#64748b" stroke="#1e293b" stroke-width="4"/><g class="flame"><path d="M66 182 q10 30 20 0z M114 182 q10 30 20 0z" fill="#f97316"/><path d="M71 182 q5 16 10 0z M119 182 q5 16 10 0z" fill="#fde047"/></g>`,
+  vampcape: () => `<path d="M48 104 L66 132 L134 132 L152 104 L142 140 L58 140Z" fill="#b91c1c" stroke="#450a0a" stroke-width="3.5" stroke-linejoin="round"/><path d="M60 132 Q100 120 140 132 L172 216 Q100 230 28 216Z" fill="#111827" stroke="#000" stroke-width="4" stroke-linejoin="round"/><path d="M70 140 Q100 132 130 140 L150 206 Q100 216 50 206Z" fill="#991b1b" opacity=".85"/>`
 });
 Object.assign(HEAD, {
   tiara: b => { const y = headTop(b); return `<path d="M72 ${y+8} Q100 ${y-2} 128 ${y+8}" stroke="#e5e7eb" stroke-width="5" fill="none"/><path d="M78 ${y+4} L84 ${y-14} L92 ${y+1} L100 ${y-24} L108 ${y+1} L116 ${y-14} L122 ${y+4}" fill="#e0e7ff" stroke="#94a3b8" stroke-width="3" stroke-linejoin="round"/><circle cx="100" cy="${y-8}" r="5" fill="#ec4899"/><circle cx="85" cy="${y-3}" r="3" fill="#38bdf8"/><circle cx="115" cy="${y-3}" r="3" fill="#38bdf8"/><g class="sparkle"><path d="M126 ${y-20} l2 5 l5 1 l-4 3 l1 5 l-4 -3 l-4 3 l1 -5 l-4 -3 l5 -1z" fill="#fde047"/></g>`; },
@@ -1953,7 +1957,12 @@ Object.assign(HEAD, {
   halo: b => { const y = headTop(b); return `<g class="sparkle"><ellipse cx="100" cy="${y-20}" rx="34" ry="9" fill="none" stroke="#fde047" stroke-width="7"/><ellipse cx="100" cy="${y-20}" rx="34" ry="9" fill="none" stroke="#fff" stroke-width="2" opacity=".8"/></g>`; },
   tophat: b => { const y = headTop(b); return `<ellipse cx="100" cy="${y+8}" rx="44" ry="8" fill="#111827"/><rect x="74" y="${y-38}" width="52" height="46" rx="4" fill="#111827"/><rect x="74" y="${y-6}" width="52" height="9" fill="#dc2626"/>`; },
   beanie: b => { const y = headTop(b); return `<path d="M56 ${y+22} Q56 ${y-28} 100 ${y-28} Q144 ${y-28} 144 ${y+22}Z" fill="#14b8a6" stroke="#115e59" stroke-width="3.5"/><rect x="54" y="${y+12}" width="92" height="14" rx="6" fill="#0d9488" stroke="#115e59" stroke-width="3"/><circle cx="100" cy="${y-30}" r="10" fill="#fef3c7" stroke="#115e59" stroke-width="3"/>`; },
-  flowerclip: b => { const y = headTop(b); return `${[0,72,144,216,288].map(a=>`<circle cx="${128+10*Math.cos(a*Math.PI/180)}" cy="${y+8+10*Math.sin(a*Math.PI/180)}" r="8" fill="#f472b6" stroke="#be185d" stroke-width="2"/>`).join('')}<circle cx="128" cy="${y+8}" r="6" fill="#fde047"/>`; }
+  flowerclip: b => { const y = headTop(b); return `${[0,72,144,216,288].map(a=>`<circle cx="${128+10*Math.cos(a*Math.PI/180)}" cy="${y+8+10*Math.sin(a*Math.PI/180)}" r="8" fill="#f472b6" stroke="#be185d" stroke-width="2"/>`).join('')}<circle cx="128" cy="${y+8}" r="6" fill="#fde047"/>`; },
+  // holiday costumes
+  witchhat: b => { const y = headTop(b); return `<ellipse cx="100" cy="${y+8}" rx="58" ry="11" fill="#4c1d95" stroke="#1e1b4b" stroke-width="3.5"/><path d="M70 ${y+6} L104 ${y-62} Q112 ${y-70} 122 ${y-58} L114 ${y-52} L130 ${y+6}Z" fill="#6d28d9" stroke="#1e1b4b" stroke-width="3.5" stroke-linejoin="round"/><rect x="72" y="${y-6}" width="56" height="9" fill="#f97316"/><rect x="94" y="${y-8}" width="12" height="13" rx="2" fill="none" stroke="#fde047" stroke-width="3"/>`; },
+  santahat: b => { const y = headTop(b); return `<path d="M62 ${y+10} Q70 ${y-40} 112 ${y-44} Q146 ${y-46} 156 ${y-12} L140 ${y-16} Q132 ${y-30} 118 ${y-24} L138 ${y+10}Z" fill="#dc2626" stroke="#7f1d1d" stroke-width="3.5" stroke-linejoin="round"/><rect x="58" y="${y+2}" width="84" height="16" rx="8" fill="#fff" stroke="#cbd5e1" stroke-width="2.5"/><circle cx="154" cy="${y-10}" r="11" fill="#fff" stroke="#cbd5e1" stroke-width="2.5"/>`; },
+  antlers: b => { const y = headTop(b); return `<path d="M78 ${y+8} L66 ${y-30} M70 ${y-16} L52 ${y-24} M68 ${y-26} L60 ${y-44} M122 ${y+8} L134 ${y-30} M130 ${y-16} L148 ${y-24} M132 ${y-26} L140 ${y-44}" stroke="#92400e" stroke-width="8" stroke-linecap="round" fill="none"/><circle cx="76" cy="${y+8}" r="6" fill="#b45309"/><circle cx="124" cy="${y+8}" r="6" fill="#b45309"/>`; },
+  pumpkinhat: b => { const y = headTop(b); return `<ellipse cx="100" cy="${y-8}" rx="40" ry="28" fill="#f97316" stroke="#9a3412" stroke-width="3.5"/><path d="M86 ${y-34} Q80 ${y-8} 86 ${y+18} M114 ${y-34} Q120 ${y-8} 114 ${y+18}" stroke="#c2410c" stroke-width="3" fill="none"/><rect x="96" y="${y-46}" width="8" height="14" rx="3" fill="#15803d"/><path d="M84 ${y-14} l8 -8 l8 8z M108 ${y-14} l8 -8 l8 8z" fill="#422006"/><path d="M84 ${y-2} q16 12 32 0 l-6 4 l-4 -4 l-6 6 l-6 -6 l-4 4z" fill="#422006"/>`; }
 });
 Object.assign(FACE, {
   hearts: b => `${[82,118].map(x=>`<path d="M${x} 98 l-14 -14 a7 7 0 0 1 14 -8 a7 7 0 0 1 14 8z" fill="#f472b6" fill-opacity=".75" stroke="#be185d" stroke-width="3" stroke-linejoin="round"/>`).join('')}<path d="M96 84 h8" stroke="#be185d" stroke-width="3"/>`,
@@ -2031,10 +2040,35 @@ const WORLD_ITEMS = [
   ['animal','trex','🦖','T-Rex',40], ['animal','dino','🦕','Long-Neck Dino',40], ['animal','dragon','🐉','Dragon',50,4], ['animal','unicorn','🦄','Unicorn',45],
   ['animal','dolphin','🐬','Dolphin',20], ['animal','butterfly','🦋','Butterfly',8], ['animal','bee','🐝','Bee',5], ['animal','ladybug','🐞','Ladybug',5],
   ['animal','parrot','🦜','Parrot',15], ['animal','penguin','🐧','Penguin',15], ['animal','panda','🐼','Panda',20], ['animal','lion','🦁','Lion',25],
-  ['animal','elephant','🐘','Elephant',25], ['animal','giraffe','🦒','Giraffe',25]
+  ['animal','elephant','🐘','Elephant',25], ['animal','giraffe','🦒','Giraffe',25],
+  // holidays: Christmas & winter
+  ['holiday','xmastree','🎄','Christmas Tree',25], ['holiday','santa','🎅','Santa',35], ['holiday','mrsclaus','🤶','Mrs. Claus',35],
+  ['holiday','reindeer','🦌','Reindeer',25], ['holiday','sleigh','🛷','Sleigh',40], ['holiday','snowman','⛄','Snowman',15],
+  ['holiday','stocking','🧦','Stocking',8], ['holiday','bells','🔔','Jingle Bells',8], ['holiday','giftpile','🎁','Pile of Gifts',15],
+  ['holiday','cookies','🍪','Cookies for Santa',8], ['holiday','snowflake','❄️','Giant Snowflake',10], ['holiday','hotcocoa','☕','Hot Cocoa',8],
+  // holidays: blow-up yard decorations (they sway in the breeze)
+  ['holiday','inf_santa','🎅','Blow-Up Santa',45], ['holiday','inf_snowman','⛄','Blow-Up Snowman',40], ['holiday','inf_reindeer','🦌','Blow-Up Reindeer',40],
+  ['holiday','inf_pumpkin','🎃','Blow-Up Pumpkin',40], ['holiday','inf_ghost','👻','Blow-Up Ghost',40], ['holiday','inf_bunny','🐰','Blow-Up Bunny',40],
+  ['holiday','inf_turkey','🦃','Blow-Up Turkey',40], ['holiday','inf_dino','🦖','Blow-Up Holiday Dino',50],
+  // holidays: Halloween
+  ['holiday','jackolantern','🎃','Jack-o\'-Lantern',10], ['holiday','ghost','👻','Ghost',15], ['holiday','witch','🧙','Witch',25],
+  ['holiday','vampire','🧛','Vampire',25], ['holiday','zombie','🧟','Zombie',25], ['holiday','skeleton','💀','Skeleton',15],
+  ['holiday','bats','🦇','Bats',10], ['holiday','web','🕸️','Spider Web',8], ['holiday','spider','🕷️','Spider',8],
+  ['holiday','candy','🍬','Trick-or-Treat Candy',8], ['holiday','haunted','🏚️','Haunted House',45], ['holiday','broom','🧹','Witch\'s Broom',15],
+  // holidays: Easter & spring
+  ['holiday','easterbunny','🐰','Easter Bunny',25], ['holiday','easteregg','🥚','Easter Egg',5], ['holiday','chick','🐣','Baby Chick',10],
+  ['holiday','eggbasket','🧺','Egg Basket',15],
+  // holidays: Thanksgiving, Valentine's, St. Patrick's
+  ['holiday','turkey','🦃','Turkey',20], ['holiday','pie','🥧','Pumpkin Pie',8], ['holiday','corn','🌽','Harvest Corn',8], ['holiday','leaves','🍂','Fall Leaves',5],
+  ['holiday','valentine','💝','Valentine Heart',10], ['holiday','loveletter','💌','Love Letter',8], ['holiday','rose','🌹','Rose',8],
+  ['holiday','clover','🍀','Lucky Clover',8], ['holiday','goldcoins','🪙','Pot of Gold Coins',20],
+  // holidays: celebrations around the world
+  ['holiday','fireworks','🎆','Fireworks',30], ['holiday','sparkler','🎇','Sparkler',15], ['holiday','popper','🎉','Party Popper',10],
+  ['holiday','lantern','🏮','Paper Lantern',15], ['holiday','redenvelope','🧧','Red Envelope',10], ['holiday','menorah','🕎','Menorah',20],
+  ['holiday','diya','🪔','Diya Lamp',15], ['holiday','candles','🕯️','Candles',8]
 ];
 const WORLD_BY_ID = Object.fromEntries(WORLD_ITEMS.map(i => [i[1], i]));
-const WORLD_CATS = { home:'🏠 Buildings', nature:'🌳 Nature', fun:'🎡 Fun', ride:'🚀 Rides', animal:'🦖 Animals', friends:'💛 My Friends' };
+const WORLD_CATS = { home:'🏠 Buildings', nature:'🌳 Nature', fun:'🎡 Fun', ride:'🚀 Rides', animal:'🦖 Animals', holiday:'🎉 Holidays', friends:'💛 My Friends' };
 const WORLD_THEMES = {
   meadow:  { name:'Sunny Meadow', price:0,  sky:'linear-gradient(#7dd3fc,#e0f2fe)', ground:'linear-gradient(#86efac,#22c55e)' },
   beach:   { name:'Beach Day',    price:25, sky:'linear-gradient(#38bdf8,#bae6fd)', ground:'linear-gradient(#fde68a 0 45%,#38bdf8 45%)' },
@@ -2156,6 +2190,7 @@ function screenWorld(visitKid){
     // animals and friends wander around a little, like pets
     const cat = (WORLD_BY_ID[it.k] || ['friends'])[0];
     if (cat === 'animal' || cat === 'friends'){ n.classList.add('wander'); n.style.setProperty('--wd', (6 + (it.id % 5)) + 's'); n.style.setProperty('--wdl', '-' + (it.id % 7) + 's'); }
+    if (/^inf_/.test(it.k)){ n.classList.add('inflatable'); n.style.setProperty('--wdl', '-' + (it.id % 4) + 's'); } // blow-ups sway on their air base
     if (!readOnly) attachDrag(n, it);
     nodes[it.id] = n; stage.append(n);
   };
@@ -2227,7 +2262,7 @@ function screenWorld(visitKid){
         if (balance() < price){ say('Keep reading to earn more stars!'); beep('bad'); return; }
         K.spent = (K.spent||0) + price;
         const sl = scroller.scrollLeft;
-        const it = { id: W.nextId++, k:id, e, x: Math.round(sl + 300 + Math.random()*300), y: GROUND_Y - 80 - Math.round(Math.random()*60), s: cat==='home' ? 1.6 : cat==='ride' ? 1.2 : 1, f:false, z: W.items.length + 2 };
+        const it = { id: W.nextId++, k:id, e, x: Math.round(sl + 300 + Math.random()*300), y: GROUND_Y - 80 - Math.round(Math.random()*60), s: /^inf_/.test(id) ? 1.9 : cat==='home' ? 1.6 : cat==='ride' ? 1.2 : 1, f:false, z: W.items.length + 2 };
         W.items.push(it); worldSel = it.id; save(); place(it); refreshSel(); beep('star'); bal.textContent = '⭐ ' + balance();
         checkBadges(); }},
         el('span',{class:'chip-e'}, e), el('span',{class:'chip-name'}, name), el('span',{class:'chip-price'}, locked ? `🔒 Lv ${lvl}` : price ? '⭐ ' + price : 'Free')));
@@ -2345,6 +2380,42 @@ const BUDDY_ACTS = {
     await Promise.all([c.hide(3300), c.itemAct(c.it, fly ? 'act-fly' : boat ? 'act-bob' : 'act-drive', 3200)]); c.pop('😄'); },
   '@animal': async c => { c.pop('❤️'); await Promise.all([c.itemAct(c.it, 'act-hop', 1500), c.pose('waving', 1500)]); },
   '@friends': async c => { c.pop('👋💛'); await Promise.all([c.itemAct(c.it, 'act-hop', 1500), c.pose('jumping', 700)]); },
+  // holidays
+  xmastree: async c => { c.pop('🎄✨'); await c.pose('dancing', 2400); },
+  santa: async c => { c.pop('🎅👋'); await Promise.all([c.itemAct(c.it, 'act-hop', 1500), c.pose('jumping', 700)]); c.pop('🎁😄'); },
+  mrsclaus: async c => { c.pop('🍪😋'); await c.pose('munch', 1800); },
+  reindeer: async c => { c.pop('🦌❤️'); await Promise.all([c.itemAct(c.it, 'act-hop', 1500), c.pose('waving', 1500)]); },
+  sleigh: async c => { c.pop('🛷🎶'); await Promise.all([c.hide(3300), c.itemAct(c.it, 'act-fly', 3200)]); c.pop('🤩'); },
+  snowman: async c => { c.pop('⛄'); await c.pose('waving', 1500); c.pop('❄️😄'); },
+  giftpile: async c => { c.pop('🎁'); await c.itemAct(c.it, 'act-hop', 1500); c.pop('🎉'); await c.pose('dancing', 1800); },
+  cookies: async c => { c.pop('🍪😋'); await c.pose('munch', 1800); },
+  hotcocoa: async c => { c.pop('☕😋'); await c.pose('munch', 1800); },
+  ghost: async c => { c.pop('😱'); await c.pose('jumping', 700); c.pop('😂'); await c.itemAct(c.it, 'act-float', 2400); },
+  witch: async c => { c.pop('🧙✨'); await c.pose('waving', 1500); },
+  vampire: async c => { c.pop('😱'); await c.pose('jumping', 700); c.pop('🧛😄'); },
+  zombie: async c => { c.pop('🧟'); await Promise.all([c.itemAct(c.it, 'act-wiggle', 2400), c.pose('dancing', 2400)]); },
+  skeleton: async c => { c.pop('💀🎶'); await c.pose('dancing', 2400); },
+  jackolantern: async c => { c.pop('🎃😄'); await c.pose('jumping', 700); },
+  haunted: async c => { c.pop('👻🚪'); await wsleep(700); c.pop('😱', 2600); await c.hide(2800); c.pop('😂'); },
+  candy: async c => { c.pop('🍬😋'); await c.pose('munch', 1800); },
+  broom: async c => { c.pop('🧹✨'); await Promise.all([c.hide(3300), c.itemAct(c.it, 'act-fly', 3200)]); c.pop('😄'); },
+  easterbunny: async c => { c.pop('🐰❤️'); await Promise.all([c.itemAct(c.it, 'act-hop', 1500), c.pose('jumping', 700)]); },
+  easteregg: async c => { c.pop('🥚🔎'); await c.pose('bend', 1800); c.pop('🎉'); },
+  eggbasket: async c => { c.pop('🧺🥚'); await c.pose('bend', 1800); },
+  chick: async c => { c.pop('🐣❤️'); await c.itemAct(c.it, 'act-hop', 1500); },
+  turkey: async c => { c.pop('🦃'); await Promise.all([c.itemAct(c.it, 'act-wiggle', 2400), c.pose('waving', 1500)]); },
+  pie: async c => { c.pop('🥧😋'); await c.pose('munch', 1800); },
+  fireworks: async c => { c.pop('🎆🤩'); await Promise.all([c.itemAct(c.it, 'act-burst', 2400), c.pose('jumping', 700)]); },
+  sparkler: async c => { c.pop('🎇'); await c.pose('waving', 1500); },
+  popper: async c => { c.pop('🎉'); await c.pose('jumping', 700); await c.pose('dancing', 1800); },
+  menorah: async c => { c.pop('🕎✨', 2800); await c.pose('sitting', 3000); },
+  diya: async c => { c.pop('🪔✨', 2800); await c.pose('sitting', 3000); },
+  candles: async c => { c.pop('🕯️✨', 2800); await c.pose('sitting', 3000); },
+  lantern: async c => { c.pop('🏮'); await c.itemAct(c.it, 'act-float', 2400); },
+  '@holiday': async c => {
+    if (/^inf_/.test(c.it.k)){ c.pop('😆'); await Promise.all([c.pose('jumping', 700), c.itemAct(c.it, 'act-wiggle', 2400)]); await c.pose('jumping', 700); return; } // bounce on the blow-ups
+    c.pop(c.it.e + '😊'); await c.pose('dancing', 1800);
+  },
   '@any': async c => { c.pop('😊'); await c.pose('waving', 1200); }
 };
 
