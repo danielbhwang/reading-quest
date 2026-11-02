@@ -1462,6 +1462,7 @@ async function commitResults(stars, quiz){
       el('p',{}, mastered.map(w => (K.words[w].disp||w)).join(', ') + ' — read right 3 times in a row!')), [['Yes! ▶','',1]]);
   }
   if (stars >= 2 && r.opts.mode === 'normal') await giveReward();
+  if (stars >= 3 && r.opts.mode === 'normal') await maybeStarfallChest(); // super rare mythic drop
   if (levelUp){
     const newTrophies = awardTrophiesUpTo(K.level); save();
     confetti(120); beep('level');
@@ -1818,7 +1819,8 @@ const BADGES = [
   ['skill1','⚡','Skill Up','Master a phonics skill in your stories', k => Object.values(k.skills||{}).some(s => s.mastered)],
   ['skill5','🧠','Sound Expert','Master 5 phonics skills', k => Object.values(k.skills||{}).filter(s => s.mastered).length >= 5],
   ['speed','🚀','Speed Reader','Beat your own reading speed', k => Object.keys((k.path||{}).best||{}).length >= 1],
-  ['top','🏆','Top of the Track','Reach the highest level', k => k.level >= TRACKS[kid].levels.length]
+  ['top','🏆','Top of the Track','Reach the highest level', k => k.level >= TRACKS[kid].levels.length],
+  ['legend1','✨','Legend Hunter','Own a legendary or mythic item', k => (k.legendOwned||[]).length + (k.mythics||[]).length >= 1]
 ];
 const normalSessions = k => k.sessions.filter(s => s.mode === 'normal');
 async function checkBadges(){
@@ -1831,6 +1833,7 @@ async function checkBadges(){
       await modal(el('div',{}, el('div',{class:'big-e'}, e), el('h2',{}, 'Badge: ' + name), el('p',{}, desc + '. Bonus: +5 ⭐')), [['Awesome! ▶','',1]]);
     }
   }
+  await checkLegends();
 }
 function screenTrophies(){
   const tlist = TROPHIES[kid];
@@ -2068,6 +2071,112 @@ const WORLD_ITEMS = [
   ['holiday','diya','🪔','Diya Lamp',15], ['holiday','candles','🕯️','Candles',8]
 ];
 const WORLD_BY_ID = Object.fromEntries(WORLD_ITEMS.map(i => [i[1], i]));
+
+/* ---------- Legendary & Mythic world items ----------
+   LEGENDARY: each unlocks with a real achievement, then still costs a lot of stars. Bought once, kept forever.
+   MYTHIC: can't be bought. Only found in a Starfall Chest, which can drop after a great read (1 in 20,
+   and guaranteed by the 20th great read without one). Both get a cinematic reveal and live effects in the world.
+   fx: 'fly' circles the sky, 'float' bobs, 'spin' swirls, 'pulse' glows bigger. */
+const LEGENDS = [
+  { id:'lg_dragon',  e:'🐲', name:'Golden Sky Dragon',   price:250, req:'level6',  fx:'fly',   say:'A golden dragon soars over your world!' },
+  { id:'lg_palace',  e:'🏯', name:'Crystal Palace',      price:220, req:'reads50', fx:'pulse', say:'A shining crystal palace rises from the ground!' },
+  { id:'lg_unicorn', e:'🦄', name:'Rainbow Unicorn',     price:200, req:'streak7', fx:'float', say:'A rainbow unicorn gallops into your world!' },
+  { id:'lg_phoenix', e:'🐦‍🔥', name:'Phoenix of Fire',     price:220, req:'perfect10', fx:'fly', say:'A phoenix bursts into flames and flies!' },
+  { id:'lg_whale',   e:'🐋', name:'Sky Whale',           price:180, req:'stories25', fx:'fly', say:'A giant whale swims through the sky!' },
+  { id:'lg_rocket',  e:'🚀', name:'Galaxy Rocket',       price:200, req:'badges12', fx:'pulse', say:'A galaxy rocket is ready for launch!' },
+  { id:'lg_rainbow', e:'🌈', name:'Endless Rainbow',     price:180, req:'words20', fx:'pulse', say:'An endless rainbow lights up the sky!' },
+  { id:'lg_trophy',  e:'🏆', name:'Hall of Fame Trophy', price:300, req:'top',     fx:'pulse', say:'The Hall of Fame Trophy! You reached the very top!' }
+];
+const MYTHICS = [
+  { id:'my_portal', e:'🌀', name:'Galaxy Portal',        fx:'spin' },
+  { id:'my_planet', e:'🪐', name:'Tiny Planet',          fx:'float' },
+  { id:'my_star',   e:'🌠', name:'Wishing Star',         fx:'fly' },
+  { id:'my_genie',  e:'🧞', name:'Wish Genie',           fx:'float' },
+  { id:'my_island', e:'🏝️', name:'Floating Island',      fx:'float' },
+  { id:'my_peacock',e:'🦚', name:'Rainbow Peacock',      fx:'pulse' }
+];
+LEGENDS.forEach(l => { const row = ['legendary', l.id, l.e, l.name, l.price]; WORLD_ITEMS.push(row); WORLD_BY_ID[l.id] = row; });
+MYTHICS.forEach(m => { const row = ['mythic', m.id, m.e, m.name, 0]; WORLD_ITEMS.push(row); WORLD_BY_ID[m.id] = row; });
+const LEGEND_FX = Object.fromEntries(LEGENDS.concat(MYTHICS).map(x => [x.id, x.fx]));
+// requirement id -> [label, () => [have, need]]
+function legendReq(req){
+  const word = kid === 'daughter' ? 'Rank' : 'Level', top = T.levels.length;
+  const perfect = () => normalSessions(K).filter(s => s.quiz && s.quiz.split('/')[0] === s.quiz.split('/')[1]).length;
+  return {
+    level6:    [`Reach ${word} 6`, () => [Math.min(K.level, 6), 6]],
+    reads50:   ['Finish 50 readings', () => [Math.min(normalSessions(K).length, 50), 50]],
+    streak7:   ['Reach your reading goal 7 days in a row', () => [Math.min(K.streak.count || 0, 7), 7]],
+    perfect10: ['Get every question right on 10 stories', () => [Math.min(perfect(), 10), 10]],
+    stories25: ['Finish 25 stories', () => [Math.min(normalSessions(K).filter(s => s.kind === 'story').length, 25), 25]],
+    badges12:  ['Earn 12 badges', () => [Math.min(K.badges.length, 12), 12]],
+    words20:   ['Master 20 tricky words', () => [Math.min(masteredWords(K).length, 20), 20]],
+    top:       [`Reach the top ${word.toLowerCase()} (${top})`, () => [Math.min(K.level, top), top]]
+  }[req];
+}
+const legendUnlocked = l => { const [have, need] = legendReq(l.req)[1](); return have >= need; };
+const legendOwned = id => (K.legendOwned || []).includes(id) || (K.mythics || []).includes(id);
+
+// Full-screen reveal with spinning light rays, the item zooming in, and a fanfare.
+function epicReveal(item, tier, title, sub){
+  return new Promise(res => {
+    const ov = el('div',{class:'epic-overlay epic-' + tier},
+      el('div',{class:'epic-rays'}),
+      el('div',{class:'epic-card'},
+        el('div',{class:'epic-tier'}, tier === 'mythic' ? '🌈 MYTHIC 🌈' : '✨ LEGENDARY ✨'),
+        el('div',{class:'epic-item'}, item.e),
+        el('h2',{class:'epic-title'}, title),
+        el('p',{class:'epic-name'}, item.name),
+        sub ? el('p',{class:'epic-sub'}, sub) : null,
+        el('button',{class:'btn big', onclick:()=>{ ov.remove(); res(); }},'AMAZING! ▶')));
+    document.body.append(ov);
+    try { [523,659,784,1047,784,1047,1319].forEach((f, i) => setTimeout(() => { try {
+      if (!actx) actx = new (window.AudioContext || window.webkitAudioContext)();
+      const o = actx.createOscillator(), g = actx.createGain(); o.type = 'triangle'; o.frequency.value = f;
+      g.gain.setValueAtTime(0.0001, actx.currentTime); g.gain.exponentialRampToValueAtTime(0.3, actx.currentTime + .02); g.gain.exponentialRampToValueAtTime(0.0001, actx.currentTime + .45);
+      o.connect(g).connect(actx.destination); o.start(); o.stop(actx.currentTime + .5); } catch(e){} }, i * 160)); } catch(e){}
+    confetti(160); setTimeout(() => confetti(120), 900);
+    say(`${tier === 'mythic' ? 'Mythic' : 'Legendary'}! ${item.name}! ${item.say || ''}`);
+  });
+}
+// Called with the badges: shows the reveal the first time each legendary's achievement is reached.
+async function checkLegends(){
+  K.legendSeen = K.legendSeen || [];
+  for (const l of LEGENDS){
+    if (K.legendSeen.includes(l.id) || !legendUnlocked(l)) continue;
+    K.legendSeen.push(l.id); save();
+    await epicReveal(l, 'legendary', 'LEGENDARY UNLOCKED!', `${legendReq(l.req)[0]}: done! Find it in My World › ✨ Legendary for ⭐ ${l.price}.`);
+  }
+}
+// After a great read: maybe a Starfall Chest with a random mythic inside.
+const CHEST_ODDS = 20;
+const CHEST_SVG = `<svg viewBox="0 0 120 100" width="200" height="167" aria-label="treasure chest">
+  <ellipse cx="60" cy="94" rx="52" ry="6" fill="#000" opacity=".35"/>
+  <rect x="10" y="44" width="100" height="48" rx="8" fill="#92400e" stroke="#451a03" stroke-width="5"/>
+  <path d="M10 48 Q10 14 60 14 Q110 14 110 48Z" fill="#b45309" stroke="#451a03" stroke-width="5"/>
+  <rect x="10" y="44" width="100" height="9" fill="#fbbf24" stroke="#78350f" stroke-width="2.5"/>
+  <rect x="24" y="16" width="10" height="76" fill="#fbbf24" stroke="#78350f" stroke-width="2.5"/>
+  <rect x="86" y="16" width="10" height="76" fill="#fbbf24" stroke="#78350f" stroke-width="2.5"/>
+  <rect x="50" y="42" width="20" height="24" rx="4" fill="#fde68a" stroke="#78350f" stroke-width="3"/>
+  <circle cx="60" cy="52" r="3.5" fill="#78350f"/><rect x="58.5" y="52" width="3" height="8" fill="#78350f"/>
+  <g class="sparkle"><path d="M8 10 l3 7 l7 3 l-7 3 l-3 7 l-3 -7 l-7 -3 l7 -3z" fill="#fde047"/><path d="M106 4 l2.5 6 l6 2.5 l-6 2.5 l-2.5 6 l-2.5 -6 l-6 -2.5 l6 -2.5z" fill="#f0abfc"/></g>
+</svg>`;
+async function maybeStarfallChest(){
+  K.chestPity = (K.chestPity || 0) + 1;
+  if (Math.random() >= 1 / CHEST_ODDS && K.chestPity < CHEST_ODDS){ save(); return; }
+  K.chestPity = 0;
+  const left = MYTHICS.filter(m => !(K.mythics || []).includes(m.id));
+  await new Promise(res => {
+    const ov = el('div',{class:'epic-overlay epic-mythic'}, el('div',{class:'epic-rays'}),
+      el('div',{class:'epic-card'}, el('div',{class:'epic-tier'},'🌠 STARFALL CHEST 🌠'), el('div',{class:'chest-shake', html: CHEST_SVG}),
+        el('h2',{class:'epic-title'},'A Starfall Chest fell from the sky!'), el('p',{class:'epic-sub'},'Super rare! Tap to open it.'),
+        el('button',{class:'btn big', onclick:()=>{ ov.remove(); res(); }},'🗝️ Open it!')));
+    document.body.append(ov); beep('level'); confetti(60); say('Whoa! A Starfall Chest fell from the sky!');
+  });
+  if (!left.length){ K.stars += 25; save(); await modal(el('div',{}, el('div',{class:'big-e'},'💰'), el('h2',{},'Chest full of stars!'), el('p',{},'You already found every mythic! +25 ⭐')), [['Yay! ▶','',1]]); return; }
+  const m = pick(left);
+  K.mythics = (K.mythics || []).concat(m.id); save();
+  await epicReveal(m, 'mythic', 'MYTHIC FOUND!', 'Only found in Starfall Chests. Place it in My World › ✨ Legendary!');
+}
 const WORLD_CATS = { home:'🏠 Buildings', nature:'🌳 Nature', fun:'🎡 Fun', ride:'🚀 Rides', animal:'🦖 Animals', holiday:'🎉 Holidays', friends:'💛 My Friends' };
 const WORLD_THEMES = {
   meadow:  { name:'Sunny Meadow', price:0,  sky:'linear-gradient(#7dd3fc,#e0f2fe)', ground:'linear-gradient(#86efac,#22c55e)' },
@@ -2191,6 +2300,7 @@ function screenWorld(visitKid){
     const cat = (WORLD_BY_ID[it.k] || ['friends'])[0];
     if (cat === 'animal' || cat === 'friends'){ n.classList.add('wander'); n.style.setProperty('--wd', (6 + (it.id % 5)) + 's'); n.style.setProperty('--wdl', '-' + (it.id % 7) + 's'); }
     if (/^inf_/.test(it.k)){ n.classList.add('inflatable'); n.style.setProperty('--wdl', '-' + (it.id % 4) + 's'); } // blow-ups sway on their air base
+    if (cat === 'legendary' || cat === 'mythic'){ n.classList.add(cat === 'mythic' ? 'mythic' : 'legend', 'fx-' + (LEGEND_FX[it.k] || 'pulse')); n.style.setProperty('--wdl', '-' + (it.id % 9) + 's'); }
     if (!readOnly) attachDrag(n, it);
     nodes[it.id] = n; stage.append(n);
   };
@@ -2212,8 +2322,10 @@ function screenWorld(visitKid){
     el('button',{class:'btn small', onclick:act(it => it.f = !it.f)},'↔️ Flip'),
     el('button',{class:'btn small', onclick:act(it => it.z = Math.max(...W.items.map(i => i.z || 1)) + 1)},'⬆️ Front'),
     el('button',{class:'btn small red', onclick:async()=>{ const it = selected(); if (!it) return;
-      // removing gives back only half of what the item cost
-      const def = WORLD_BY_ID[it.k], price = def ? def[4] : 0, refund = Math.floor(price / 2);
+      // removing gives back only half of what the item cost; legendary and mythic items go back to the vault instead
+      const def = WORLD_BY_ID[it.k], vault = def && (def[0] === 'legendary' || def[0] === 'mythic');
+      const price = def && !vault ? def[4] : 0, refund = Math.floor(price / 2);
+      if (vault) say(`The ${def[3]} goes back to your Legendary Vault. You can put it out again any time.`);
       if (price){
         const ok = await modal(el('div',{}, el('div',{class:'big-e'}, it.e), el('h2',{}, `Remove the ${def[3]}?`),
           el('p',{}, `You paid ⭐ ${price}. If you remove it, you only get ⭐ ${refund} back.`)), [['Keep it','green',false],[`Remove (+${refund} ⭐)`,'red',true]]);
@@ -2243,6 +2355,42 @@ function screenWorld(visitKid){
     catTabs.innerHTML = ''; palette.innerHTML = '';
     Object.entries(WORLD_CATS).forEach(([c, label]) => catTabs.append(el('button',{class:'tab' + (c===worldCat?' active':''), onclick:()=>{ worldCat = c; drawPalette(); }}, label)));
     catTabs.append(el('button',{class:'tab' + (worldCat==='theme'?' active':''), onclick:()=>{ worldCat = 'theme'; drawPalette(); }},'🎨 Places'));
+    catTabs.append(el('button',{class:'tab legend-tab' + (worldCat==='legend'?' active':''), onclick:()=>{ worldCat = 'legend'; drawPalette(); }},'✨ Legendary'));
+    if (worldCat === 'legend'){
+      const inWorld = id => W.items.some(i => i.k === id);
+      const putOut = (row) => {
+        const sl = scroller.scrollLeft;
+        const it = { id: W.nextId++, k:row[1], e:row[2], x: Math.round(sl + 300 + Math.random()*300), y: GROUND_Y - 150, s:1.8, f:false, z: W.items.length + 2 };
+        W.items.push(it); worldSel = it.id; save(); place(it); refreshSel();
+        const n = nodes[it.id]; if (n){ n.classList.add('summon'); setTimeout(() => n.classList.remove('summon'), 1600); }
+        confetti(90); beep('level'); burst('WOW!'); drawPalette();
+      };
+      LEGENDS.forEach(l => {
+        const row = WORLD_BY_ID[l.id], owned = legendOwned(l.id), open = owned || legendUnlocked(l), [label, prog] = legendReq(l.req), [have, need] = prog();
+        palette.append(el('button',{class:'world-chip rar-legendary legend-chip' + (open ? '' : ' locked'), onclick: async () => {
+          if (!open){ say(`${l.name} is locked. ${label}. You have ${have} of ${need}.`); return; }
+          if (owned){ if (inWorld(l.id)) { say(`Your ${l.name} is already in your world!`); return; } putOut(row); return; }
+          if (balance() < l.price){ say(`You need ${l.price} stars for the ${l.name}. Keep reading!`); beep('bad'); return; }
+          K.spent = (K.spent||0) + l.price; K.legendOwned = (K.legendOwned || []).concat(l.id); save(); bal.textContent = '⭐ ' + balance();
+          await epicReveal(l, 'legendary', 'LEGENDARY SUMMONED!', 'It\'s yours forever. Watch it come alive in your world!');
+          putOut(row); checkBadges(); }},
+          el('span',{class:'chip-e' + (open ? '' : ' silhouette')}, l.e),
+          el('span',{class:'chip-name'}, l.name),
+          open ? el('span',{class:'chip-price'}, owned ? (inWorld(l.id) ? '✓ In world' : 'Place it') : '⭐ ' + l.price)
+               : el('span',{class:'chip-req'}, `🔒 ${label} · ${have}/${need}`)));
+      });
+      MYTHICS.forEach(m => {
+        const row = WORLD_BY_ID[m.id], owned = legendOwned(m.id);
+        palette.append(el('button',{class:'world-chip rar-mythic legend-chip' + (owned ? '' : ' locked'), onclick:()=>{
+          if (!owned){ say(`Mythic items are only found in Starfall Chests. Great reads can make one fall from the sky!`); return; }
+          if (inWorld(m.id)){ say(`Your ${m.name} is already in your world!`); return; }
+          putOut(row); }},
+          el('span',{class:'chip-e' + (owned ? '' : ' silhouette')}, owned ? m.e : '❔'),
+          el('span',{class:'chip-name'}, owned ? m.name : 'Mythic ???'),
+          el('span',{class: owned ? 'chip-price' : 'chip-req'}, owned ? (inWorld(m.id) ? '✓ In world' : 'Place it') : `🌠 Starfall Chest only · ${K.chestPity || 0}/${CHEST_ODDS}`)));
+      });
+      return;
+    }
     if (worldCat === 'theme'){
       Object.entries(WORLD_THEMES).forEach(([id, t]) => {
         const owned = W.themes.includes(id), on = W.theme === id;
@@ -2416,6 +2564,8 @@ const BUDDY_ACTS = {
     if (/^inf_/.test(c.it.k)){ c.pop('😆'); await Promise.all([c.pose('jumping', 700), c.itemAct(c.it, 'act-wiggle', 2400)]); await c.pose('jumping', 700); return; } // bounce on the blow-ups
     c.pop(c.it.e + '😊'); await c.pose('dancing', 1800);
   },
+  '@legendary': async c => { c.pop('🤩✨'); await Promise.all([c.itemAct(c.it, 'act-burst', 2400), c.pose('jumping', 700)]); await c.pose('jumping', 700); c.pop('💛'); },
+  '@mythic': async c => { c.pop('😲🌈'); await Promise.all([c.itemAct(c.it, 'act-burst', 2400), c.pose('dancing', 2400)]); },
   '@any': async c => { c.pop('😊'); await c.pose('waving', 1200); }
 };
 
@@ -3082,7 +3232,7 @@ cloudStart();
 watchForUpdates();
 
 // test hooks
-window.__RQ = { graphemes: typeof graphemes !== 'undefined' ? graphemes : null, align, wordMatch, tokenizeHeard, letterMatch, get run(){ return run; }, get DB(){ return DB; } };
+window.__RQ = { graphemes: typeof graphemes !== 'undefined' ? graphemes : null, align, wordMatch, tokenizeHeard, letterMatch, checkBadges, maybeStarfallChest, get run(){ return run; }, get DB(){ return DB; } };
 })();
 
 
