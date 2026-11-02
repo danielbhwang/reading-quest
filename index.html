@@ -407,6 +407,42 @@ body.parent{ background:#f1f5f9; }
   .next-card h2{ font-size:26px; }
 }
 
+/* ---- buddy moving around My World ---- */
+.world-avatar{ z-index:400; transition:left 1s linear, opacity .4s; }
+.world-avatar.away{ opacity:0; }
+.av-body{ pointer-events:auto; cursor:pointer; transform-origin:50% 100%; transition:translate .3s, scale .3s, rotate .3s; }
+.av-body.walking{ animation:avWalk .45s ease-in-out infinite; }
+@keyframes avWalk{ 0%,100%{ translate:0 0; rotate:-3deg; } 50%{ translate:0 -8px; rotate:3deg; } }
+.av-body.jumping{ animation:avJump .7s ease-out; }
+@keyframes avJump{ 0%,100%{ translate:0 0; scale:1 1; } 15%{ scale:1.08 .9; } 50%{ translate:0 -70px; scale:.95 1.05; } 85%{ translate:0 0; scale:1.08 .92; } }
+.av-body.sitting{ translate:0 16px; scale:1.05 .85; }
+.av-body.bend{ rotate:12deg; }
+.av-body.waving{ animation:avWave .5s ease-in-out 3; }
+@keyframes avWave{ 0%,100%{ rotate:0deg; } 50%{ rotate:-10deg; } }
+.av-body.dancing{ animation:avDance .6s ease-in-out 4; }
+@keyframes avDance{ 0%,100%{ rotate:0deg; translate:0 0; } 25%{ rotate:-12deg; translate:-6px -10px; } 75%{ rotate:12deg; translate:6px -10px; } }
+.av-body.munch{ animation:avMunch .3s ease-in-out 6; }
+@keyframes avMunch{ 50%{ scale:1.05 .93; } }
+.av-bubble{ position:absolute; left:50%; top:-38px; translate:-50% 0; background:#fff; border:3px solid var(--ink); border-radius:16px; box-shadow:3px 3px 0 var(--ink);
+  padding:2px 10px; font-size:26px; white-space:nowrap; pointer-events:none; opacity:0; scale:.5; transition:opacity .2s, scale .2s; }
+.av-bubble.show{ opacity:1; scale:1; }
+.world-item.act-hop{ animation:itHop .5s ease-out 3; }
+@keyframes itHop{ 50%{ translate:0 -24px; } }
+.world-item.act-spin{ animation:itSpin 3s linear; }
+@keyframes itSpin{ to{ rotate:360deg; } }
+.world-item.act-wiggle{ animation:itWiggle .4s ease-in-out 6; }
+@keyframes itWiggle{ 25%{ rotate:-8deg; } 75%{ rotate:8deg; } }
+.world-item.act-float{ animation:itFloat 2.4s ease-in-out; }
+@keyframes itFloat{ 50%{ translate:0 -60px; } }
+.world-item.act-kick{ animation:itKick 1.4s ease-out; }
+@keyframes itKick{ 40%{ translate:160px -60px; rotate:360deg; } 70%{ translate:200px 0; rotate:540deg; } 100%{ translate:0 0; rotate:720deg; } }
+.world-item.act-fly{ animation:itFly 3.2s ease-in-out; }
+@keyframes itFly{ 40%{ translate:60px -260px; } 60%{ translate:-40px -260px; } 100%{ translate:0 0; } }
+.world-item.act-drive{ animation:itDrive 3.2s ease-in-out; }
+@keyframes itDrive{ 45%,55%{ translate:420px 0; } 100%{ translate:0 0; } }
+.world-item.act-bob{ animation:itBob 1s ease-in-out 3; }
+@keyframes itBob{ 25%{ rotate:-6deg; translate:0 -6px; } 75%{ rotate:6deg; translate:0 4px; } }
+
 /* ---- level progress bar ---- */
 .lvl-progress{ background:rgba(15,23,42,.45); border:3px solid var(--ink); border-radius:16px; box-shadow:4px 4px 0 var(--ink); padding:10px 14px; margin:4px 0 6px; max-width:560px; color:#fff; }
 .lvl-head{ display:flex; justify-content:space-between; font:18px 'Lilita One','Fredoka',sans-serif; text-shadow:2px 2px 0 var(--ink); }
@@ -3333,7 +3369,8 @@ function screenHome(msg){
         el('button',{class:'btn ghost small', onclick:screenShop},'🛍️ Shop'),
         el('button',{class:'btn ghost small', onclick:screenTrophies},'🏆 Trophies'),
         el('button',{class:'btn ghost small', onclick:screenCollection}, kid==='daughter' ? '🐉 Roost' : '📖 Pals'),
-        el('button',{class:'btn ghost small', onclick:screenWords},'🎯 Words'))),
+        el('button',{class:'btn ghost small', onclick:screenWords},'🎯 Words'),
+        el('button',{class:'btn ghost small', onclick:()=>{ beep('tap'); startSpelling(); }},'✏️ Spelling'))),
     el('div',{class:'hero'}, avatar,
       el('div',{class:'grow'},
         el('h1',{class:'title'}, `Hi, ${kidName()}!`),
@@ -4458,9 +4495,12 @@ function screenWorld(visitKid){
   const otherKid = kid === 'son' ? 'daughter' : 'son';
   const stage = el('div',{class:'world-stage', style:`width:${WORLD_W}px;height:${WORLD_H}px;background:${theme.sky}`});
   stage.append(el('div',{class:'world-ground', style:`top:${GROUND_Y}px;background:${theme.ground}`}));
-  // the owner's avatar always stands in their world
-  const av = el('div',{class:'world-avatar', html: avatarSVG(DB.kids[owner].avatar, 120)});
-  av.style.left = '60px'; av.style.top = (GROUND_Y - 110) + 'px';
+  // the owner's avatar lives in their world and wanders around (see the life loop at the end)
+  const avBody = el('div',{class:'av-body', html: avatarSVG(DB.kids[owner].avatar, 120)});
+  const bubble = el('div',{class:'av-bubble'});
+  const av = el('div',{class:'world-avatar'}, bubble, avBody);
+  let ax = 60;
+  av.style.left = ax + 'px'; av.style.top = (GROUND_Y - 110) + 'px';
   stage.append(av);
   const nodes = {};
   const place = it => {
@@ -4556,13 +4596,107 @@ function screenWorld(visitKid){
                : el('div',{class:'row'}, bal, el('button',{class:'btn small blue', onclick:()=>{ worldSel = null; screenWorld(otherKid); }}, `👀 Visit ${kidName(otherKid)}`))),
     readOnly && !DB.kids[owner].world?.items?.length ? el('div',{class:'banner'}, `${kidName(owner)} hasn't built anything here yet. (Visiting shows worlds saved on this iPad, for now.)`) : null,
     scroller,
+    el('div',{class:'row', style:'margin-top:10px'},
+      el('button',{class:'btn small blue', onclick:()=>scroller.scrollTo({ left: ax - scroller.clientWidth/2 + 60, behavior:'smooth' })},'🔎 Find my buddy'),
+      el('span',{class:'world-hint', style:'margin:0'}, readOnly ? `Watch ${kidName(owner)}'s buddy play!` : 'Tap your buddy to make them jump!')),
     readOnly ? null : el('div',{class:'world-hint'}, 'Tap something to buy it, then drag it anywhere! Tap a thing in your world to change it. Removing something gives back only half its stars.'),
     readOnly ? null : tools,
     readOnly ? null : catTabs,
     readOnly ? null : palette);
   show(s);
   refreshSel();
+
+  // ---- buddy life loop: wander, play, and use the things in the world ----
+  const life = ++worldLifeGen;
+  const alive = () => life === worldLifeGen && av.isConnected;
+  let facing = 1;
+  const setFace = d => { facing = d; avBody.style.transform = d < 0 ? 'scaleX(-1)' : ''; };
+  const pop = (txt, ms=1900) => { bubble.textContent = txt; bubble.classList.remove('show'); void bubble.offsetWidth; bubble.classList.add('show');
+    setTimeout(() => { if (bubble.textContent === txt) bubble.classList.remove('show'); }, ms); };
+  const pose = (cls, ms) => { avBody.classList.add(cls); return wsleep(ms).then(() => avBody.classList.remove(cls)); };
+  const itemAct = (it, cls, ms) => { const n = nodes[it.id]; if (!n) return wsleep(ms); n.classList.add(cls); return wsleep(ms).then(() => n.classList.remove(cls)); };
+  const hide = async ms => { av.classList.add('away'); await wsleep(ms); av.classList.remove('away'); };
+  const walkTo = async x => {
+    x = Math.max(0, Math.min(WORLD_W - 120, Math.round(x)));
+    const dist = Math.abs(x - ax); if (dist < 4) return;
+    setFace(x > ax ? 1 : -1);
+    const secs = Math.max(0.4, dist / 110);
+    av.style.transition = `left ${secs}s linear, opacity .4s`; avBody.classList.add('walking');
+    av.style.left = x + 'px'; ax = x;
+    await wsleep(secs * 1000);
+    avBody.classList.remove('walking');
+  };
+  const ctx = { pop, pose, itemAct, hide };
+  const visit = async it => {
+    const w = Math.round(64 * (it.s || 1)), fromLeft = it.x - 100 >= 0;
+    await walkTo(fromLeft ? it.x - 100 : it.x + w - 20);
+    if (!alive() || !W.items.includes(it)) return;
+    setFace(fromLeft ? 1 : -1);
+    const def = WORLD_BY_ID[it.k], cat = def ? def[0] : 'friends';
+    await (BUDDY_ACTS[it.k] || BUDDY_ACTS['@' + cat] || BUDDY_ACTS['@any'])(Object.assign({ it }, ctx));
+  };
+  const idle = [
+    () => walkTo(ax + (Math.random() < .5 ? -1 : 1) * (150 + Math.random() * 350)),
+    () => walkTo(ax + (Math.random() < .5 ? -1 : 1) * (150 + Math.random() * 350)),
+    async () => { pop('🦘'); await pose('jumping', 700); await pose('jumping', 700); },
+    async () => { pop(pick(['😊','🎵','😎'])); await pose('sitting', 3000); },
+    async () => { pop('👋'); await pose('waving', 1500); },
+    async () => { pop('🎶'); await pose('dancing', 2400); },
+    async () => { pop('💤', 3200); await pose('sitting', 3400); },
+    async () => { setFace(-facing); await wsleep(600); setFace(-facing); pop('👀'); await wsleep(700); }
+  ];
+  avBody.addEventListener('pointerdown', ev => { ev.stopPropagation(); beep('tap'); pop(pick(['😄','🎉','⭐','💖','🤩'])); pose('jumping', 700); });
+  (async () => {
+    await wsleep(900);
+    while (alive()){
+      if (W.items.length && Math.random() < 0.55) await visit(pick(W.items));
+      else await pick(idle)();
+      await wsleep(500 + Math.random() * 1200);
+    }
+  })();
 }
+
+// What the buddy does with each kind of world item. Keys are item ids, '@category', or '@any'.
+let worldLifeGen = 0;
+const wsleep = ms => new Promise(r => setTimeout(r, ms));
+const BUDDY_ACTS = {
+  '@home': async c => { c.pop('🚪'); await wsleep(700); c.pop(pick(['💤','📺','🍪','🎮']), 2600); await c.hide(2800); c.pop('👋'); },
+  '@nature': async c => { c.pop('😌', 2800); await c.pose('sitting', 3000); },
+  sunflower: async c => { c.pop('🌻😊'); await c.pose('bend', 1800); },
+  tulip: async c => { c.pop('🌷😊'); await c.pose('bend', 1800); },
+  blossom: async c => { c.pop('🌸😊'); await c.pose('bend', 1800); },
+  rock: async c => { c.pop('⛰️'); await c.pose('jumping', 700); await c.pose('jumping', 700); },
+  mountain: async c => { c.pop('🧗'); await c.pose('jumping', 700); await c.pose('jumping', 700); },
+  volcano: async c => { c.pop('😮'); await Promise.all([c.itemAct(c.it, 'act-wiggle', 2400), c.pose('waving', 1500)]); },
+  sun: async c => { c.pop('😎'); await c.pose('waving', 1500); },
+  moon: async c => { c.pop('🌙💤', 3000); await c.pose('sitting', 3200); },
+  star: async c => { c.pop('✨🤩'); await c.pose('jumping', 700); },
+  cloud: async c => { c.pop('☁️'); await c.itemAct(c.it, 'act-float', 2400); },
+  rainbow: async c => { c.pop('🌈🤩'); await c.pose('dancing', 2400); },
+  crystal: async c => { c.pop('💎✨'); await c.itemAct(c.it, 'act-hop', 1500); },
+  ball: async c => { c.pop('⚽'); await c.pose('jumping', 500); await c.itemAct(c.it, 'act-kick', 1400); },
+  balloons: async c => { c.pop('🎈'); await Promise.all([c.pose('jumping', 700), c.itemAct(c.it, 'act-float', 2400)]); },
+  kite: async c => { c.pop('🪁'); await Promise.all([c.pose('waving', 1500), c.itemAct(c.it, 'act-float', 2400)]); },
+  campfire: async c => { c.pop('🔥😊', 2800); await c.pose('sitting', 3000); },
+  icecream: async c => { c.pop('😋'); await c.pose('munch', 1800); },
+  cupcake: async c => { c.pop('😋'); await c.pose('munch', 1800); },
+  pizza: async c => { c.pop('🍕😋'); await c.pose('munch', 1800); },
+  trophy: async c => { c.pop('🏆'); await c.pose('jumping', 700); await c.pose('jumping', 700); },
+  present: async c => { c.pop('🎁'); await c.itemAct(c.it, 'act-hop', 1500); c.pop('🎉'); await c.pose('dancing', 1800); },
+  treasure: async c => { c.pop('💰✨'); await c.pose('jumping', 700); },
+  fountain: async c => { c.pop('💦'); await c.itemAct(c.it, 'act-wiggle', 2400); },
+  target: async c => { c.pop('🎯'); await c.pose('waving', 1200); c.pop('🎯✅'); await c.itemAct(c.it, 'act-wiggle', 1200); },
+  slide: async c => { c.pop('🛝'); await c.pose('jumping', 700); await c.pose('sitting', 1400); c.pop('😄'); },
+  ferris: async c => { c.pop('🎡'); await Promise.all([c.hide(3200), c.itemAct(c.it, 'act-spin', 3000)]); c.pop('😄'); },
+  carousel: async c => { c.pop('🎠'); await Promise.all([c.hide(3200), c.itemAct(c.it, 'act-spin', 3000)]); c.pop('😄'); },
+  coaster: async c => { c.pop('🎢'); await Promise.all([c.hide(2800), c.itemAct(c.it, 'act-wiggle', 2400)]); c.pop('😆'); },
+  '@ride': async c => { const fly = ['rocket','jet','heli'].includes(c.it.k), boat = ['ship','sailboat'].includes(c.it.k);
+    c.pop(fly ? '🚀' : boat ? '⚓' : '🏁');
+    await Promise.all([c.hide(3300), c.itemAct(c.it, fly ? 'act-fly' : boat ? 'act-bob' : 'act-drive', 3200)]); c.pop('😄'); },
+  '@animal': async c => { c.pop('❤️'); await Promise.all([c.itemAct(c.it, 'act-hop', 1500), c.pose('waving', 1500)]); },
+  '@friends': async c => { c.pop('👋💛'); await Promise.all([c.itemAct(c.it, 'act-hop', 1500), c.pose('jumping', 700)]); },
+  '@any': async c => { c.pop('😊'); await c.pose('waving', 1200); }
+};
 
 /* ================= PHONICS PATH: lesson engine =================
    Each lesson follows an explicit "I do / we do / you do" routine:
