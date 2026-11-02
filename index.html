@@ -443,6 +443,8 @@ body.parent{ background:#f1f5f9; }
 .world-item.act-bob{ animation:itBob 1s ease-in-out 3; }
 @keyframes itBob{ 25%{ rotate:-6deg; translate:0 -6px; } 75%{ rotate:6deg; translate:0 4px; } }
 
+.cloud-status{ margin:18px auto 0; padding:6px 14px; border-radius:999px; background:rgba(15,23,42,.45); color:#fff; font-size:14px; text-align:center; width:fit-content; max-width:100%; }
+
 /* ---- level progress bar ---- */
 .lvl-progress{ background:rgba(15,23,42,.45); border:3px solid var(--ink); border-radius:16px; box-shadow:4px 4px 0 var(--ink); padding:10px 14px; margin:4px 0 6px; max-width:560px; color:#fff; }
 .lvl-head{ display:flex; justify-content:space-between; font:18px 'Lilita One','Fredoka',sans-serif; text-shadow:2px 2px 0 var(--ink); }
@@ -3027,7 +3029,7 @@ function load(){
   d.names = Object.assign({ daughter:'Gianna', son:'Miles' }, d.names||{});
   return d;
 }
-function save(){ try { localStorage.setItem(STORE_KEY, JSON.stringify(DB)); } catch(e){} }
+function save(){ try { localStorage.setItem(STORE_KEY, JSON.stringify(DB)); } catch(e){} try { cloudQueue(); } catch(e){ /* cloud code not set up yet during startup */ } }
 DB = load();
 
 // One-time gifts from a grown-up. Each id is granted once per device and announced on the kid's home screen.
@@ -3234,7 +3236,98 @@ function setKid(k){
 }
 function levelDef(n){ return T.levels[Math.min(Math.max(n,1), T.levels.length) - 1]; }
 function show(node){
+  onCloudUpdate = null; // screens that can redraw on a cloud change set this again after show()
   const root = $('#app'); root.innerHTML = ''; root.append(node); window.scrollTo(0,0);
+}
+
+/* ---------------- cloud save ----------------
+   When the app runs inside its Claude artifact, both kids' progress (worlds included) and the
+   shared settings are kept in the artifact's database, so every device sees the same data and the
+   kids can visit each other's worlds anywhere. Elsewhere (GitHub Pages) it saves on the device only.
+   Docs: rq/son, rq/daughter, rq/settings = { json, ts }. Newest save wins. */
+const APP_VERSION = '2026-11-02';
+const CLOUD_KEYS = ['son','daughter','settings'];
+const CLOUD = { db:null, on:false, status:'local', last:{}, timers:{}, busy:{}, again:{}, mine:{} };
+let onCloudUpdate = null;
+const CLOUD_TEXT = {
+  local:'📱 Saved on this device only',
+  syncing:'☁️ Connecting to cloud save…',
+  cloud:'☁️ Cloud save is on: works on every device',
+  offline:'⚠️ Can\'t reach cloud save right now. Saving on this device until it\'s back.'
+};
+function cloudStatusNode(){ return el('div',{class:'cloud-status'}, CLOUD_TEXT[CLOUD.status] + ' · v' + APP_VERSION); }
+function setCloudStatus(s){ CLOUD.status = s; document.querySelectorAll('.cloud-status').forEach(n => n.textContent = CLOUD_TEXT[s] + ' · v' + APP_VERSION); }
+const settingsOf = d => ({ pin:d.pin, names:d.names, catName:d.catName || null, gifts:d.gifts || [], record:!!d.record, forceManual:!!d.forceManual });
+const cloudBody = key => key === 'settings' ? settingsOf(DB) : DB.kids[key];
+// real progress only (never stars: a fresh device's one-time gift must not outrank the cloud copy)
+const kidScore = k => (k.sessions||[]).length + ((k.world && k.world.items) || []).length + (k.collection||[]).length + (k.placed ? k.level || 1 : 0);
+function setCloudTs(key, ts){ DB.cloudTs = DB.cloudTs || {}; DB.cloudTs[key] = ts; }
+function cloudQueue(){
+  if (!CLOUD.on) return;
+  CLOUD_KEYS.forEach(key => {
+    if (JSON.stringify(cloudBody(key)) === CLOUD.last[key]) return;
+    clearTimeout(CLOUD.timers[key]); CLOUD.timers[key] = setTimeout(() => cloudPush(key), 1200);
+  });
+}
+async function cloudPush(key, retried){
+  if (!CLOUD.on) return;
+  if (CLOUD.busy[key]){ CLOUD.again[key] = true; return; }
+  let body = cloudBody(key), j = JSON.stringify(body);
+  if (j === CLOUD.last[key]) return;
+  CLOUD.busy[key] = true;
+  const ts = Date.now();
+  CLOUD.mine[key] = ts;
+  try {
+    try { await CLOUD.db.doc('rq/' + key).set({ json:j, ts }); }
+    catch(e){
+      if (e && e.code === 'invalid_argument' && key !== 'settings'){ // too big: keep the cloud copy's history shorter
+        j = JSON.stringify(Object.assign({}, body, { sessions:(body.sessions||[]).slice(0,40) }));
+        await CLOUD.db.doc('rq/' + key).set({ json:j, ts });
+      } else throw e;
+    }
+    CLOUD.last[key] = JSON.stringify(body); setCloudTs(key, ts);
+    try { localStorage.setItem(STORE_KEY, JSON.stringify(DB)); } catch(e){}
+    if (CLOUD.status !== 'cloud') setCloudStatus('cloud');
+  } catch(e){
+    setCloudStatus('offline');
+    if (!retried && (!e || e.code === 'unavailable' || e.code === 'resource_exhausted')) setTimeout(() => cloudPush(key, true), 3000 + Math.random()*3000);
+  }
+  CLOUD.busy[key] = false;
+  if (CLOUD.again[key]){ CLOUD.again[key] = false; cloudPush(key); }
+}
+function cloudApply(key, snap){
+  if (snap.metadata.hasPendingWrites) return;
+  const d = snap.exists ? snap.data() : null;
+  if (!d || typeof d.json !== 'string'){ if (!snap.metadata.fromCache) cloudPush(key); return; } // cloud empty: seed it from this device
+  const mine = JSON.stringify(cloudBody(key));
+  if (d.json === mine){ CLOUD.last[key] = mine; setCloudTs(key, d.ts); return; }
+  // our own save coming back (or something older than it): nothing new to take
+  if (CLOUD.mine[key] && d.ts <= CLOUD.mine[key]){ if (!snap.metadata.fromCache) cloudQueue(); return; }
+  let remote; try { remote = JSON.parse(d.json); } catch(e){ return; }
+  const base = (DB.cloudTs || {})[key];
+  // after the first sync, a newer cloud save wins; on a device's very first sync, keep whichever copy has more progress
+  const takeRemote = base ? d.ts > base : (key === 'settings' || kidScore(remote) >= kidScore(DB.kids[key]));
+  if (!takeRemote){ if (!snap.metadata.fromCache) cloudPush(key); return; }
+  if (key === 'settings') Object.assign(DB, settingsOf(Object.assign(settingsOf(DB), remote)));
+  else { DB.kids[key] = Object.assign(freshKid(), remote); if (kid === key) K = DB.kids[key]; }
+  CLOUD.last[key] = JSON.stringify(cloudBody(key)); setCloudTs(key, d.ts);
+  try { localStorage.setItem(STORE_KEY, JSON.stringify(DB)); } catch(e){}
+  if (onCloudUpdate) onCloudUpdate();
+}
+async function cloudStart(){
+  let db = null;
+  try { if (window.claude && window.claude.use) db = await window.claude.use('db'); } catch(e){}
+  if (!db){ setCloudStatus('local'); return; }
+  CLOUD.db = db; CLOUD.on = true; setCloudStatus('syncing');
+  const timer = setTimeout(() => { if (CLOUD.status === 'syncing') setCloudStatus('offline'); }, 10000);
+  CLOUD_KEYS.forEach(key => {
+    try {
+      db.doc('rq/' + key).onSnapshot(snap => {
+        if (!snap.metadata.fromCache){ clearTimeout(timer); if (CLOUD.status !== 'cloud') setCloudStatus('cloud'); }
+        cloudApply(key, snap);
+      }, () => setCloudStatus('offline'));
+    } catch(e){ setCloudStatus('offline'); }
+  });
 }
 function burst(word){
   const b = el('div',{class:'pow'}, word || pick(['POW!','ZAP!','WHAM!','BOOM!','YES!','WOW!']));
@@ -3293,9 +3386,11 @@ function screenProfiles(){
       el('button',{class:'profile son', onclick:()=>{ beep('tap'); enterKid('son'); }},
         DB.kids.son.avatar.base ? el('div',{html: avatarSVG(DB.kids.son.avatar, 120)}) : el('div',{class:'pic'},'🐲'), DB.names.son, el('small',{},`${CAT} & Pals · Detective ${CAT}`))
     ),
+    cloudStatusNode(),
     el('button',{class:'gear', onclick:()=>screenPin()},'⚙︎ Grown-ups')
   );
   show(s);
+  onCloudUpdate = () => screenProfiles();
 }
 
 // back to the "Who is reading today?" screen
@@ -3387,9 +3482,11 @@ function screenHome(msg){
     doneToday ? el('div',{class:'banner'},'🎉 Great reading today! You did 10 minutes. You can stop here, or keep going!') : null,
     el('div',{class:'cards'}, ...cards),
     useManual() ? el('div',{class:'banner'}, srSupported ? 'Grown-up scoring mode is on.' : 'This browser can\'t listen, so a grown-up will tap any words that are missed. (Open in Safari on an https site for listening mode.)') : null,
+    cloudStatusNode(),
     el('button',{class:'gear', onclick:()=>screenPin()},'⚙︎ Grown-ups')
   );
   show(s);
+  onCloudUpdate = () => screenHome();
 }
 
 // How close the kid is to the next level: 3 passing (3-star) reads in a row levels up (see commitResults).
@@ -4602,9 +4699,12 @@ function screenWorld(visitKid){
     readOnly ? null : el('div',{class:'world-hint'}, 'Tap something to buy it, then drag it anywhere! Tap a thing in your world to change it. Removing something gives back only half its stars.'),
     readOnly ? null : tools,
     readOnly ? null : catTabs,
-    readOnly ? null : palette);
+    readOnly ? null : palette,
+    cloudStatusNode());
   show(s);
   refreshSel();
+  // redraw when the other kid (or another device) saves, unless something here is being moved
+  onCloudUpdate = () => { if (!document.querySelector('.world-item.drag')) screenWorld(visitKid); };
 
   // ---- buddy life loop: wander, play, and use the things in the world ----
   const life = ++worldLifeGen;
@@ -5306,6 +5406,7 @@ window.addEventListener('pagehide', stopAll);
 document.addEventListener('visibilitychange', () => { if (document.hidden && recogOn) stopRecog(); });
 if (DB.pinKid && DB.kids[DB.pinKid]) enterKid(DB.pinKid);
 else screenProfiles();
+cloudStart();
 
 // test hooks
 window.__RQ = { graphemes: typeof graphemes !== 'undefined' ? graphemes : null, align, wordMatch, tokenizeHeard, letterMatch, get run(){ return run; }, get DB(){ return DB; } };
