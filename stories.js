@@ -534,45 +534,45 @@ SON_TRACK.rewards.push(
 const SON_STARTER = {
   1: [
     { title: 'What Biscuit Sees', emoji: '👀',
-      text: `I see a cat. 🐱
+      text: `I see a cat. 🐱 The cat is on a mat.
 
-I see a dog. 🐶
+I see a dog. 🐶 The dog can sit.
 
-I see a pig. 🐷
+I see a pig. 🐷 The pig is in the mud.
 
-I see a sun. ☀️
+I look up. I see a sun. ☀️ The sun is hot.
 
-I see a bug! 🐞`,
+I look down. I see a bug! 🐞 The bug is red. Hi, bug!`,
       qs: [
         ['What did Biscuit see first?', ['🐱 A cat', '🐟 A fish', '🚗 A car'], 0],
         ['What did he see in the sky?', ['☀️ The sun', '🌙 The moon', '🎈 A balloon'], 0],
         ['What did he see last?', ['🐞 A bug', '🐷 A pig', '🐶 A dog'], 0]
       ] },
     { title: 'I Like My Things', emoji: '❤️',
-      text: `I like my hat. 🎩
+      text: `I like my hat. 🎩 It is red.
 
-I like my dog. 🐶
+I like my dog. 🐶 My dog can run.
 
-I like my bed. 🛏️
+I like my bed. 🛏️ I nap in my bed.
 
-I like my cup. 🥤
+I like my cup. 🥤 It is big.
 
-I like my mom! ❤️`,
+I like my things a lot. But I like my mom the most! ❤️`,
       qs: [
         ['What does he like to wear?', ['🎩 A hat', '🧤 Mittens', '👟 Shoes'], 0],
         ['Where does he sleep?', ['🛏️ In his bed', '🌳 In a tree', '🛁 In the tub'], 0],
         ['Who does he like at the end?', ['❤️ His mom', '🐷 A pig', '🐞 A bug'], 0]
       ] },
     { title: 'Look at Me!', emoji: '🙌',
-      text: `Look at the fox. 🦊
+      text: `Look at the fox. 🦊 The fox can run.
 
-Look at the hen. 🐔
+Look at the hen. 🐔 The hen can sit on an egg.
 
-Look at the frog. 🐸
+Look at the frog. 🐸 The frog can hop.
 
-Look at the bus. 🚌
+Look at the bus. 🚌 We can get on the bus.
 
-Look at me! 😺`,
+Can you see me? I can run, sit, and hop. Look at me! 😺`,
       qs: [
         ['Which animal says "cluck"?', ['🐔 The hen', '🦊 The fox', '🐸 The frog'], 0],
         ['What can you ride in?', ['🚌 The bus', '🐸 The frog', '🦊 The fox'], 0],
@@ -581,45 +581,45 @@ Look at me! 😺`,
   ],
   2: [
     { title: 'The Big Pig', emoji: '🐷',
-      text: `A pig is big. 🐷
+      text: `A pig is big. 🐷 The pig has a pink nose.
 
-The big pig is in the mud.
+The big pig is in the mud. The mud is wet.
 
-The pig can dig and dig.
+The pig can dig and dig. Dig, pig, dig!
 
-Biscuit can not dig. 🐱
+Biscuit can not dig. 🐱 He sat on a log in the sun.
 
-The pig is a big mess! 😂`,
+The pig got mud on his back. He got mud on his legs. The pig is a big mess! 😂`,
       qs: [
         ['Where is the pig?', ['🟫 In the mud', '🛁 In the tub', '🌳 In a tree'], 0],
         ['What can the pig do?', ['⛏️ Dig', '🦅 Fly', '🏊 Swim'], 0],
         ['How does the pig look at the end?', ['😂 Like a big mess', '✨ Very clean', '😴 Asleep'], 0]
       ] },
     { title: 'Zip and the Jet', emoji: '🚀',
-      text: `Zip has a red jet. 🐰
+      text: `Zip has a red jet. 🐰 It is not big.
 
-Zip sat in the jet.
+Zip sat in the jet. She had a hat on.
 
-The jet can zip up, up, up! 🚀
+The jet can zip up, up, up! 🚀 It went up to the top.
 
-Zip sees the sun. ☀️
+Zip sees the sun. ☀️ Zip sees a hill and a pond. The pond is not big from up here!
 
-The jet is fun!`,
+The jet came down. It did a bump on the grass. Zip got out. The jet is fun!`,
       qs: [
         ['What color is the jet?', ['🔴 Red', '🔵 Blue', '🟢 Green'], 0],
         ['Which way did the jet go?', ['⬆️ Up, up, up', '⬇️ Down', '↩️ Back'], 0],
         ['What did Zip see?', ['☀️ The sun', '🐷 A pig', '🌧️ Rain'], 0]
       ] },
     { title: 'Ten Hens', emoji: '🐔',
-      text: `Ten hens sat in a pen. 🐔
+      text: `Ten hens sat in a pen. 🐔 The hens had ten eggs.
 
-A fox ran to the pen! 🦊
+A fox ran to the pen! 🦊 The fox had a big grin.
 
-The hens ran and hid.
+The hens ran and hid. Six hid in a box. Four hid in a bin.
 
-Toasty ran at the fox. 🐶
+Toasty ran at the fox. 🐶 "Get out, fox!" said Toasty. "Ruff, ruff!"
 
-The fox ran off. The hens are glad!`,
+The fox ran off. He ran up the hill and into his den. The hens are glad! They sat on the eggs.`,
       qs: [
         ['How many hens were there?', ['🔟 Ten', '2️⃣ Two', '5️⃣ Five'], 0],
         ['Who ran to the pen?', ['🦊 A fox', '🐷 A pig', '🐱 Biscuit'], 0],
@@ -628,30 +628,30 @@ The fox ran off. The hens are glad!`,
   ],
   3: [
     { title: 'Come and Play', emoji: '🤸',
-      text: `"Come and play," said Zip. 🐰
+      text: `It is a sunny day. "Come and play," said Zip. 🐰
 
-"We can run," said Plip. 🐸
+"We can run," said Plip. 🐸 "Look at me go!"
 
-"We can jump," said Toasty. 🐶
+"We can jump," said Toasty. 🐶 "I can jump up high!"
 
-"I like to play with you," said Biscuit. 🐱
+Biscuit came out to see his friends. "I like to play with you," said Biscuit. 🐱
 
-Here we go!`,
+They all run. They all jump. Then they sit down in the grass. "That was fun," said Zip. "Can we play one more time?" Here we go!`,
       qs: [
         ['Who said "Come and play"?', ['🐰 Zip', '🐱 Biscuit', '🐶 Toasty'], 0],
         ['What did Toasty want to do?', ['🦘 Jump', '😴 Sleep', '🍪 Eat'], 0],
         ['How does Biscuit feel about his friends?', ['😊 He likes to play with them', '😠 He is mad', '😢 He is sad'], 0]
       ] },
     { title: 'Where Is My Ball?', emoji: '⚽',
-      text: `Where is my blue ball? 🔵
+      text: `I have a blue ball. 🔵 I like to play with it. But where is my blue ball?
 
-Is it here? No.
+Is it here in my room? No.
 
-Is it down there? No.
+Is it down there under the bed? No. I see a sock, but not my ball.
 
-Look! It is up in the tree! 🌳
+Is it in the yard? I go out to look. Look! It is up in the tree! 🌳
 
-Zip can help me get it down. 🐰`,
+I can not get it down. It is too high for me. Zip can help me get it down. 🐰 She can jump up and get it!`,
       qs: [
         ['What color is the ball?', ['🔵 Blue', '🔴 Red', '🟡 Yellow'], 0],
         ['Where was the ball?', ['🌳 Up in the tree', '🛏️ Under the bed', '🏊 In the pond'], 0],
@@ -660,13 +660,13 @@ Zip can help me get it down. 🐰`,
     { title: 'One, Two, Three!', emoji: '🔢',
       text: `One, two, three. Jump with me! 🦘
 
-Biscuit can jump. 🐱
+Biscuit can jump. 🐱 He can jump up on a box.
 
-Chip can jump. 🐥
+Chip can jump. 🐥 She is little, but she can jump too.
 
-Look at the funny frog jump! 🐸
+Look at the funny frog jump! 🐸 He jumps so high. He jumps with his legs out. We all laugh.
 
-We all jump and jump and jump!`,
+Now we can all jump. One, two, three! We all jump and jump and jump!`,
       qs: [
         ['What do they count to?', ['3️⃣ Three', '🔟 Ten', '5️⃣ Five'], 0],
         ['What are they doing?', ['🦘 Jumping', '🏊 Swimming', '😴 Sleeping'], 0],
@@ -677,30 +677,30 @@ We all jump and jump and jump!`,
 // More starter stories so Levels 1–3 don't repeat so often.
 SON_STARTER[1].push(
   { title: 'Biscuit Can Hop', emoji: '🐾',
-    text: `I can hop. 🐱
+    text: `I can hop. 🐱 Hop, hop, hop!
 
-I can run.
+I can run. I run to the tree.
 
-I can sit.
+I can sit. I sit on a red mat.
 
-I can nap in the sun. ☀️
+I can nap in the sun. ☀️ The sun is hot. I like it.
 
-I can hug my pal! 🤗`,
+Here is my pal. My pal is a dog. I can hug my pal! 🤗`,
     qs: [
       ['What can Biscuit do first?', ['🦘 Hop', '✈️ Fly', '🏊 Swim'], 0],
       ['Where does he nap?', ['☀️ In the sun', '🛁 In the tub', '🚗 In a car'], 0],
       ['What does he do last?', ['🤗 Hug his pal', '🍪 Eat a cookie', '📖 Read a book'], 0]
     ] },
   { title: 'The Red Bus', emoji: '🚌',
-    text: `Zip is on a bus. 🚌
+    text: `Zip is on a bus. 🚌 Zip has a bag.
 
-The bus is red.
+The bus is red. It is a big bus.
 
-The bus can go.
+The bus can go. Go, bus, go!
 
-The bus can stop. 🛑
+The bus can stop. 🛑 A dog gets on. A cat gets on.
 
-Zip is at the park! 🌳`,
+The bus can go and go. Then it stops. Zip gets off. Zip is at the park! 🌳`,
     qs: [
       ['Who is on the bus?', ['🐰 Zip', '🐸 Plip', '🐶 Toasty'], 0],
       ['What color is the bus?', ['🔴 Red', '🔵 Blue', '🟢 Green'], 0],
@@ -709,30 +709,30 @@ Zip is at the park! 🌳`,
 );
 SON_STARTER[2].push(
   { title: 'Fox in a Box', emoji: '🦊',
-    text: `A fox sat in a box. 🦊
+    text: `A fox sat in a box. 🦊 It was a big box.
 
-The box had a lid.
+The box had a lid. The lid was up on top.
 
-The lid fell on top!
+The fox did a big yawn. Then the lid fell on top! Bam!
 
-The fox did not like it.
+The fox did not like it. It was dim in the box. "Help!" said the fox.
 
-Biscuit got the lid off. The fox ran to his den. 🏠`,
+Biscuit ran to the box. Biscuit got the lid off. The fox ran to his den. 🏠 "Thank you!" said the fox.`,
     qs: [
       ['Where did the fox sit?', ['📦 In a box', '🌳 In a tree', '🛁 In a tub'], 0],
       ['What fell on top?', ['🟫 The lid', '🍎 An apple', '🎩 A hat'], 0],
       ['Who got the lid off?', ['🐱 Biscuit', '🐰 Zip', '🐔 A hen'], 0]
     ] },
   { title: 'Plip and the Bug', emoji: '🐛',
-    text: `Plip is a frog. 🐸
+    text: `Plip is a frog. 🐸 Plip is wet and green.
 
-Plip sat on a big log.
+Plip sat on a big log. The log is in the pond.
 
-A bug sat on the log. 🐛
+A bug sat on the log. 🐛 The bug had six legs.
 
-Plip did a big hop.
+Plip did a big hop. Hop! But the bug ran fast.
 
-The bug ran! Plip did not get it. Plip had a nap. 😴`,
+The bug ran up a stick. Plip did not get it. Plip sat back on the log. The sun was hot. Plip had a nap. 😴`,
     qs: [
       ['What is Plip?', ['🐸 A frog', '🐶 A pup', '🐷 A pig'], 0],
       ['What sat on the log with Plip?', ['🐛 A bug', '🦊 A fox', '🐱 A cat'], 0],
@@ -741,30 +741,30 @@ The bug ran! Plip did not get it. Plip had a nap. 😴`,
 );
 SON_STARTER[3].push(
   { title: 'Help Me, Please!', emoji: '🐥',
-    text: `"Help me!" said Chip. 🐥
+    text: `Chip went up a big tree. She went up, up, up.
 
-"I can not get down."
+"Help me!" said Chip. 🐥 "I can not get down. It is too high!"
 
-"We will help you," said Zip and Plip.
+Zip and Plip came to the tree. "We will help you," said Zip and Plip.
 
-They made a big pile of leaves. 🍂
+They made a big pile of leaves. 🍂 It was soft and red and yellow.
 
-Chip jumped down. "Thank you!" she said.`,
+"Jump!" they said. Chip jumped down into the leaves. She was OK! "Thank you!" she said. Then they all played in the leaves.`,
     qs: [
       ['Who needed help?', ['🐥 Chip', '🐰 Zip', '🐱 Biscuit'], 0],
       ['What did they make?', ['🍂 A pile of leaves', '🪜 A ladder', '🎂 A cake'], 0],
       ['What did Chip say at the end?', ['🙏 Thank you!', '👋 Goodbye!', '😴 Good night!'], 0]
     ] },
   { title: 'What Is in the Box?', emoji: '🎁',
-    text: `Look! A big box is here. 📦
+    text: `Look! A big box is here. 📦 It has my name on it.
 
-What is in it?
+What is in it? I shake it. It does not make a sound.
 
 Is it a ball? No.
 
-Is it a hat? No.
+Is it a hat? No. Is it a little car? No.
 
-It is a little cake for me! 🎂 We all play and eat.`,
+I open the box. It is a little cake for me! 🎂 Today is my birthday! My friends come to see me. We all play and eat.`,
     qs: [
       ['What is here?', ['📦 A big box', '🚌 A bus', '🐸 A frog'], 0],
       ['Was it a ball?', ['🙅 No', '👍 Yes', '🤷 Maybe'], 0],

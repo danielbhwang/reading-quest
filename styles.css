@@ -646,3 +646,6 @@ body.parent{ background:#f1f5f9; }
 .lg-now{ font:15px 'Lilita One','Fredoka',sans-serif; color:#b45309; }
 .lg-notes{ margin:8px 0 0; padding-left:20px; font-size:15px; color:#334155; }
 .lg-notes li{ margin:4px 0; }
+
+/* whole-story reader: blank lines in the story become paragraph gaps */
+.passage .pbreak{ display:block; height:.45em; }

@@ -237,7 +237,16 @@ function align(target, heard, strict){
         matched = true; break;
       }
     }
-    // unmatched heard word = extra word or misread; ignore
+    // skipped a line? jump ahead when two heard words in a row match further on in the story
+    if (!matched && heard[i+1]){
+      for (let k=4; k<=40 && pos+k+1<target.length; k++){
+        if (wordMatch(target[pos+k], h, strict) && wordMatch(target[pos+k+1], heard[i+1], strict)){
+          for (let s=pos; s<pos+k; s++) st[s] = 'miss';
+          st[pos+k] = 'ok'; pos = pos+k+1; break;
+        }
+      }
+    }
+    // otherwise an unmatched heard word = extra word or misread; ignore
   }
   return st;
 }
@@ -660,7 +669,6 @@ function levelGuide(){
       el('button',{class:'btn blue', onclick:speak},'🔊 Read it to me'),
       el('button',{class:'btn green', onclick:()=>{ if (window.speechSynthesis) speechSynthesis.cancel(); ov.remove(); }},'Got it! ▶'))));
   document.body.append(ov);
-  if (kid === 'son') speak();
 }
 
 /* ---------- spelling practice ---------- */
@@ -853,6 +861,12 @@ function startSpelling(){
 function tokensOf(text){
   return text.split(/\s+/).filter(Boolean).map(disp => { const n = norm(disp); return n ? { disp, n } : { disp, n:'', skip:true }; });
 }
+// Read-aloud stories go on one screen; blank lines in the text become paragraph breaks.
+function storyPages(text){
+  const tokens = [];
+  text.split(/\n\s*\n/).forEach((p, pi) => tokensOf(p.trim()).forEach((t, i) => tokens.push(i === 0 && pi > 0 ? Object.assign(t, { para:true }) : t)));
+  return [{ tokens }];
+}
 function buildActivity(levelN, mode){
   const L = levelDef(levelN);
   const wantsStory = L.kind === 'story' || (mode && seriesAt(levelN).includes(mode));
@@ -865,7 +879,7 @@ function buildActivity(levelN, mode){
     return { kind:'words', level:levelN, title:L.title, pages: items.map(w => ({ single:true, tokens:[{disp:w, n:norm(w)}] })) };
   }
   const { story, index, key, series } = storyFor(levelN, mode);
-  const pages = story.text.split(/\n\s*\n/).map(p => ({ tokens: tokensOf(p.trim()) }));
+  const pages = storyPages(story.text);
   return { kind:'story', level:levelN, title:story.title, emoji:story.emoji, story, storyIndex:index, storyKey:key, series, pages };
 }
 function startActivity(series){
@@ -949,6 +963,7 @@ function renderReader(){
   const passage = el('div',{class:'passage' + (single ? ' single' : '') + (p.letter ? ' letter' : '')});
   const focusSet = r.opts.focus ? new Set(r.opts.focus.words) : null;
   p.tokens.forEach((t,i) => {
+    if (t.para) passage.append(el('span',{class:'pbreak'}));
     const w = el('span',{class:'w' + (focusSet && focusSet.has(t.n) ? ' focus' : '') + (!single && r.opts.focus && heartNew(t.n) ? ' heartw' : ''), 'data-i':i}, t.disp);
     w.addEventListener('click', () => onWordTap(i));
     passage.append(w);
@@ -971,7 +986,7 @@ function renderReader(){
   const s = el('div',{class:'screen'},
     el('div',{class:'topbar'},
       el('button',{class:'btn ghost small', onclick:()=>{ stopAll(); r.opts.onStop ? r.opts.onStop() : a.kind==='placement' ? screenPlacementIntro() : screenHome(); }},'← Back'),
-      el('div',{class:'pageinfo'}, (a.emoji ? a.emoji + ' ' : '') + a.title + ' · ' + (r.page+1) + ' / ' + a.pages.length),
+      el('div',{class:'pageinfo'}, (a.emoji ? a.emoji + ' ' : '') + a.title + (a.pages.length > 1 ? ' · ' + (r.page+1) + ' / ' + a.pages.length : '')),
       el('div',{style:'width:80px'})),
     el('div',{class:'reader-wrap'}, pageCard, hint, heard,
       el('div',{class:'controls'},
@@ -2836,7 +2851,7 @@ function nextStep(){
   else if (step === 'heart'){
     lessonRun({ kind:'words', level:K.level, title:'❤️ Heart words', pages: L.heart.map(([w,part,tip]) => ({ single:true, heart:{ part, tip }, tokens:[{disp:w, n:norm(w)}] })) }, 'heart');
   } else if (step === 'read'){
-    const pages = L.text.split(/\n\s*\n/).map(p => ({ tokens: tokensOf(p.trim()) }));
+    const pages = storyPages(L.text);
     lessonRun({ kind:'story', level:K.level, title:'📖 ' + L.title, pages }, 'read', { echo:true });
   } else if (step === 'questions'){ screenLessonQuiz(score => advance('questions', score)); }
 }
@@ -3012,7 +3027,7 @@ async function lessonResults(){
 }
 function rereadForSpeed(L){
   const before = pathState().best[L.id] || 0;
-  const pages = L.text.split(/\n\s*\n/).map(p => ({ tokens: tokensOf(p.trim()) }));
+  const pages = storyPages(L.text);
   beginRun({ kind:'story', level:K.level, title:'🔁 Speed read: ' + L.title, pages }, { mode:'lesson', onStop:screenPath, onDone:async (res, a) => {
     trackWords(a);
     const P = pathState(), now = res.wcpm || 0;
@@ -3183,7 +3198,7 @@ function startBossBattle(){
     startQuietRead(story, { storyKey:'boss_' + K.level, boss:B });
     run.opts.boss = B; bossHud();
   } else {
-    const pages = story.text.split(/\n\s*\n/).map(p => ({ tokens: tokensOf(p.trim()) }));
+    const pages = storyPages(story.text);
     beginRun({ kind:'story', level:K.level, title:'⚔️ ' + story.title, emoji:B.e, story, storyKey:'boss_' + K.level, series:'boss', pages }, { mode:'normal', boss:B });
   }
 }

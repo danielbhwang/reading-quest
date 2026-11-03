@@ -76,7 +76,12 @@ at(300,()=>{ ok('spelling check opens', /Spelling Check · 1 \/ 8/.test(T())); c
   'miles-reader' = @{ seed = (Seed 'son' ''); probe = @'
 at(0,()=>{ ok('progress bar', !!document.querySelector('.lvl-progress')); btn(/^▶ Read$/).click(); });
 at(400,()=>{ if (btn(/Skip to the story/)) btn(/Skip to the story/).click(); });
-at(400,()=>{ ok('reader open', !!document.querySelector('.passage')); ok('hear it first button', !!btn(/Hear it first/)); });
+at(400,()=>{ ok('reader open', !!document.querySelector('.passage')); ok('hear it first button', !!btn(/Hear it first/));
+  ok('whole story on one screen', __RQ.run.act.pages.length===1, __RQ.run.act.pages.length);
+  ok('paragraph breaks', document.querySelectorAll('.passage .pbreak').length >= 3);
+  ok('story is longer', document.querySelectorAll('.passage .w').length >= 35, document.querySelectorAll('.passage .w').length);
+  const st = __RQ.align('the cat sat on a mat the dog ran to the big red bus'.split(' '), 'the cat sat the big red bus'.split(' '));
+  ok('mic catches up after a skipped line', st[12]==='ok' && st[11]==='ok' && st[5]==='miss', st.join(',')); });
 '@ }
   'level-guide' = @{ seed = (Seed 'son' ''); probe = @'
 at(0,()=>{ ok('cards say what levels you up', document.querySelectorAll('.counts-tag').length>0); ok('rule shown under bar', /8 of 10 words right/.test(document.querySelector('.lvl-rule').textContent)); btn(/How do I level up/i).click(); });
