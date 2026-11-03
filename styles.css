@@ -628,3 +628,21 @@ body.parent{ background:#f1f5f9; }
 .rb-covers{ display:flex; gap:8px; flex-wrap:wrap; } .rb-cov{ font-size:36px; background:#f1f5f9; border:3px solid #cbd5e1; border-radius:12px; padding:4px 10px; } .rb-cov.on{ border-color:#111827; background:#fde68a; }
 .rb-stars button{ font-size:44px; background:none; }
 .rb-heard{ min-height:90px; margin:14px auto; max-width:620px; font-size:20px; background:#f8fafc; border:3px dashed #94a3b8; border-radius:14px; padding:12px; text-align:left; }
+
+/* ---- how to level up ---- */
+.lvl-rule{ font:14px 'Fredoka',sans-serif; font-weight:600; opacity:.95; margin-top:2px; }
+.lvl-how{ margin-top:8px; background:#facc15 !important; color:#111827 !important; }
+.counts-tag{ display:inline-block; margin:0 0 6px 6px; padding:2px 10px; border:2px solid var(--ink); border-radius:999px; background:#bbf7d0; color:#14532d; font:13px 'Lilita One','Fredoka',sans-serif; vertical-align:middle; }
+.level-guide{ max-width:520px; text-align:left; }
+.level-guide h2{ text-align:center; margin-top:0; }
+.lg-steps{ list-style:none; padding:0; margin:10px 0; display:grid; gap:8px; }
+.lg-step{ display:flex; align-items:center; gap:10px; flex-wrap:wrap; padding:10px 12px; border:3px solid var(--ink); border-radius:14px; background:#f8fafc; font-size:18px; }
+.lg-step.done{ background:#dcfce7; }
+.lg-step.now{ background:#fef9c3; box-shadow:4px 4px 0 var(--ink); }
+.lg-step.todo{ opacity:.8; }
+.lg-num{ font:20px 'Lilita One','Fredoka',sans-serif; min-width:26px; text-align:center; }
+.lg-e{ font-size:22px; }
+.lg-t{ flex:1; min-width:180px; }
+.lg-now{ font:15px 'Lilita One','Fredoka',sans-serif; color:#b45309; }
+.lg-notes{ margin:8px 0 0; padding-left:20px; font-size:15px; color:#334155; }
+.lg-notes li{ margin:4px 0; }

@@ -78,6 +78,10 @@ at(0,()=>{ ok('progress bar', !!document.querySelector('.lvl-progress')); btn(/^
 at(400,()=>{ if (btn(/Skip to the story/)) btn(/Skip to the story/).click(); });
 at(400,()=>{ ok('reader open', !!document.querySelector('.passage')); ok('hear it first button', !!btn(/Hear it first/)); });
 '@ }
+  'level-guide' = @{ seed = (Seed 'son' ''); probe = @'
+at(0,()=>{ ok('cards say what levels you up', document.querySelectorAll('.counts-tag').length>0); ok('rule shown under bar', /8 of 10 words right/.test(document.querySelector('.lvl-rule').textContent)); btn(/How do I level up/i).click(); });
+at(300,()=>{ const g=document.querySelector('.level-guide'); ok('guide opens', !!g); ok('guide has steps + boss', g && g.querySelectorAll('.lg-step').length>=3, g && g.querySelectorAll('.lg-step').length); ok('shows where you are', g && g.querySelectorAll('.lg-now').length===1); btn(/Got it/i).click(); ok('guide closes', !document.querySelector('.level-guide')); });
+'@ }
   'world' = @{ seed = (Seed 'son' ''); probe = @'
 at(0,()=>{ btn(/My World/).click(); });
 at(1500,()=>{ ok('scene drawn', !!document.querySelector('.world-scene svg')); ok('items placed', document.querySelectorAll('.world-item').length===2); ok('panda wanders', document.querySelector('.world-item.wander')?.textContent==='🐼'); ok('buddy present', !!document.querySelector('.world-avatar .av-body')); });

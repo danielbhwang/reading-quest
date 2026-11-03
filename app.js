@@ -489,12 +489,12 @@ function screenHome(msg){
     const st = nextQuietStory(), book = currentBook(), bs = book && bookState(book.id);
     cards.push(
       st ? el('div',{class:'card next-card series-card'},
-        el('div',{class:'series-tag'},'📖 Short Stories'),
+        el('div',{class:'series-tag'},'📖 Short Stories'), COUNTS_TAG(),
         el('h2',{}, st.emoji + ' ' + st.title),
         el('p',{},'Read it to yourself, then answer 5 questions. Highlight clues as you go!'),
         el('button',{class:'btn big', onclick:()=>{ beep('tap'); startQuietStory(); }},'▶ Read')) : null,
       book ? el('div',{class:'card next-card series-card'},
-        el('div',{class:'series-tag'},'📚 Chapter Books'),
+        el('div',{class:'series-tag'},'📚 Chapter Books'), COUNTS_TAG(),
         el('h2',{}, book.emoji + ' ' + book.title),
         el('p',{}, `Chapter ${bs.ch + 1} of ${book.chapters.length}: ${book.chapters[bs.ch].title}`),
         el('div',{class:'chapter-dots', style:'margin:-8px 0 14px'}, ...book.chapters.map((_, i) => el('span',{class:'dot' + (i < bs.ch ? ' on' : '')}))),
@@ -508,14 +508,14 @@ function screenHome(msg){
         el('button',{class:'btn big blue', onclick:()=>{ beep('tap'); startSpellCheck(); }},'✏️ Start')));
   }
   if (kid !== 'daughter' && L.kind !== 'story') cards.push(el('div',{class:'card next-card'},
-      el('div',{class:'series-tag'}, L.kind === 'letters' ? '🔤 Practice' : '⭐ Practice'),
+      el('div',{class:'series-tag'}, L.kind === 'letters' ? '🔤 Practice' : '⭐ Practice'), COUNTS_TAG(),
       el('h2',{}, L.kind === 'letters' ? 'Letter Sounds Round' : L.title + ' Round'), el('p',{}, L.intro),
       el('button',{class:'btn big', onclick:()=>{ beep('tap'); startActivity(); }},'▶ Start')));
   if (kid !== 'daughter'){
     seriesAt(K.level).forEach(sid => {
       const st = storyFor(K.level, sid).story, info = (T.series||{})[sid] || { name:'', emoji:'' };
       cards.push(el('div',{class:'card next-card series-card'},
-        el('div',{class:'series-tag'}, info.emoji + ' ' + info.name),
+        el('div',{class:'series-tag'}, info.emoji + ' ' + info.name), COUNTS_TAG(),
         el('h2',{}, st.emoji + ' ' + st.title), el('p',{}, 'Read it out loud, then answer questions!'),
         el('button',{class:'btn big', onclick:()=>{ beep('tap'); startActivity(sid); }},'▶ Read')));
     });
@@ -611,7 +611,56 @@ function levelProgress(){
     el('div',{class:'lvl-bar'}, ...Array.from({length:LEVEL_UP_STREAK}, (_,i) => el('div',{class:'lvl-seg' + (i < have ? ' on' : '')}, i < have ? '⭐⭐⭐' : ''))),
     el('div',{class:'lvl-tip'}, kid === 'daughter'
       ? (bossReady() ? `⚔️ The boss is waiting! Beat it to reach ${word} ${K.level+1}.` : `${left} more stor${left>1?'ies':'y'} with 4 or 5 questions right to face the boss!`)
-      : (bossReady() ? `⚔️ The boss is waiting! Beat it to reach ${word} ${K.level+1}.` : `${left} more ⭐⭐⭐ read${left>1?'s':''} to face the boss!`)));
+      : (bossReady() ? `⚔️ The boss is waiting! Beat it to reach ${word} ${K.level+1}.` : `${left} more ⭐⭐⭐ read${left>1?'s':''} to face the boss!`)),
+    bossReady() ? null : el('div',{class:'lvl-rule'}, '⭐⭐⭐ = ' + greatRule().short),
+    el('button',{class:'btn small lvl-how', onclick:()=>{ beep('tap'); levelGuide(); }},'❓ How do I level up?'));
+}
+
+// What a ⭐⭐⭐ (great) read means at the kid's current level, in kid words (matches starsFor in screenResults).
+function greatRule(){
+  const L = levelDef(K.level);
+  if (kid === 'daughter') return { short:'4 or 5 of the 5 questions right', long:'Get 4 or 5 of the 5 questions right.' };
+  if (L.kind === 'letters'){ const n = Math.ceil(L.pass * L.roundSize - 1e-9); return { short:`${n} of ${L.roundSize} letter sounds right`, long:`Say at least ${n} of the ${L.roundSize} letter sounds right.` }; }
+  if (L.kind === 'words'){ const n = Math.ceil(L.pass * L.roundSize - 1e-9); return { short:`${n} of ${L.roundSize} words right`, long:`Read at least ${n} of the ${L.roundSize} words right.` }; }
+  return { short:'almost every word right + most questions right', long:'Read almost every word right, then get most of the questions right (like 4 out of 5).' };
+}
+const COUNTS_TAG = () => el('span',{class:'counts-tag'},'⬆️ Levels you up');
+
+// Step-by-step "how to level up" guide, with the kid's own progress, read aloud for Miles.
+function levelGuide(){
+  const word = kid === 'daughter' ? 'Rank' : 'Level', next = K.level + 1, rule = greatRule();
+  const have = Math.min(K.passStreak||0, LEVEL_UP_STREAK), boss = bossFor(K.level), ready = bossReady();
+  const L = levelDef(K.level);
+  const round = L.kind === 'letters' ? 'Letter Sounds Round' : L.title + ' Round';
+  // word/letter levels can also have story cards, which use the story rule
+  const how = kid === 'daughter' ? `Read a Short Story or a Chapter Book. ${rule.long}`
+    : L.kind === 'story' ? `Read a story card. ${rule.long}`
+    : `In the ${round}: ${rule.long.replace(/^./, c => c.toLowerCase())}` + (seriesAt(K.level).length ? ' In a story: read almost every word right and get most questions right.' : '');
+  const steps = [
+    ['⭐⭐⭐', `Tap a card with the ⬆️ Levels you up sticker and get 3 stars. ${how}`, have > 0 || ready ? 'done' : 'now'],
+    ['3️⃣', `Do that 3 times. You have ${ready ? LEVEL_UP_STREAK : have} of ${LEVEL_UP_STREAK}.`, ready ? 'done' : have > 0 ? 'now' : 'todo'],
+    boss ? [boss.e, `Beat the boss, ${boss.name}! It shows up at the top of your page.`, ready ? 'now' : 'todo'] : null,
+    ['🏆', `You reach ${word} ${next}!`, 'todo']
+  ].filter(Boolean);
+  const notes = [
+    '⭐⭐ Good read: your star boxes stay the same.',
+    '⭐ Tricky read: you lose one star box. Keep trying!',
+    kid === 'daughter' ? '✏️ Spelling Checks earn stars for the shop, but they don\'t change your rank.'
+      : '✏️ Spelling, 🧠 Skills and 💪 Practice earn stars for the shop, but they don\'t change your level.'
+  ];
+  const ov = el('div',{class:'overlay'});
+  const speak = () => say([`How to reach ${word} ${next}.`, ...steps.map((s, i) => `Step ${i + 1}. ${s[1].replace('⬆️ ', '')}`), ...notes.map(n => n.replace(/^[^A-Za-z]+/, ''))].join(' '));
+  ov.append(el('div',{class:'modal level-guide'},
+    el('h2',{}, `How to reach ${word} ${next}`),
+    el('ol',{class:'lg-steps'}, ...steps.map(([e, t, st], i) => el('li',{class:'lg-step ' + st},
+      el('span',{class:'lg-num'}, st === 'done' ? '✅' : i + 1), el('span',{class:'lg-e'}, e), el('span',{class:'lg-t'}, t),
+      st === 'now' ? el('span',{class:'lg-now'},'👈 You are here') : null))),
+    el('ul',{class:'lg-notes'}, ...notes.map(n => el('li',{}, n))),
+    el('div',{class:'row center', style:'margin-top:16px'},
+      el('button',{class:'btn blue', onclick:speak},'🔊 Read it to me'),
+      el('button',{class:'btn green', onclick:()=>{ if (window.speechSynthesis) speechSynthesis.cancel(); ov.remove(); }},'Got it! ▶'))));
+  document.body.append(ov);
+  if (kid === 'son') speak();
 }
 
 /* ---------- spelling practice ---------- */
@@ -1367,11 +1416,18 @@ function screenResults(){
     starsBox.innerHTML = ''; for (let i=0;i<3;i++) starsBox.append(el('span',{}, i < st ? '⭐' : '☆'));
     if (lvlNote){
       const have = Math.min((K.passStreak||0) + (st === 3 ? 1 : 0), LEVEL_UP_STREAK);
-      lvlNote.textContent = st === 3
-        ? (have >= LEVEL_UP_STREAK ? `🎉 That's ${LEVEL_UP_STREAK} great reads. ${kid === 'daughter' ? 'Rank' : 'Level'} up!` : `✅ This counts! ${have} of ${LEVEL_UP_STREAK} toward the next ${kid === 'daughter' ? 'rank' : 'level'}.`)
-        : starsFor() === 2 ? `Good read! Your level-up count stays at ${Math.min(K.passStreak||0, LEVEL_UP_STREAK)} of ${LEVEL_UP_STREAK}. Get ${a.quiet ? '4 or 5 right' : '⭐⭐⭐'} to add one.`
-        : a.quiet ? `Get 4 or 5 questions right for a story to count toward the next rank.`
-        : `Get ⭐⭐⭐ for a read to count toward the next level.`;
+      // say exactly what this read got vs. what ⭐⭐⭐ needs
+      const L = levelDef(a.level), passAcc = a.kind === 'story' ? 0.95 : (L.pass || 0.9);
+      const gap = st === 3 ? '' : [
+        !a.quiet && R.accuracy < passAcc ? `You read ${R.correct} of ${R.total} ${a.kind === 'letters' ? 'sounds' : 'words'} right. ⭐⭐⭐ needs ${Math.ceil(passAcc * R.total - 1e-9)}.` : '',
+        quiz && quiz.c / quiz.t < 0.8 ? `You got ${quiz.c} of ${quiz.t} questions. ⭐⭐⭐ needs ${Math.ceil(0.8 * quiz.t - 1e-9)}.` : ''
+      ].filter(Boolean).join(' ') + ' ';
+      const failAcc = a.kind === 'story' ? 0.85 : (a.kind === 'letters' ? 0.6 : 0.7);
+      const rough = R.accuracy < failAcc || (quiz && quiz.c / quiz.t < 0.6), cur = Math.min(K.passStreak||0, LEVEL_UP_STREAK);
+      lvlNote.textContent = gap + (st === 3
+        ? (have >= LEVEL_UP_STREAK ? (bossFor(K.level) ? `🎉 That's ${LEVEL_UP_STREAK} great reads. ⚔️ The boss is coming!` : `🎉 That's ${LEVEL_UP_STREAK} great reads. ${kid === 'daughter' ? 'Rank' : 'Level'} up!`) : `✅ This counts! ${have} of ${LEVEL_UP_STREAK} toward the next ${kid === 'daughter' ? 'rank' : 'level'}.`)
+        : rough ? `Your star boxes go from ${cur} to ${Math.max(0, cur - 1)} of ${LEVEL_UP_STREAK}. You can do it next time!`
+        : `Good read! Your star boxes stay at ${cur} of ${LEVEL_UP_STREAK}.`);
     }
     statsBox.innerHTML = '';
     if (!a.quiet) statsBox.append(el('div',{class:'stat'}, el('b',{}, Math.round(R.accuracy*100)+'%'), el('span',{},'words read right')));
