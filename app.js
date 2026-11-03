@@ -442,9 +442,9 @@ function screenProfiles(){
     el('div',{class:'topbar center'}, el('div',{}, el('h1',{class:'title center'},'📚 Reading Quest'), el('p',{class:'subtitle center'},'Who is reading today?'))),
     el('div',{class:'profiles'},
       el('button',{class:'profile daughter', onclick:()=>{ beep('tap'); enterKid('daughter'); }},
-        DB.kids.daughter.avatar.base ? el('div',{html: avatarSVG(DB.kids.daughter.avatar, 120)}) : el('div',{class:'pic'},'🐰'), DB.names.daughter, el('small',{},'Dragon Academy · Sunny Day Club')),
+        DB.kids.daughter.hero ? profileHero('daughter') : DB.kids.daughter.avatar.base ? el('div',{html: avatarSVG(DB.kids.daughter.avatar, 120)}) : el('div',{class:'pic'},'🐰'), DB.names.daughter, el('small',{},'Dragon Academy · Sunny Day Club')),
       el('button',{class:'profile son', onclick:()=>{ beep('tap'); enterKid('son'); }},
-        DB.kids.son.avatar.base ? el('div',{html: avatarSVG(DB.kids.son.avatar, 120)}) : el('div',{class:'pic'},'🐲'), DB.names.son, el('small',{},`${CAT} & Pals · Detective ${CAT}`))
+        DB.kids.son.hero ? profileHero('son') : DB.kids.son.avatar.base ? el('div',{html: avatarSVG(DB.kids.son.avatar, 120)}) : el('div',{class:'pic'},'🐲'), DB.names.son, el('small',{},`${CAT} & Pals · Detective ${CAT}`))
     ),
     cloudStatusNode(),
     el('button',{class:'gear', onclick:()=>screenPin()},'⚙︎ Grown-ups')
@@ -482,6 +482,7 @@ function screenHome(msg){
   stopAll();
   { const h = $('.boss-hud'); if (h) h.remove(); }
   if (!K.avatar.base || !AVATAR_BASES[K.avatar.base] || !AVATAR_BASES[K.avatar.base].kid) return screenAvatarPick();
+  if (!K.hero) return screenHeroCreate();
   if (awardTrophiesUpTo(K.level).length) save();
   if (K.giftMsg){ msg = msg ? K.giftMsg + ' ' + msg : K.giftMsg; delete K.giftMsg; save(); confetti(80); beep('level'); }
   const L = levelDef(K.level);
@@ -539,14 +540,18 @@ function screenHome(msg){
     el('h2',{},'Spelling Practice'),
     el('p',{},'Hear a word, then build it with letter tiles! +1 ⭐ for each word you spell on the first try.'),
     el('button',{class:'btn big blue', onclick:()=>{ beep('tap'); startSpelling(); }},'✏️ Spell')));
-  const avatar = avatarNode(150);
+  const avatar = K.hero ? heroNode(150) : avatarNode(150);
   avatar.classList.add('mascot-av');
-  avatar.onclick = () => screenShop();
+  avatar.onclick = () => K.hero ? screenArmory() : screenShop();
   const s = el('div',{class:'screen'},
     el('div',{class:'topbar'},
       homeBtn(),
       el('div',{class:'row'},
+        el('button',{class:'btn small town-btn', onclick:()=>{ beep('tap'); screenTownSquare(); }},'🏰 Town Square'),
         el('button',{class:'btn ghost small', onclick:()=>screenWorld()},'🏗️ My World'),
+        el('button',{class:'btn ghost small', onclick:screenQuestMap},'🗺️ Quest Map'),
+        el('button',{class:'btn ghost small', onclick:screenArmory},'🛡️ Armory'),
+        el('button',{class:'btn ghost small', onclick:screenHeroHall},'🏛️ Heroes'),
         el('button',{class:'btn ghost small', onclick:screenRealBooks},'📚 Real Books'),
         el('button',{class:'btn ghost small', onclick:()=>{ ensureSkillStart(); screenPath(); }},'🧠 Skills'),
         el('button',{class:'btn ghost small', onclick:screenShop},'🛍️ Shop'),
@@ -1552,6 +1557,7 @@ async function commitResults(stars, quiz){
       el('p',{}, mastered.map(w => (K.words[w].disp||w)).join(', ') + ' — read right 3 times in a row!')), [['Yes! ▶','',1]]);
   }
   if (stars >= 2 && r.opts.mode === 'normal') await giveReward();
+  if (stars >= 2 && r.opts.mode === 'normal') await maybeGearDrop();
   if (stars >= 3 && r.opts.mode === 'normal') await maybeStarfallChest(); // super rare mythic drop
   if (levelUp){
     const newTrophies = awardTrophiesUpTo(K.level); save();
@@ -1944,6 +1950,9 @@ const BADGES = [
   ['skill5','🧠','Sound Expert','Master 5 phonics skills', k => Object.values(k.skills||{}).filter(s => s.mastered).length >= 5],
   ['speed','🚀','Speed Reader','Beat your own reading speed', k => Object.keys((k.path||{}).best||{}).length >= 1],
   ['top','🏆','Top of the Track','Reach the highest level', k => k.level >= TRACKS[kid].levels.length],
+  ['gear1','🛡️','Geared Up','Collect your first gear piece', k => Object.entries((k.gear||{}).owned||{}).some(([id, l]) => id !== 'traveler' && l.length)],
+  ['set1','✨','Full Set','Collect a complete 8-piece gear set', k => (k.setsDone||[]).length >= 1],
+  ['set4','👑','Armor Master','Collect 4 complete gear sets', k => (k.setsDone||[]).length >= 4],
   ['boss1','⚔️','Boss Slayer','Defeat your first boss', k => (k.bossesBeaten||[]).length >= 1],
   ['boss4','🛡️','Boss Hunter','Defeat 4 bosses', k => (k.bossesBeaten||[]).length >= 4],
   ['bossfinal','👑','Reading Legend','Defeat the final boss', k => (k.bossesBeaten||[]).includes(TRACKS[kid].levels.length)],
@@ -2057,6 +2066,13 @@ SHOP.push(
   ['aura','a_sparkle','Sparkles',20], ['aura','a_hearts','Floating Hearts',20], ['aura','a_stars','Star Swirl',25], ['aura','a_snow','Snowflakes',20],
   ['aura','a_bubbles','Bubbles',15], ['aura','a_bolt','Lightning Power',35], ['aura','a_fire','Fire Power',50,5], ['aura','a_rainbow','Rainbow Glow',60,6]
 );
+SHOP.forEach(s => SHOP_BY_ID[s[1]] = s);
+const LASERS = { laser_blue:'#38bdf8', laser_green:'#4ade80', laser_pink:'#f472b6', laser_red:'#ef4444', laser_purple:'#a855f7', laser_gold:'#facc15' };
+Object.entries(LASERS).forEach(([id, c]) => {
+  HAND[id] = () => `<line x1="160" y1="140" x2="188" y2="52" stroke="${c}" stroke-width="16" stroke-linecap="round" opacity=".35"/><line x1="160" y1="140" x2="188" y2="52" stroke="${c}" stroke-width="9" stroke-linecap="round"/><line x1="160" y1="140" x2="188" y2="52" stroke="#fff" stroke-width="3.5" stroke-linecap="round"/><rect x="150" y="136" width="16" height="34" rx="4" transform="rotate(18 158 153)" fill="#94a3b8" stroke="#0f172a" stroke-width="3"/><rect x="151" y="146" width="14" height="4" transform="rotate(18 158 153)" fill="#0f172a"/>`;
+});
+SHOP.push(['hand','laser_blue','Blue Laser Sword',30], ['hand','laser_green','Green Laser Sword',30], ['hand','laser_pink','Pink Laser Sword',30],
+  ['hand','laser_red','Red Laser Sword',35], ['hand','laser_purple','Purple Laser Sword',35], ['hand','laser_gold','Golden Laser Sword',60,5]);
 SHOP.forEach(s => SHOP_BY_ID[s[1]] = s);
 Object.assign(SLOT_NAMES, { shield:'Shields', neck:'Necklaces', pet:'Pets', aura:'Magic Glow' });
 
@@ -2199,6 +2215,80 @@ const WORLD_ITEMS = [
   ['holiday','lantern','🏮','Paper Lantern',15], ['holiday','redenvelope','🧧','Red Envelope',10], ['holiday','menorah','🕎','Menorah',20],
   ['holiday','diya','🪔','Diya Lamp',15], ['holiday','candles','🕯️','Candles',8]
 ];
+
+/* ---------- Town: original drawn buildings, shops, restaurants and vehicles ----------
+   Each entry draws an SVG sized in em, so the world's Bigger/Smaller buttons still work. */
+const TOWN_INK = '#1f2937';
+const svgItem = (w, h, body) => `<svg viewBox="0 0 ${w} ${h}" style="width:${(w/60).toFixed(2)}em;height:${(h/60).toFixed(2)}em;display:block;overflow:visible" xmlns="http://www.w3.org/2000/svg">${body}</svg>`;
+const awning = (x, y, w, c1, c2) => { let s = ''; const n = Math.max(4, Math.round(w / 16)), sw = w / n; for (let i = 0; i < n; i++) s += `<path d="M${x+i*sw} ${y} h${sw} v14 q-${sw/2} 10 -${sw} 0z" fill="${i%2 ? c2 : c1}" stroke="${TOWN_INK}" stroke-width="2"/>`; return s; };
+const winRow = (x, y, n, w, gap, col='#bae6fd') => Array.from({length:n}, (_, i) => `<rect x="${x+i*(w+gap)}" y="${y}" width="${w}" height="${w*1.1}" rx="3" fill="${col}" stroke="${TOWN_INK}" stroke-width="2"/><path d="M${x+i*(w+gap)+w/2} ${y} v${w*1.1}" stroke="#fff" stroke-width="1.5" opacity=".7"/>`).join('');
+function shop(wall, a1, a2, sign, label, extra=''){
+  return svgItem(150, 130, `<rect x="8" y="34" width="134" height="92" rx="4" fill="${wall}" stroke="${TOWN_INK}" stroke-width="3"/>
+    <rect x="16" y="6" width="118" height="30" rx="8" fill="#fff" stroke="${TOWN_INK}" stroke-width="3"/><text x="75" y="27" text-anchor="middle" font-family="Lilita One,Fredoka,sans-serif" font-size="17" fill="${TOWN_INK}">${sign} ${label}</text>
+    ${awning(10, 44, 130, a1, a2)}
+    <rect x="18" y="68" width="62" height="40" rx="3" fill="#bae6fd" stroke="${TOWN_INK}" stroke-width="2.5"/><path d="M26 72 l12 30" stroke="#fff" stroke-width="3" opacity=".7"/>
+    <rect x="92" y="66" width="38" height="60" rx="3" fill="${a1}" stroke="${TOWN_INK}" stroke-width="2.5"/><circle cx="122" cy="98" r="3" fill="#facc15"/>${extra}`);
+}
+const TOWN_SVG = {
+  dreamhouse: svgItem(220, 190, `<rect x="20" y="70" width="180" height="116" rx="6" fill="#fbcfe8" stroke="${TOWN_INK}" stroke-width="3"/>
+    <path d="M10 74 L110 14 L210 74z" fill="#ec4899" stroke="${TOWN_INK}" stroke-width="3" stroke-linejoin="round"/><circle cx="110" cy="50" r="12" fill="#fff" stroke="${TOWN_INK}" stroke-width="2.5"/><path d="M104 50 l6 -6 l6 6 l-6 6z" fill="#f472b6"/>
+    <rect x="20" y="120" width="180" height="6" fill="#f9a8d4"/>
+    ${winRow(34, 84, 4, 26, 20, '#fdf2f8')}${winRow(34, 134, 1, 26, 0, '#fdf2f8')}${winRow(150, 134, 1, 26, 0, '#fdf2f8')}
+    <path d="M94 186 v-38 a16 16 0 0 1 32 0 v38z" fill="#f472b6" stroke="${TOWN_INK}" stroke-width="2.5"/><circle cx="120" cy="168" r="2.5" fill="#fde047"/>
+    <path d="M200 120 h16 v10 h-16" fill="#fff" stroke="${TOWN_INK}" stroke-width="2"/><path d="M216 130 q20 20 6 56" stroke="#f9a8d4" stroke-width="10" fill="none" stroke-linecap="round"/>
+    <rect x="-30" y="166" width="70" height="20" rx="8" fill="#67e8f9" stroke="${TOWN_INK}" stroke-width="2.5"/>
+    ${[40,70,150,180].map(x => `<path d="M${x} 186 q-6 -12 0 -18 q6 6 0 18z" fill="#f472b6"/>`).join('')}<path d="M100 74 q10 -8 20 0" stroke="#fde047" stroke-width="3" fill="none"/>`),
+  herocar: svgItem(200, 80, `<path d="M6 56 q4 -18 30 -22 l40 -16 h44 l34 16 q30 4 40 22 l-4 10 h-180z" fill="#111827" stroke="#374151" stroke-width="3" stroke-linejoin="round"/>
+    <path d="M150 34 l38 -26 l-4 30z M44 34 l-30 -20 l2 26z" fill="#111827" stroke="#374151" stroke-width="2.5"/>
+    <path d="M82 22 h34 l22 14 h-72z" fill="#38bdf8" opacity=".85"/><path d="M16 50 h170" stroke="#facc15" stroke-width="3"/>
+    <circle cx="44" cy="66" r="14" fill="#1f2937" stroke="#6b7280" stroke-width="4"/><circle cx="156" cy="66" r="14" fill="#1f2937" stroke="#6b7280" stroke-width="4"/><circle cx="44" cy="66" r="4" fill="#facc15"/><circle cx="156" cy="66" r="4" fill="#facc15"/>
+    <path d="M186 50 h12 M-2 54 l-8 2" stroke="#fde047" stroke-width="4" stroke-linecap="round"/><path d="M0 48 q-14 2 -20 10 q12 -2 18 2" fill="#f97316" class="flame"/>`),
+  pizza: shop('#fef3c7', '#dc2626', '#fff', '🍕', 'Pizza Place', `<circle cx="49" cy="88" r="14" fill="#fbbf24" stroke="#b45309" stroke-width="2"/><circle cx="44" cy="84" r="3" fill="#dc2626"/><circle cx="54" cy="90" r="3" fill="#dc2626"/>`),
+  burger: shop('#e0f2fe', '#ef4444', '#facc15', '🍔', 'Burger Diner'),
+  icecream: shop('#fce7f3', '#f9a8d4', '#fff', '🍦', 'Ice Cream'),
+  bakery: shop('#fef9c3', '#a16207', '#fde68a', '🧁', 'Bakery'),
+  sushi: shop('#fff7ed', '#111827', '#ef4444', '🍣', 'Sushi Bar'),
+  noodles: shop('#fee2e2', '#dc2626', '#facc15', '🍜', 'Noodle House'),
+  cafe: shop('#ecfccb', '#16a34a', '#fff', '☕', 'Café'),
+  candy: shop('#fae8ff', '#c026d3', '#fff', '🍭', 'Candy Shop'),
+  toystore: shop('#dbeafe', '#2563eb', '#facc15', '🧸', 'Toy Store'),
+  bookstore: shop('#ede9fe', '#7c3aed', '#fff', '📚', 'Book Shop'),
+  petshop: shop('#dcfce7', '#22c55e', '#fff', '🐾', 'Pet Shop'),
+  flowers: shop('#fdf2f8', '#ec4899', '#86efac', '🌷', 'Flowers'),
+  market: shop('#fef3c7', '#16a34a', '#fde68a', '🍎', 'Market'),
+  arcade: shop('#1e1b4b', '#7c3aed', '#22d3ee', '🕹️', 'Arcade'),
+  cinema: svgItem(170, 150, `<rect x="10" y="40" width="150" height="106" rx="4" fill="#7f1d1d" stroke="${TOWN_INK}" stroke-width="3"/><rect x="24" y="6" width="122" height="38" rx="6" fill="#111827" stroke="#facc15" stroke-width="3"/><text x="85" y="32" text-anchor="middle" font-family="Bangers,Lilita One,sans-serif" font-size="22" fill="#facc15" letter-spacing="2">CINEMA</text>${[30,50,70,90,110,130].map(x => `<circle cx="${x}" cy="44" r="3" fill="#fde047"/>`).join('')}<rect x="24" y="60" width="122" height="30" rx="3" fill="#fff" stroke="${TOWN_INK}" stroke-width="2"/><text x="85" y="81" text-anchor="middle" font-family="Lilita One,sans-serif" font-size="14" fill="#7f1d1d">🍿 NOW SHOWING</text><path d="M62 146 v-36 h46 v36" fill="#fde68a" stroke="${TOWN_INK}" stroke-width="2.5"/><path d="M85 110 v36" stroke="${TOWN_INK}" stroke-width="2"/>`),
+  townhall: svgItem(200, 180, `<path d="M20 64 L100 18 L180 64z" fill="#e2e8f0" stroke="${TOWN_INK}" stroke-width="3" stroke-linejoin="round"/><circle cx="100" cy="46" r="11" fill="#fff" stroke="${TOWN_INK}" stroke-width="2.5"/><path d="M100 40 v6 l4 3" stroke="${TOWN_INK}" stroke-width="2" fill="none"/>
+    <rect x="22" y="64" width="156" height="10" fill="#cbd5e1" stroke="${TOWN_INK}" stroke-width="2.5"/>${[34,62,90,118,146].map(x => `<rect x="${x}" y="74" width="16" height="84" fill="#f8fafc" stroke="${TOWN_INK}" stroke-width="2"/>`).join('')}
+    <rect x="14" y="158" width="172" height="10" fill="#cbd5e1" stroke="${TOWN_INK}" stroke-width="2.5"/><rect x="6" y="168" width="188" height="10" fill="#94a3b8" stroke="${TOWN_INK}" stroke-width="2.5"/><path d="M100 18 v-14 l18 6 l-18 6" fill="#ef4444" stroke="${TOWN_INK}" stroke-width="1.5"/>`),
+  clocktower: svgItem(70, 210, `<rect x="14" y="60" width="42" height="146" fill="#d6b88a" stroke="${TOWN_INK}" stroke-width="3"/><path d="M8 62 L35 14 L62 62z" fill="#1e3a8a" stroke="${TOWN_INK}" stroke-width="3"/><circle cx="35" cy="86" r="16" fill="#fff" stroke="${TOWN_INK}" stroke-width="3"/><path d="M35 76 v10 l7 5" stroke="${TOWN_INK}" stroke-width="2.5" fill="none"/>${[120,150,180].map(y => `<rect x="27" y="${y}" width="16" height="18" rx="8" fill="#bae6fd" stroke="${TOWN_INK}" stroke-width="2"/>`).join('')}`),
+  skyscraper: svgItem(90, 260, `<rect x="10" y="20" width="70" height="236" fill="#60a5fa" stroke="${TOWN_INK}" stroke-width="3"/>${Array.from({length:11}, (_, r) => winRow(18, 30 + r*20, 4, 10, 6, r % 3 ? '#e0f2fe' : '#fde68a')).join('')}<path d="M45 20 v-18" stroke="${TOWN_INK}" stroke-width="3"/><circle cx="45" cy="2" r="4" fill="#ef4444"/>`),
+  apartments: svgItem(130, 190, `<rect x="8" y="16" width="114" height="170" fill="#fda4af" stroke="${TOWN_INK}" stroke-width="3"/><rect x="2" y="8" width="126" height="12" fill="#e11d48" stroke="${TOWN_INK}" stroke-width="2.5"/>${Array.from({length:5}, (_, r) => winRow(18, 30 + r*28, 4, 18, 8)).join('')}<rect x="50" y="160" width="30" height="26" fill="#7c2d12" stroke="${TOWN_INK}" stroke-width="2"/>`),
+  firestation: shop('#fecaca', '#dc2626', '#fff', '🚒', 'Fire Station'),
+  police: shop('#dbeafe', '#1e3a8a', '#fff', '🚓', 'Police'),
+  hospital: shop('#f8fafc', '#ef4444', '#fff', '🏥', 'Hospital'),
+  library: shop('#fef3c7', '#92400e', '#fde68a', '📖', 'Library'),
+  lamp: svgItem(30, 130, `<rect x="13" y="20" width="5" height="106" fill="#334155"/><rect x="6" y="122" width="19" height="6" rx="2" fill="#334155"/><path d="M4 22 h22 l-4 -14 h-14z" fill="#334155"/><circle cx="15" cy="20" r="6" fill="#fde68a" class="sc-firefly"/>`),
+  bench: svgItem(110, 56, `<rect x="6" y="10" width="98" height="10" rx="3" fill="#a16207" stroke="${TOWN_INK}" stroke-width="2"/><rect x="6" y="26" width="98" height="10" rx="3" fill="#a16207" stroke="${TOWN_INK}" stroke-width="2"/><path d="M14 36 v18 M96 36 v18" stroke="#334155" stroke-width="5"/>`),
+  road: svgItem(240, 34, `<rect x="0" y="0" width="240" height="34" fill="#4b5563"/><path d="M0 17 h240" stroke="#facc15" stroke-width="4" stroke-dasharray="22 16"/><rect x="0" y="0" width="240" height="3" fill="#9ca3af"/><rect x="0" y="31" width="240" height="3" fill="#9ca3af"/>`),
+  crosswalk: svgItem(120, 34, `<rect x="0" y="0" width="120" height="34" fill="#4b5563"/>${[6,26,46,66,86,106].map(x => `<rect x="${x}" y="3" width="10" height="28" fill="#f8fafc"/>`).join('')}`),
+  stall: svgItem(110, 100, `${awning(4, 4, 102, '#f97316', '#fff')}<rect x="10" y="20" width="90" height="10" fill="#fff" stroke="${TOWN_INK}" stroke-width="2"/><path d="M14 30 v66 M96 30 v66" stroke="#7c4a24" stroke-width="5"/><rect x="8" y="60" width="94" height="36" fill="#a16207" stroke="${TOWN_INK}" stroke-width="2"/><text x="55" y="58" text-anchor="middle" font-size="22">🍉🍋🍓</text>`),
+  planter: svgItem(90, 60, `<rect x="6" y="28" width="78" height="30" rx="4" fill="#a16207" stroke="${TOWN_INK}" stroke-width="2"/>${[16,30,44,58,72].map((x,i) => `<circle cx="${x}" cy="24" r="9" fill="${['#f472b6','#facc15','#a78bfa','#fb7185','#f97316'][i]}" stroke="${TOWN_INK}" stroke-width="1.5"/>`).join('')}`),
+  tacotruck: svgItem(180, 110, `<rect x="6" y="20" width="120" height="70" rx="8" fill="#facc15" stroke="${TOWN_INK}" stroke-width="3"/><path d="M126 40 h28 l18 22 v28 h-46z" fill="#facc15" stroke="${TOWN_INK}" stroke-width="3"/><path d="M134 46 h18 l12 16 h-30z" fill="#bae6fd" stroke="${TOWN_INK}" stroke-width="2"/><rect x="20" y="32" width="80" height="30" rx="4" fill="#fff" stroke="${TOWN_INK}" stroke-width="2"/><text x="60" y="54" text-anchor="middle" font-family="Lilita One,sans-serif" font-size="16" fill="#b91c1c">🌮 TACOS</text>${awning(16, 22, 92, '#ef4444', '#16a34a')}<circle cx="40" cy="92" r="12" fill="#1f2937" stroke="#6b7280" stroke-width="4"/><circle cx="146" cy="92" r="12" fill="#1f2937" stroke="#6b7280" stroke-width="4"/>`)
+};
+
+WORLD_ITEMS.push(
+  ['dream','dreamhouse','🏩','Pink Dream Mansion',80], ['dream','herocar','🦇','Midnight Hero Car',70], ['dream','townhall','🏛️','Town Hall',50],
+  ['dream','clocktower','🕰️','Clock Tower',35], ['dream','skyscraper','🏙️','Skyscraper',40], ['dream','apartments','🏢','Apartments',30], ['dream','cinema','🎬','Movie Theater',45],
+  ['food','pizza','🍕','Pizza Place',30], ['food','burger','🍔','Burger Diner',30], ['food','icecream','🍦','Ice Cream Shop',25], ['food','bakery','🧁','Bakery',25],
+  ['food','sushi','🍣','Sushi Bar',30], ['food','noodles','🍜','Noodle House',30], ['food','cafe','☕','Café',20], ['food','candy','🍭','Candy Shop',25], ['food','tacotruck','🌮','Taco Truck',25], ['food','stall','🍉','Fruit Stall',15],
+  ['shops','toystore','🧸','Toy Store',30], ['shops','bookstore','📚','Book Shop',20], ['shops','petshop','🐾','Pet Shop',25], ['shops','flowers','🌷','Flower Shop',20],
+  ['shops','market','🍎','Market',25], ['shops','arcade','🕹️','Arcade',35], ['shops','library','📖','Library',20], ['shops','firestation','🚒','Fire Station',30],
+  ['shops','police','🚓','Police Station',30], ['shops','hospital','🏥','Hospital',30],
+  ['street','road','🛣️','Road',5], ['street','crosswalk','🚸','Crosswalk',5], ['street','lamp','💡','Street Lamp',5], ['street','bench','🪑','Park Bench',5],
+  ['street','planter','🌼','Flower Planter',5], ['street','trafficlight','🚦','Traffic Light',5], ['street','busstop','🚏','Bus Stop',8], ['street','bus','🚌','City Bus',25],
+  ['street','taxi','🚕','Taxi',15], ['street','scooter2','🛵','Moped',10], ['street','statue','🗽','Town Statue',30]
+);
 const WORLD_BY_ID = Object.fromEntries(WORLD_ITEMS.map(i => [i[1], i]));
 
 /* ---------- Legendary & Mythic world items ----------
@@ -2306,7 +2396,7 @@ async function maybeStarfallChest(){
   K.mythics = (K.mythics || []).concat(m.id); save();
   await epicReveal(m, 'mythic', 'MYTHIC FOUND!', 'Only found in Starfall Chests. Place it in My World › ✨ Legendary!');
 }
-const WORLD_CATS = { home:'🏠 Buildings', nature:'🌳 Nature', fun:'🎡 Fun', ride:'🚀 Rides', animal:'🦖 Animals', holiday:'🎉 Holidays', friends:'💛 My Friends' };
+const WORLD_CATS = { dream:'🏙️ Town', food:'🍕 Food', shops:'🛍️ Shops', street:'🚦 Streets', home:'🏠 Buildings', nature:'🌳 Nature', fun:'🎡 Fun', ride:'🚀 Rides', animal:'🦖 Animals', holiday:'🎉 Holidays', friends:'💛 My Friends' };
 const WORLD_THEMES = {
   meadow:  { name:'Sunny Meadow', price:0,  sky:'linear-gradient(#7dd3fc,#e0f2fe)', ground:'linear-gradient(#86efac,#22c55e)' },
   beach:   { name:'Beach Day',    price:25, sky:'linear-gradient(#38bdf8,#bae6fd)', ground:'linear-gradient(#fde68a 0 45%,#38bdf8 45%)' },
@@ -2314,7 +2404,25 @@ const WORLD_THEMES = {
   night:   { name:'Night Sky',    price:30, sky:'radial-gradient(#fff 1px,transparent 1.5px) 0 0/40px 40px, linear-gradient(#0f172a,#312e81)', ground:'linear-gradient(#166534,#14532d)' },
   candy:   { name:'Candy Land',   price:40, sky:'linear-gradient(#fbcfe8,#fdf2f8)', ground:'repeating-linear-gradient(45deg,#f9a8d4 0 20px,#fff 20px 40px)' },
   space:   { name:'Outer Space',  price:40, sky:'radial-gradient(#fff 1.2px,transparent 1.7px) 0 0/34px 34px, linear-gradient(#020617,#1e1b4b)', ground:'radial-gradient(#94a3b8 10px,transparent 11px) 0 0/60px 40px, linear-gradient(#64748b,#334155)' },
-  lava:    { name:'Volcano Island', price:40, sky:'linear-gradient(#7c2d12,#fb923c)', ground:'linear-gradient(#292524,#7f1d1d)' }
+  lava:    { name:'Volcano Island', price:40, sky:'linear-gradient(#7c2d12,#fb923c)', ground:'linear-gradient(#292524,#7f1d1d)' },
+  // ---- new places (Nov 2) ----
+  town:      { name:'Town Center',       price:30, sky:'linear-gradient(#60a5fa,#e0f2fe)', ground:'linear-gradient(#e7e5e4,#d6d3d1)' },
+  sunset:    { name:'Sunset Beach',      price:30, sky:'linear-gradient(#f97316,#fde68a)' },
+  tropic:    { name:'Tropical Island',   price:35, sky:'linear-gradient(#22d3ee,#a5f3fc)' },
+  forest:    { name:'Enchanted Forest',  price:30, sky:'linear-gradient(#065f46,#a7f3d0)' },
+  desert:    { name:'Desert Dunes',      price:30, sky:'linear-gradient(#fb923c,#fef3c7)' },
+  waterpark: { name:'Splash Water Park', price:45, sky:'linear-gradient(#0ea5e9,#e0f2fe)' },
+  jungle:    { name:'Jungle Falls',      price:40, sky:'linear-gradient(#15803d,#bbf7d0)' },
+  under:     { name:'Under the Sea',     price:45, sky:'linear-gradient(#0c4a6e,#22d3ee)' },
+  rainbow:   { name:'Rainbow Land',      price:40, sky:'linear-gradient(#f472b6,#a78bfa,#60a5fa)' },
+  castle:    { name:'Castle Kingdom',    price:45, sky:'linear-gradient(#6366f1,#e0e7ff)' },
+  dino:      { name:'Dino Valley',       price:40, sky:'linear-gradient(#ca8a04,#fef9c3)' },
+  pirate:    { name:'Pirate Cove',       price:40, sky:'linear-gradient(#1e3a8a,#93c5fd)' },
+  farm:      { name:'Autumn Farm',       price:30, sky:'linear-gradient(#f59e0b,#fef3c7)' },
+  blossom:   { name:'Cherry Blossom Garden', price:35, sky:'linear-gradient(#f9a8d4,#fdf2f8)' },
+  skycity:   { name:'Sky City',          cosmic:8,  sky:'linear-gradient(#3b82f6,#c7d2fe)' },
+  clouds:    { name:'Cloud Kingdom',     cosmic:8,  sky:'linear-gradient(#a5b4fc,#fdf4ff)' },
+  aurora:    { name:'Northern Lights',   cosmic:10, sky:'linear-gradient(#020617,#065f46,#7c3aed)' }
 };
 const WORLD_W = 1800, WORLD_H = 470, GROUND_Y = 300;
 
@@ -2329,7 +2437,71 @@ const SCENE_PAL = {
   night: { sky:['#070b22','#2b2f7d'], sun:'#fef6c3', far:'#283363', mid:'#323d6c', midHi:'#46538a', cap:'#c7d2fe', hill:'#1f5c3a', hill2:'#174a2f', tree:'#0f3d26', tree2:'#0a2c1b', water:['#2849a8','#0b1a4a'], sand:'#8f8c78', grass:['#2f7a45','#1c5530'], tuft:'#174a2a', trees:'pine', stars:true },
   candy: { sky:['#ffbde4','#fff1f9'], sun:'#ffffff', far:'#f7add6', mid:'#ea8dc6', midHi:'#ffd0ea', cap:'#ffffff', hill:'#ffb6dc', hill2:'#f79ccc', tree:'#c084fc', tree2:'#a855f7', water:['#cbbcff','#a58bfa'], sand:'#ffe3f4', grass:['#ffd3ee','#f9a8d4'], tuft:'#f472b6', trees:'lolly' },
   space: { sky:['#020617','#231e5c'], sun:'#fb923c', far:'#4c1d95', mid:'#5b21b6', midHi:'#7c3aed', cap:'#c4b5fd', hill:'#3b4558', hill2:'#2b3446', tree:'#22d3ee', tree2:'#0e7490', water:['#2ee6ff','#6366f1'], sand:'#9aa6b8', grass:['#6b778c','#3a4457'], tuft:'#4b566b', trees:'crystal', stars:true },
+  town:     { sky:['#5aa9ff','#e3f2ff'], sun:'#fff7c2', far:'#a8bfdc', mid:'#8ea4c2', midHi:'#c1d0e4', cap:'#ffffff', hill:'#7cc96e', hill2:'#5aab55', tree:'#22a05a', tree2:'#15803d', water:['#7dd3fc','#0ea5e9'], sand:'#d6d3d1', grass:['#e7e5e4','#d6d3d1'], tuft:'#e7e5e4', trees:'round', noMtn:true, noDock:true, extra:'town' },
+  sunset:   { sky:['#ff7a3d','#ffe3a3'], sun:'#ffefb0', far:'#c46b8e', mid:'#a35a7d', midHi:'#d892a6', cap:'#ffd1c4', hill:'#7fbf6a', hill2:'#5d9a52', tree:'#2f7a46', tree2:'#7c5a33', water:['#ff9f6b','#7c3aed'], sand:'#ffd39a', grass:['#ffd39a','#f2b66c'], tuft:'#d99a4b', trees:'palm', extra:'sunset' },
+  tropic:   { sky:['#19c8f0','#e6fcff'], sun:'#fff7b0', far:'#9be3d6', mid:'#4fb38a', midHi:'#86d9b4', cap:'#4fb38a', hill:'#38b26b', hill2:'#249a57', tree:'#1f9a52', tree2:'#7c5a33', water:['#2df0e6','#0a8fd6'], sand:'#fff0b8', grass:['#fff0b8','#f6d987'], tuft:'#e2bd62', trees:'palm', extra:'tropic', noMtn:true },
+  forest:   { sky:['#2d8f6f','#d4f7e6'], sun:'#fffbd1', far:'#4e9b7e', mid:'#2f6f57', midHi:'#4f9478', cap:'#2f6f57', hill:'#2e8b4f', hill2:'#1f6b3c', tree:'#166534', tree2:'#14532d', water:['#57d5c8','#1d8a87'], sand:'#a07a52', grass:['#4caf50','#2e7d32'], tuft:'#1b5e20', trees:'oak', dense:true, extra:'forest' },
+  desert:   { sky:['#ff9e4a','#fff2cc'], sun:'#fff7c2', far:'#e8b37a', mid:'#d99a5e', midHi:'#f2c58e', cap:'#d99a5e', hill:'#f0c27e', hill2:'#e0a964', tree:'#3f8f4f', tree2:'#2d6b3a', water:['#3fd0e8','#1792c9'], sand:'#f4d08f', grass:['#f6d59a','#e7b86d'], tuft:'#c99247', trees:'cactus', extra:'desert' },
+  waterpark:{ sky:['#1fb2f5','#e9f9ff'], sun:'#fffbd1', far:'#b9dcf2', mid:'#8fc3e6', midHi:'#c6e4f7', cap:'#ffffff', hill:'#7bd36b', hill2:'#5bb553', tree:'#2f9e54', tree2:'#7c5a33', water:['#53f2ff','#13a4ec'], sand:'#ffe9b0', grass:['#9be36b','#64c44a'], tuft:'#4ea338', trees:'palm', extra:'waterpark', noMtn:true },
+  jungle:   { sky:['#2fa25c','#dcfce7'], sun:'#fffbd1', far:'#3c8f5a', mid:'#2b7448', midHi:'#3f9562', cap:'#2b7448', hill:'#1f8a3f', hill2:'#166a30', tree:'#15803d', tree2:'#065f46', water:['#5fe3d0','#0f8f84'], sand:'#a8865a', grass:['#3fbf5a','#238a3c'], tuft:'#14532d', trees:'jungle', dense:true, extra:'jungle' },
+  under:    { sky:['#06395e','#2bb7dd'], sun:false, far:'#0b5577', mid:'#0a6a8f', midHi:'#2e8fb3', cap:'#0a6a8f', hill:'#e9cf8f', hill2:'#d4b574', tree:'#fb7185', tree2:'#f59e0b', water:['#1fa7cf','#0b6f99'], sand:'#f3dba0', grass:['#f3dba0','#e2c27e'], tuft:'#2fa36b', trees:'coral', noMtn:true, noDock:true, extra:'under' },
+  rainbow:  { sky:['#ff9fd6','#bfe2ff'], sun:'#ffffff', far:'#d8b4fe', mid:'#c4b5fd', midHi:'#ede9fe', cap:'#ffffff', hill:'#86efac', hill2:'#4ade80', tree:'#f472b6', tree2:'#a78bfa', water:['#a5f3fc','#818cf8'], sand:'#fde68a', grass:['#bbf7d0','#86efac'], tuft:'#f9a8d4', trees:'round', extra:'rainbow' },
+  castle:   { sky:['#6d7cf5','#eef0ff'], sun:'#fff7c2', far:'#a5b0e8', mid:'#8a95cf', midHi:'#c3cbf2', cap:'#ffffff', hill:'#5fbf5f', hill2:'#469f4a', tree:'#1f7a3d', tree2:'#14532d', water:['#60a5fa','#1d4ed8'], sand:'#c9b48a', grass:['#7fd36a','#4fae45'], tuft:'#3a8f33', trees:'pine', extra:'castle' },
+  dino:     { sky:['#e2a33b','#fff7d6'], sun:'#fff3b0', far:'#b88a5a', mid:'#9b6f45', midHi:'#c4976a', cap:'#9b6f45', hill:'#8bbf4a', hill2:'#6a9e35', tree:'#3f7f2a', tree2:'#7c5a33', water:['#4fd1c5','#0f766e'], sand:'#c9a26b', grass:['#9ccc5a','#6b9e35'], tuft:'#4d7c25', trees:'fern', extra:'dino' },
+  pirate:   { sky:['#2b4fa8','#bcd7ff'], sun:'#fff7c2', far:'#5b7bb8', mid:'#4a5f8a', midHi:'#7b8fb5', cap:'#4a5f8a', hill:'#5aa860', hill2:'#3f8a49', tree:'#1f7a3d', tree2:'#7c5a33', water:['#1f6fd1','#0b2e6b'], sand:'#efd7a0', grass:['#efd7a0','#d9b878'], tuft:'#b89350', trees:'palm', extra:'pirate' },
+  farm:     { sky:['#f6a83b','#fff4d6'], sun:'#fff3b0', far:'#d7a46a', mid:'#b98049', midHi:'#dba673', cap:'#b98049', hill:'#d1b04a', hill2:'#b38f2e', tree:'#ea580c', tree2:'#b45309', water:['#7cc6e8','#2f7fb0'], sand:'#c79a5a', grass:['#c8b452','#9c8a2e'], tuft:'#7a6a22', trees:'autumn', extra:'farm', noMtn:true },
+  blossom:  { sky:['#ffb3d9','#fff3fa'], sun:'#ffffff', far:'#e9b7d6', mid:'#cf9fc0', midHi:'#f1cfe3', cap:'#ffffff', hill:'#9ad98b', hill2:'#77c06a', tree:'#f9a8d4', tree2:'#ec4899', water:['#a5d8ff','#5b9bd5'], sand:'#f4e3c8', grass:['#b6e8a2','#8fcf7b'], tuft:'#f472b6', trees:'round', extra:'blossom' },
+  skycity:  { sky:['#3d7bf2','#dfe6ff'], sun:'#ffffff', far:'#b8c6f5', mid:'#9fb0e8', midHi:'#dbe3ff', cap:'#ffffff', hill:'#ffffff', hill2:'#e6ebff', tree:'#7dd3fc', tree2:'#38bdf8', water:['#ffffff','#dbe4ff'], sand:'#ffffff', grass:['#ffffff','#e3e9ff'], tuft:'#c7d2fe', trees:'none', noMtn:true, noDock:true, extra:'skycity' },
+  clouds:   { sky:['#9fb1ff','#fff5ff'], sun:'#fff7c2', far:'#ffffff', mid:'#f5f3ff', midHi:'#ffffff', cap:'#ffffff', hill:'#ffffff', hill2:'#f1eaff', tree:'#fde68a', tree2:'#f9a8d4', water:['#ffffff','#e9e3ff'], sand:'#ffffff', grass:['#ffffff','#efe8ff'], tuft:'#ddd6fe', trees:'none', noMtn:true, noDock:true, extra:'clouds' },
+  aurora:   { sky:['#020617','#0b3b3a'], sun:'#e0f2fe', far:'#1e293b', mid:'#273449', midHi:'#3b4a63', cap:'#e2e8f0', hill:'#e2e8f0', hill2:'#cbd5e1', tree:'#1f4f43', tree2:'#163a31', water:['#1e3a5f','#0b1a33'], sand:'#cbd5e1', grass:['#f1f5f9','#cbd5e1'], tuft:'#94a3b8', trees:'snowpine', stars:true, extra:'aurora' },
   lava:  { sky:['#6f2410','#ff9a4d'], sun:'#ffe08a', far:'#4a2a1d', mid:'#5c3322', midHi:'#7a4a33', cap:'#ff7a3d', hill:'#45403f', hill2:'#36312f', tree:'#1f1a17', tree2:'#000000', water:['#ffb347','#e0321c'], sand:'#80766f', grass:['#4a4542','#2c2826'], tuft:'#1f1b19', trees:'dead' }
+};
+/* Place-specific scenery. SCENE_SKY draws behind the mountains; SCENE_EXTRA draws in front of the
+   hills/trees but behind the lake and grass (the play area). Each gets (width, height, random, palette). */
+const cloudPuff = (x, y, c, col='#fff') => `<g transform="translate(${x} ${y}) scale(${c})"><ellipse cx="0" cy="0" rx="60" ry="22" fill="${col}"/><ellipse cx="-30" cy="-10" rx="30" ry="22" fill="${col}"/><ellipse cx="22" cy="-18" rx="36" ry="28" fill="${col}"/></g>`;
+const SCENE_SKY = {
+  sunset: (W) => `<circle cx="${W/2}" cy="236" r="120" fill="#ffd166" opacity=".9"/><circle cx="${W/2}" cy="236" r="160" fill="#ff8a3d" opacity=".25"/>`,
+  rainbow: (W) => ['#ef4444','#f97316','#facc15','#22c55e','#3b82f6','#8b5cf6'].map((c, i) => `<path d="M${W/2 - 620 + i*22} 250 A${620 - i*22} ${210 - i*8} 0 0 1 ${W/2 + 620 - i*22} 250" fill="none" stroke="${c}" stroke-width="22" opacity=".85"/>`).join(''),
+  aurora: (W, H, R) => [0,1,2].map(i => `<path class="sc-aurora" style="animation-delay:-${i*2}s" d="M0 ${70+i*28} C${W*.2} ${20+i*30} ${W*.4} ${130+i*20} ${W*.6} ${60+i*25} S${W} ${40+i*30} ${W} ${90+i*24}" fill="none" stroke="${['#34d399','#a78bfa','#22d3ee'][i]}" stroke-width="${28-i*6}" opacity=".45" stroke-linecap="round"/>`).join(''),
+  skycity: (W, H, R) => { let s = ''; for (let i = 0; i < 7; i++) s += cloudPuff(R()*W, 200 + R()*60, 1.4 + R(), '#ffffff'); return s; },
+  clouds: (W, H, R) => { let s = ''; for (let i = 0; i < 9; i++) s += cloudPuff(R()*W, 150 + R()*100, 1.3 + R()*1.2, i % 3 ? '#ffffff' : '#fdf4ff'); return s; },
+  under: (W, H, R) => { let s = `<g opacity=".25">`; for (let i = 0; i < 8; i++) s += `<path d="M${R()*W} 0 L${R()*W} 260" stroke="#e0f2fe" stroke-width="${20+R()*40}"/>`; return s + `</g>`; }
+};
+const SCENE_EXTRA = {
+  town: (W, H, R) => { let s = ''; let x = 0;
+    while (x < W){ const w = 50 + R()*70, h = 70 + R()*130, c = ['#93c5fd','#a5b4fc','#fca5a5','#fde68a','#86efac','#c4b5fd','#f9a8d4'][Math.floor(R()*7)];
+      s += `<rect x="${x}" y="${246-h}" width="${w}" height="${h}" fill="${c}" stroke="#475569" stroke-width="2" opacity=".75"/>`;
+      for (let yy = 246-h+10; yy < 236; yy += 18) for (let xx = x+8; xx < x+w-10; xx += 16) s += `<rect x="${xx}" y="${yy}" width="8" height="10" fill="#fff" opacity=".6"/>`;
+      x += w + 4 + R()*20; }
+    return s + `<rect x="0" y="244" width="${W}" height="10" fill="#9ca3af"/>`; },
+  sunset: (W, H, R) => { let s = ''; for (let i = 0; i < 4; i++) s += `<path d="M${200+i*380} 200 l12 -6 l12 6 M${230+i*380} 180 l9 -5 l9 5" stroke="#4a2545" stroke-width="3" fill="none"/>`; return s; },
+  tropic: (W, H, R) => { let s = ''; [[300,1],[900,1.4],[1450,.9]].forEach(([x, k]) => { s += `<ellipse cx="${x}" cy="246" rx="${150*k}" ry="${40*k}" fill="#f6dc8f"/><ellipse cx="${x}" cy="240" rx="${120*k}" ry="${30*k}" fill="#3fbf6b"/>`; }); s += `<g transform="translate(1100 244)"><path d="M-40 0 L40 0 L30 12 L-30 12Z" fill="#8b5a2b"/><path d="M0 0 V-40" stroke="#5b3a1a" stroke-width="3"/><path d="M2 -38 L26 -8 L2 -8Z" fill="#fff"/></g>`; return s; },
+  forest: (W, H, R) => { let s = ''; for (let i = 0; i < 14; i++){ const x = R()*W, y = 240 + R()*10; s += `<g transform="translate(${x} ${y})"><rect x="-3" y="-12" width="6" height="12" fill="#f8fafc"/><ellipse cx="0" cy="-14" rx="12" ry="8" fill="#ef4444"/><circle cx="-4" cy="-16" r="2" fill="#fff"/><circle cx="4" cy="-14" r="1.6" fill="#fff"/></g>`; } for (let i = 0; i < 24; i++) s += `<circle class="sc-firefly" style="animation-delay:-${(R()*4).toFixed(1)}s" cx="${R()*W}" cy="${120+R()*120}" r="2.5" fill="#fef08a"/>`; return s; },
+  desert: (W, H, R) => `<path d="M260 246 L380 120 L500 246Z" fill="#e2b46c"/><path d="M380 120 L500 246 L400 246Z" fill="#c9954d"/><path d="M560 246 L640 160 L720 246Z" fill="#e2b46c"/><path d="M640 160 L720 246 L655 246Z" fill="#c9954d"/><g transform="translate(1300 246)"><ellipse cx="0" cy="0" rx="90" ry="12" fill="#2fb8d8"/><path d="M-50 0 Q-46 -40 -40 -70" stroke="#7c5a33" stroke-width="5" fill="none"/>${[-60,-20,20,60].map(a => `<path d="M-40 -70 q${Math.cos(a*Math.PI/180)*22} -8 ${Math.cos(a*Math.PI/180)*36} 12" stroke="#2f9e54" stroke-width="6" fill="none" stroke-linecap="round"/>`).join('')}</g><g transform="translate(980 230)"><ellipse cx="0" cy="0" rx="26" ry="16" fill="#c08a4a"/><path d="M-10 -12 q4 -14 12 -2 M8 -14 q4 -12 12 0" fill="#c08a4a"/><path d="M20 -8 q14 -10 18 -24" stroke="#c08a4a" stroke-width="8" fill="none" stroke-linecap="round"/><path d="M-16 14 v14 M-4 14 v14 M8 14 v14 M18 14 v14" stroke="#a87438" stroke-width="5"/></g>`,
+  waterpark: (W, H, R) => { const slide = (x, c, flip) => `<g transform="translate(${x} 0) scale(${flip ? -1 : 1} 1)"><rect x="-6" y="90" width="12" height="160" fill="#94a3b8"/><rect x="40" y="120" width="10" height="130" fill="#94a3b8"/><rect x="-24" y="80" width="56" height="14" rx="4" fill="#64748b"/><path d="M20 90 C120 100 20 150 110 170 S60 230 160 246" stroke="${c}" stroke-width="22" fill="none" stroke-linecap="round"/><path d="M20 90 C120 100 20 150 110 170 S60 230 160 246" stroke="#fff" stroke-width="4" fill="none" stroke-dasharray="10 14" opacity=".7"/></g>`;
+    return slide(180, '#f43f5e') + slide(700, '#facc15', true) + slide(1250, '#22c55e') + `<rect x="840" y="226" width="300" height="24" rx="12" fill="#5ee7ff" stroke="#fff" stroke-width="4"/><g class="sc-bob"><circle cx="900" cy="236" r="9" fill="none" stroke="#f97316" stroke-width="5"/><circle cx="1060" cy="238" r="9" fill="none" stroke="#a855f7" stroke-width="5"/></g>${[400,1550,1700].map(x => `<g transform="translate(${x} 246)"><path d="M0 0 V-60" stroke="#475569" stroke-width="3"/><path d="M-30 -56 Q0 -76 30 -56Z" fill="${['#f43f5e','#3b82f6','#facc15'][x%3]}"/></g>`).join('')}`; },
+  jungle: (W, H, R) => `<path d="M780 40 Q760 120 800 246 L860 246 Q830 140 850 40Z" fill="#7dd3fc" opacity=".8"/><path d="M790 40 L795 246 M815 40 L822 246 M838 40 L845 246" stroke="#fff" stroke-width="3" opacity=".7" class="sc-shimmer"/><path d="M700 60 Q750 40 790 40 L850 40 Q910 40 940 60 L940 90 L700 90Z" fill="#57534e"/>${[1,2,3,4,5].map(i => `<path d="M${R()*W} 0 q${(R()-.5)*30} 80 ${(R()-.5)*20} ${120+R()*80}" stroke="#2f7a3a" stroke-width="4" fill="none"/>`).join('')}<g transform="translate(1350 150)"><circle cx="0" cy="0" r="12" fill="#7c4a24"/><circle cx="0" cy="3" r="7" fill="#d4a373"/><path d="M0 12 q20 20 0 40" stroke="#7c4a24" stroke-width="4" fill="none"/></g>`,
+  under: (W, H, R) => { let s = ''; for (let i = 0; i < 26; i++){ const x = R()*W; s += `<path d="M${x} 250 q-8 -30 0 -60 q8 -30 0 -60" stroke="${R() < .5 ? '#16a34a' : '#22c55e'}" stroke-width="6" fill="none" class="sc-sway" style="animation-delay:-${(R()*3).toFixed(1)}s"/>`; }
+    for (let i = 0; i < 10; i++){ const x = R()*W, y = 60 + R()*160, c = ['#fb923c','#facc15','#f472b6','#60a5fa'][i%4]; s += `<g class="sc-fish" style="animation-duration:${(20+R()*20).toFixed(0)}s;animation-delay:-${(R()*20).toFixed(0)}s"><g transform="translate(${x} ${y})"><ellipse cx="0" cy="0" rx="16" ry="9" fill="${c}"/><path d="M14 0 l12 -8 v16z" fill="${c}"/><circle cx="-8" cy="-2" r="2" fill="#000"/></g></g>`; }
+    for (let i = 0; i < 30; i++) s += `<circle class="sc-bubble" style="animation-delay:-${(R()*6).toFixed(1)}s" cx="${R()*W}" cy="${100+R()*150}" r="${2+R()*5}" fill="none" stroke="#e0f2fe" stroke-width="1.5"/>`;
+    return s + `<g transform="translate(1400 238)"><path d="M-40 10 L-30 -20 L30 -20 L40 10Z" fill="#a16207"/><rect x="-32" y="-34" width="64" height="16" rx="6" fill="#ca8a04"/><circle cx="0" cy="-26" r="4" fill="#fde047"/></g>`; },
+  rainbow: (W, H, R) => { let s = ''; for (let i = 0; i < 8; i++) s += cloudPuff(R()*W, 200 + R()*40, .8, '#fff'); for (let i = 0; i < 20; i++) s += `<path class="sc-firefly" style="animation-delay:-${(R()*4).toFixed(1)}s" d="M${R()*W} ${40+R()*180} l3 7 l7 1 l-5 5 l1 7 l-6 -3 l-6 3 l1 -7 l-5 -5 l7 -1z" fill="#fde047"/>`; return s; },
+  castle: (W) => { const x = W/2 - 160, t = (tx, h, c) => `<rect x="${tx}" y="${246-h}" width="44" height="${h}" fill="#cbd5e1" stroke="#64748b" stroke-width="2"/><path d="M${tx-6} ${246-h} L${tx+22} ${246-h-40} L${tx+50} ${246-h}Z" fill="${c}"/><path d="M${tx+22} ${246-h-40} v-18" stroke="#334155" stroke-width="2"/><path d="M${tx+22} ${246-h-58} l16 6 l-16 6z" fill="#facc15"/>`;
+    return `<rect x="${x+40}" y="146" width="240" height="100" fill="#e2e8f0" stroke="#64748b" stroke-width="2"/>${[0,1,2,3,4,5,6,7].map(i => `<rect x="${x+42+i*30}" y="134" width="16" height="14" fill="#e2e8f0" stroke="#64748b" stroke-width="2"/>`).join('')}<path d="M${x+130} 246 v-50 a30 30 0 0 1 60 0 v50z" fill="#7c4a24"/>` + t(x, 150, '#ef4444') + t(x+276, 150, '#ef4444') + t(x+138, 200, '#3b82f6') + `<path d="M${x-120} 246 h560" stroke="#60a5fa" stroke-width="8" opacity=".6"/>`; },
+  dino: (W, H, R) => `<path d="M1200 246 L1300 110 L1340 120 L1420 246Z" fill="#6b4b33"/><path d="M1300 110 q10 -30 30 -60 q10 30 10 70" fill="#ef4444" opacity=".7" class="sc-firefly"/><g transform="translate(420 190)"><ellipse cx="0" cy="20" rx="60" ry="28" fill="#4d7c0f"/><path d="M40 6 Q90 -60 120 -70 q12 -4 12 8 q-6 10 -20 8 Q100 -30 60 14Z" fill="#4d7c0f"/><circle cx="122" cy="-64" r="2.5" fill="#000"/><path d="M-60 20 q-50 0 -80 -10" stroke="#4d7c0f" stroke-width="14" fill="none" stroke-linecap="round"/><path d="M-30 44 v12 M-6 44 v12 M20 44 v12 M38 44 v12" stroke="#3f6212" stroke-width="10" stroke-linecap="round"/></g><g transform="translate(900 120) scale(.6)"><path d="M0 0 l40 -10 l20 10 l40 -30 l-20 30 l40 6 l-60 10 l-20 14z" fill="#7c2d12" opacity=".7"/></g><g transform="translate(1000 230)"><ellipse cx="0" cy="0" rx="18" ry="22" fill="#f5f5f4"/><path d="M-12 -6 l6 4 l6 -6 l6 6 l6 -4" stroke="#a8a29e" stroke-width="2" fill="none"/></g>`,
+  pirate: (W) => `<g transform="translate(1250 230)"><path d="M-120 0 L120 0 L95 32 L-95 32Z" fill="#7c4a24"/><rect x="-120" y="-6" width="240" height="8" fill="#5b3418"/><path d="M-30 0 V-150 M50 0 V-120" stroke="#3f2a1d" stroke-width="6"/><path d="M-26 -140 Q20 -110 -26 -60Z" fill="#f8fafc"/><path d="M54 -112 Q90 -90 54 -50Z" fill="#f8fafc"/><path d="M-30 -150 h-30 v18 h30z" fill="#111827"/><circle cx="-45" cy="-141" r="4" fill="#fff"/></g><g transform="translate(300 246)"><path d="M-30 0 L-20 -26 L20 -26 L30 0Z" fill="#a16207"/><rect x="-24" y="-38" width="48" height="14" rx="5" fill="#ca8a04"/><circle cx="0" cy="-30" r="4" fill="#fde047"/><text x="40" y="-6" font-size="22">💰</text></g><text x="700" y="240" font-size="40">❌</text>`,
+  farm: (W) => `<g transform="translate(300 246)"><rect x="-80" y="-90" width="160" height="90" fill="#b91c1c"/><path d="M-96 -88 L0 -150 L96 -88Z" fill="#7f1d1d"/><path d="M-30 0 v-60 h60 v60" fill="#fef3c7"/><path d="M-30 -60 L30 0 M30 -60 L-30 0" stroke="#b91c1c" stroke-width="5"/><rect x="-14" y="-125" width="28" height="22" fill="#fef3c7"/></g><g transform="translate(560 246)"><rect x="-24" y="-130" width="48" height="130" rx="22" fill="#94a3b8"/><path d="M-24 -110 a24 24 0 0 1 48 0" fill="#64748b"/></g>${[900,1040,1180,1320,1460,1600].map((x,i) => `<g transform="translate(${x} 240)"><circle cx="0" cy="0" r="${12+i%3*4}" fill="#f97316"/><path d="M0 -${12+i%3*4} v-8" stroke="#166534" stroke-width="4"/></g>`).join('')}<g transform="translate(760 240)"><path d="M0 0 V-60 M-26 -44 H26" stroke="#7c4a24" stroke-width="5"/><circle cx="0" cy="-66" r="10" fill="#fde68a"/><path d="M-10 -72 h20 l-4 -8 h-12z" fill="#a16207"/></g>`,
+  blossom: (W, H, R) => { let s = `<g transform="translate(${W/2} 246)"><path d="M-140 0 Q0 -90 140 0" stroke="#dc2626" stroke-width="12" fill="none"/><path d="M-110 -24 V0 M110 -24 V0" stroke="#dc2626" stroke-width="10"/></g><g transform="translate(1400 246)"><rect x="-40" y="-60" width="80" height="60" fill="#fef3c7"/><path d="M-60 -60 L0 -100 L60 -60Z" fill="#b91c1c"/><path d="M-50 -82 L0 -112 L50 -82" stroke="#b91c1c" stroke-width="8" fill="none"/></g>`;
+    for (let i = 0; i < 40; i++) s += `<ellipse class="sc-petal" style="animation-delay:-${(R()*8).toFixed(1)}s;animation-duration:${(6+R()*6).toFixed(1)}s" cx="${R()*W}" cy="${R()*60}" rx="4" ry="2.5" fill="#f9a8d4"/>`; return s; },
+  skycity: (W, H, R) => { let s = ''; const tower = (x, h, c, w=60) => `<rect x="${x}" y="${246-h}" width="${w}" height="${h}" rx="6" fill="${c}"/>${Array.from({length:Math.floor(h/24)}, (_, j) => `<rect x="${x+10}" y="${256-h+j*24}" width="${w-20}" height="8" rx="3" fill="#e0f2fe" opacity=".8"/>`).join('')}`;
+    [[120,150,'#6366f1'],[200,210,'#0ea5e9',70],[290,120,'#a855f7'],[560,180,'#14b8a6'],[640,240,'#3b82f6',80],[740,140,'#6366f1'],[1080,200,'#0ea5e9'],[1160,150,'#a855f7',70],[1500,230,'#3b82f6',80],[1600,160,'#14b8a6']].forEach(([x,h,c,w]) => s += tower(x,h,c,w));
+    s += `<path d="M640 6 V0" stroke="#fff"/><circle cx="680" cy="0" r="0"/>`;
+    for (let i = 0; i < 6; i++){ const x = R()*W, y = 60 + R()*100; s += `<g class="sc-fish" style="animation-duration:${(30+R()*30).toFixed(0)}s;animation-delay:-${(R()*30).toFixed(0)}s"><g transform="translate(${x} ${y})"><ellipse cx="0" cy="0" rx="22" ry="7" fill="#e2e8f0"/><ellipse cx="0" cy="-5" rx="9" ry="6" fill="#7dd3fc"/></g></g>`; }
+    s += `<path d="M380 170 Q480 140 560 170" stroke="#e0e7ff" stroke-width="6" fill="none"/><path d="M820 160 Q950 120 1080 160" stroke="#e0e7ff" stroke-width="6" fill="none"/>`;
+    for (let i = 0; i < 6; i++) s += cloudPuff(R()*W, 250, 1.6, '#ffffff'); return s; },
+  clouds: (W, H, R) => { let s = ''; for (let i = 0; i < 10; i++) s += cloudPuff(R()*W, 250 + R()*10, 1.2 + R()*.8, '#ffffff'); s += `<g transform="translate(${W/2 - 400} 246)"><rect x="-90" y="-130" width="180" height="130" fill="#fdf4ff" stroke="#e9d5ff" stroke-width="3"/>${[-80,-40,0,40,80].map(x => `<rect x="${x-10}" y="-146" width="20" height="18" fill="#fdf4ff" stroke="#e9d5ff" stroke-width="3"/>`).join('')}<path d="M-120 -130 L-90 -190 L-60 -130Z M60 -130 L90 -190 L120 -130Z" fill="#fde68a"/><path d="M-20 0 v-50 a20 20 0 0 1 40 0 v50z" fill="#f9a8d4"/></g>`;
+    for (let i = 0; i < 14; i++) s += `<path class="sc-firefly" style="animation-delay:-${(R()*4).toFixed(1)}s" d="M${R()*W} ${40+R()*140} l3 7 l7 1 l-5 5 l1 7 l-6 -3 l-6 3 l1 -7 l-5 -5 l7 -1z" fill="#fde68a"/>`; return s; },
+  aurora: (W, H, R) => `<g transform="translate(420 246)"><path d="M-50 0 A50 40 0 0 1 50 0Z" fill="#f8fafc" stroke="#cbd5e1" stroke-width="3"/><path d="M-30 -14 h60 M-40 -26 h80" stroke="#cbd5e1" stroke-width="2"/><path d="M-10 0 v-16 a10 10 0 0 1 20 0 v16" fill="#475569"/></g><g transform="translate(1300 240)"><ellipse cx="0" cy="0" rx="18" ry="20" fill="#f8fafc"/><circle cx="0" cy="-22" r="12" fill="#f8fafc"/><circle cx="-4" cy="-24" r="1.6"/><circle cx="4" cy="-24" r="1.6"/><path d="M-4 -18 l4 4 l4 -4" fill="#f97316"/></g>`
 };
 function seeded(n){ return () => { n = (n * 1664525 + 1013904223) % 4294967296; return n / 4294967296; }; }
 function sceneSVG(themeId){
@@ -2342,6 +2514,13 @@ function sceneSVG(themeId){
     if (P.trees === 'palm') return `<g transform="translate(${x} ${y}) scale(${s})"><path d="M0 0 Q4 -30 2 -58" stroke="${P.tree2}" stroke-width="5" fill="none"/>${[-60,-20,20,60,100].map(a => `<path d="M2 -58 q${Math.cos(a*Math.PI/180)*26} ${-10+Math.sin(a*Math.PI/180)*6} ${Math.cos(a*Math.PI/180)*40} 14" stroke="${P.tree}" stroke-width="7" fill="none" stroke-linecap="round"/>`).join('')}</g>`;
     if (P.trees === 'lolly') return `<g transform="translate(${x} ${y}) scale(${s})"><rect x="-2" y="-40" width="4" height="40" fill="#fff"/><circle cx="0" cy="-48" r="16" fill="${R() < .5 ? P.tree : '#f472b6'}"/><path d="M-10 -48 a10 10 0 1 1 10 10" stroke="#fff" stroke-width="3" fill="none"/></g>`;
     if (P.trees === 'crystal') return `<g transform="translate(${x} ${y}) scale(${s})" opacity=".9"><path d="M0 0 L-8 -30 L0 -52 L8 -30Z" fill="${P.tree}"/><path d="M0 -52 L8 -30 L0 0Z" fill="${P.tree2}"/></g>`;
+    if (P.trees === 'none') return '';
+    if (P.trees === 'cactus') return `<g transform="translate(${x} ${y}) scale(${s})"><rect x="-6" y="-50" width="12" height="50" rx="6" fill="${P.tree}"/><path d="M-6 -26 h-10 v-14" stroke="${P.tree}" stroke-width="9" fill="none" stroke-linecap="round"/><path d="M6 -32 h9 v-12" stroke="${P.tree}" stroke-width="9" fill="none" stroke-linecap="round"/><rect x="-2" y="-46" width="3" height="40" fill="${P.tree2}" opacity=".5"/></g>`;
+    if (P.trees === 'oak' || P.trees === 'round' || P.trees === 'autumn'){ const c = R() < .5 ? P.tree : P.tree2;
+      return `<g transform="translate(${x} ${y}) scale(${s})"><rect x="-4" y="-22" width="8" height="24" fill="#7a4b2a"/><circle cx="0" cy="-40" r="22" fill="${c}"/><circle cx="-14" cy="-30" r="14" fill="${c}"/><circle cx="14" cy="-30" r="14" fill="${c}"/><circle cx="-6" cy="-48" r="8" fill="#fff" opacity=".18"/></g>`; }
+    if (P.trees === 'jungle') return `<g transform="translate(${x} ${y}) scale(${s})"><path d="M0 0 Q-3 -34 1 -64" stroke="#6b4423" stroke-width="6" fill="none"/>${[-70,-35,0,35,70,110,145].map(a => `<path d="M1 -64 q${Math.cos(a*Math.PI/180)*22} ${-14+Math.sin(a*Math.PI/180)*8} ${Math.cos(a*Math.PI/180)*44} 10" stroke="${a%2?P.tree:P.tree2}" stroke-width="10" fill="none" stroke-linecap="round"/>`).join('')}</g>`;
+    if (P.trees === 'fern') return `<g transform="translate(${x} ${y}) scale(${s})">${[-50,-25,0,25,50].map(a => `<path d="M0 0 q${a*.4} -30 ${a*.9} -44" stroke="${P.tree}" stroke-width="5" fill="none" stroke-linecap="round"/>`).join('')}</g>`;
+    if (P.trees === 'coral') return `<g transform="translate(${x} ${y}) scale(${s})"><path d="M0 0 V-30 M0 -16 L-12 -30 M0 -22 L10 -38 M-12 -30 V-40" stroke="${R() < .5 ? P.tree : P.tree2}" stroke-width="6" fill="none" stroke-linecap="round"/></g>`;
     if (P.trees === 'dead') return `<g transform="translate(${x} ${y}) scale(${s})"><path d="M0 0 L0 -40 M0 -26 L-12 -38 M0 -32 L10 -44" stroke="${P.tree}" stroke-width="4" fill="none" stroke-linecap="round"/></g>`;
     const snow = P.trees === 'snowpine' ? `<path d="M0 -62 L-8 -48 L8 -48Z M-12 -34 L12 -34 L0 -44Z" fill="#fff"/>` : '';
     return `<g transform="translate(${x} ${y}) scale(${s})"><rect x="-3" y="-8" width="6" height="10" fill="#7a4b2a"/><path d="M0 -62 L-14 -36 L-7 -36 L-20 -12 L20 -12 L7 -36 L14 -36Z" fill="${P.tree}"/><path d="M0 -62 L14 -36 L7 -36 L20 -12 L0 -12Z" fill="${P.tree2}" opacity=".55"/>${snow}</g>`;
@@ -2355,37 +2534,41 @@ function sceneSVG(themeId){
   </defs>
   <rect width="${W}" height="${H}" fill="url(#sc-sky)"/>`;
   if (P.stars) for (let i = 0; i < 90; i++) s += `<circle cx="${R() * W}" cy="${R() * 180}" r="${(R() * 1.4 + .4).toFixed(1)}" fill="#fff" opacity="${(R() * .6 + .3).toFixed(2)}"/>`;
-  s += `<circle cx="1480" cy="78" r="90" fill="url(#sc-sun)"/><circle cx="1480" cy="78" r="30" fill="${P.sun}"/>`;
+  if (P.sun) s += `<circle cx="1480" cy="78" r="90" fill="url(#sc-sun)"/><circle cx="1480" cy="78" r="30" fill="${P.sun}"/>`;
+  if (P.extra && SCENE_SKY[P.extra]) s += SCENE_SKY[P.extra](W, H, R, P);
   // drifting clouds
-  for (let i = 0; i < 6; i++){ const x = R() * W, y = 30 + R() * 90, c = R() * .5 + .8;
+  for (let i = 0; i < (P.sun === false ? 0 : 6); i++){ const x = R() * W, y = 30 + R() * 90, c = R() * .5 + .8;
     s += `<g class="sc-cloud" style="animation-duration:${(60 + R() * 60).toFixed(0)}s;animation-delay:-${(R() * 60).toFixed(0)}s" opacity="${P.stars ? .35 : .9}"><g transform="translate(${x.toFixed(0)} ${y.toFixed(0)}) scale(${c.toFixed(2)})"><ellipse cx="0" cy="0" rx="46" ry="18" fill="#fff"/><ellipse cx="-24" cy="-8" rx="24" ry="18" fill="#fff"/><ellipse cx="16" cy="-14" rx="28" ry="22" fill="#fff"/></g></g>`; }
   // far mountains, near mountains with highlights and caps
-  s += `<path d="${ridge(232, 60, 140, 160)}" fill="${P.far}"/>`;
+  if (!P.noMtn) s += `<path d="${ridge(232, 60, 140, 160)}" fill="${P.far}"/>`;
   const peaks = [];
-  for (let x = 60; x < W; x += 260 + R() * 120) peaks.push([x, 110 + R() * 60, 120 + R() * 80]);
+  if (!P.noMtn) for (let x = 60; x < W; x += 260 + R() * 120) peaks.push([x, 110 + R() * 60, 120 + R() * 80]);
   peaks.forEach(([x, top, half]) => {
     s += `<path d="M${x - half} 250 L${x} ${top} L${x + half} 250Z" fill="${P.mid}"/><path d="M${x} ${top} L${x + half} 250 L${x + half * .2} 250Z" fill="${P.midHi}" opacity=".55"/>`;
     s += `<path d="M${x} ${top} L${x - half * .22} ${top + 30} L${x - half * .08} ${top + 24} L${x + half * .06} ${top + 34} L${x + half * .22} ${top + 30}Z" fill="${P.cap}" opacity=".95"/>`;
   });
   // hills with trees
   s += `<path d="${hills(238, 26)}" fill="${P.hill2}"/><path d="${hills(252, 18)}" fill="${P.hill}"/>`;
-  for (let i = 0; i < 46; i++){ const x = R() * W, y = 226 + R() * 30; s += tree(x.toFixed(0), y.toFixed(0), (.55 + R() * .5).toFixed(2)); }
+  for (let i = 0; i < (P.dense ? 90 : 46); i++){ const x = R() * W, y = 226 + R() * 30; s += tree(x.toFixed(0), y.toFixed(0), (.55 + R() * .5).toFixed(2)); }
+  if (P.extra && SCENE_EXTRA[P.extra]) s += SCENE_EXTRA[P.extra](W, H, R, P);
   // lake with shimmer, a dock and a float ring
   s += `<rect x="0" y="246" width="${W}" height="32" fill="url(#sc-water)"/>`;
   for (let i = 0; i < 28; i++) s += `<rect class="sc-shimmer" style="animation-delay:-${(R() * 3).toFixed(1)}s" x="${(R() * W).toFixed(0)}" y="${(250 + R() * 24).toFixed(0)}" width="${(16 + R() * 34).toFixed(0)}" height="2.5" rx="1.5" fill="#fff" opacity=".7"/>`;
-  s += `<g transform="translate(250 252)"><rect x="0" y="0" width="120" height="9" fill="#a0693c"/><rect x="0" y="-4" width="120" height="5" fill="#c08350"/>${[6, 40, 74, 108].map(px => `<rect x="${px}" y="6" width="6" height="18" fill="#7a4b2a"/>`).join('')}</g>`;
-  s += `<g class="sc-bob"><circle cx="1180" cy="262" r="10" fill="none" stroke="#ff5a5a" stroke-width="6"/><circle cx="1180" cy="262" r="10" fill="none" stroke="#fff" stroke-width="6" stroke-dasharray="7 8"/></g>`;
+  if (!P.noDock) s += `<g transform="translate(250 252)"><rect x="0" y="0" width="120" height="9" fill="#a0693c"/><rect x="0" y="-4" width="120" height="5" fill="#c08350"/>${[6, 40, 74, 108].map(px => `<rect x="${px}" y="6" width="6" height="18" fill="#7a4b2a"/>`).join('')}</g>`;
+  if (!P.noDock) s += `<g class="sc-bob"><circle cx="1180" cy="262" r="10" fill="none" stroke="#ff5a5a" stroke-width="6"/><circle cx="1180" cy="262" r="10" fill="none" stroke="#fff" stroke-width="6" stroke-dasharray="7 8"/></g>`;
   // sandy shore and grass
   let shore = `M0 274`; for (let x = 0; x <= W; x += 120) shore += ` Q${x + 60} ${266 + R() * 8} ${x + 120} 274`;
   s += `<path d="${shore} L${W} 296 L0 296Z" fill="${P.sand}"/>`;
   let edge = `M0 286`; for (let x = 0; x <= W; x += 90) edge += ` Q${x + 45} ${278 + R() * 10} ${x + 90} 286`;
   s += `<path d="${edge} L${W} ${H} L0 ${H}Z" fill="url(#sc-grass)"/>`;
   for (let i = 0; i < 160; i++){ const x = R() * W, y = 300 + R() * (H - 300); s += `<path d="M${x.toFixed(0)} ${y.toFixed(0)} l-3 -9 M${x.toFixed(0)} ${y.toFixed(0)} l1 -11 M${x.toFixed(0)} ${y.toFixed(0)} l4 -8" stroke="${P.tuft}" stroke-width="2" stroke-linecap="round" opacity=".7"/>`; }
+  if (P.extra === 'town'){ for (let x = 0; x < W; x += 40) s += `<path d="M${x} 296 V${H}" stroke="#a8a29e" stroke-width="1.5" opacity=".6"/>`; for (let y = 310; y < H; y += 30) s += `<path d="M0 ${y} H${W}" stroke="#a8a29e" stroke-width="1.5" opacity=".6"/>`; }
   return s + '</svg>';
 }
 // tall grass along the front edge, drawn over everything so things look like they stand in it
 function frontGrassSVG(themeId){
   const P = SCENE_PAL[themeId] || SCENE_PAL.meadow, R = seeded(99);
+  if (P.extra === 'town') return `<svg xmlns="http://www.w3.org/2000/svg" width="${WORLD_W}" height="44" viewBox="0 0 ${WORLD_W} 44" preserveAspectRatio="none"><rect y="24" width="${WORLD_W}" height="20" fill="#9ca3af"/><rect y="22" width="${WORLD_W}" height="4" fill="#78716c"/></svg>`;
   let s = `<svg xmlns="http://www.w3.org/2000/svg" width="${WORLD_W}" height="44" viewBox="0 0 ${WORLD_W} 44" preserveAspectRatio="none">`;
   for (let x = 0; x < WORLD_W; x += 7){ const h = 18 + R() * 24, lean = (R() - .5) * 14;
     s += `<path d="M${x} 44 Q${x + lean / 2} ${44 - h / 2} ${x + lean} ${44 - h}" stroke="${R() < .5 ? P.grass[1] : P.tuft}" stroke-width="5" fill="none" stroke-linecap="round"/>`; }
@@ -2420,7 +2603,8 @@ function screenWorld(visitKid){
   stage.append(av);
   const nodes = {};
   const place = it => {
-    const n = el('div',{class:'world-item' + (worldSel === it.id ? ' sel' : ''), 'data-id':it.id}, it.e);
+    const n = el('div',{class:'world-item' + (worldSel === it.id ? ' sel' : '') + (TOWN_SVG[it.k] ? ' drawn' : ''), 'data-id':it.id}, TOWN_SVG[it.k] ? null : it.e);
+    if (TOWN_SVG[it.k]) n.innerHTML = TOWN_SVG[it.k];
     n.style.left = it.x + 'px'; n.style.top = it.y + 'px';
     n.style.fontSize = Math.round(64 * it.s) + 'px';
     n.style.transform = it.f ? 'scaleX(-1)' : '';
@@ -2523,10 +2707,11 @@ function screenWorld(visitKid){
     if (worldCat === 'theme'){
       Object.entries(WORLD_THEMES).forEach(([id, t]) => {
         const owned = W.themes.includes(id), on = W.theme === id;
-        palette.append(el('button',{class:'world-chip theme-chip' + (on?' on':''), style:`background:${t.sky}`, onclick:()=>{
-          if (!owned){ if (balance() < t.price){ say('Keep reading to earn more stars!'); return; } K.spent = (K.spent||0) + t.price; W.themes.push(id); beep('level'); confetti(40); }
+        const cost = t.cosmic ? { cur:'cosmic', amt:t.cosmic } : { cur:'star', amt:t.price };
+        palette.append(el('button',{class:'world-chip theme-chip' + (on?' on':'') + (t.cosmic && !owned ? ' cosmic-place' : ''), style:`background:${t.sky}`, onclick:()=>{
+          if (!owned){ if (!canPay(cost)){ say(cost.cur === 'cosmic' ? `${t.name} costs ${cost.amt} Cosmic Power. Keep reading to collect more!` : 'Keep reading to earn more stars!'); beep('bad'); return; } pay(cost); W.themes.push(id); beep('level'); confetti(40); say(`Welcome to ${t.name}!`); }
           W.theme = id; save(); screenWorld(); }},
-          el('span',{class:'chip-name'}, t.name), el('span',{class:'chip-price'}, owned ? (on ? '✓ Here' : 'Go!') : '⭐ ' + t.price)));
+          el('span',{class:'chip-name'}, t.name), el('span',{class:'chip-price' + (cost.cur === 'cosmic' && !owned ? ' cosmic' : '')}, owned ? (on ? '✓ Here' : 'Go!') : costLabel(cost))));
       });
       return;
     }
@@ -3179,27 +3364,32 @@ function bossCard(){
         rec.tries ? el('p',{class:'muted', style:'color:#fde68a'}, `Battles tried: ${rec.tries}. You can do it!`) : null,
         el('button',{class:'btn big boss-btn', onclick:()=>{ beep('tap'); bossIntro(); }},'⚔️ BATTLE!'))));
 }
-function bossIntro(){
-  const B = bossFor(K.level);
+function bossIntro(level){
+  level = level || K.level;
+  const B = bossFor(level);
   const ov = el('div',{class:'boss-intro', style:`--boss:${B.color}`},
     el('div',{class:'epic-rays'}),
     el('div',{class:'boss-intro-card'},
-      el('div',{class:'boss-vs'}, el('div',{html: avatarSVG(K.avatar, 120)}), el('span',{class:'vs'},'VS'), el('div',{class:'boss-face big'}, B.e)),
+      el('div',{class:'boss-vs'}, K.hero ? heroNode(130) : el('div',{html: avatarSVG(K.avatar, 120)}), el('span',{class:'vs'},'VS'), el('div',{class:'boss-face big'}, B.e)),
+      (K.bossesBeaten || []).includes(level) || level < K.level ? el('p',{style:'color:#fde68a;font-weight:700'}, `Rematch! Win to collect a missing ${(setForLevel(level) || {}).name || ''} gear piece.`) : null,
       el('h2',{}, B.name), el('p',{class:'boss-taunt'}, `"${B.taunt}"`),
-      el('button',{class:'btn big boss-btn', onclick:()=>{ ov.remove(); startBossBattle(); }},'⚔️ FIGHT WITH READING!')));
+      el('div',{class:'row center'},
+        el('button',{class:'btn big boss-btn', onclick:()=>{ ov.remove(); startBossBattle(level); }},'⚔️ FIGHT WITH READING!'),
+        el('button',{class:'btn small gray', onclick:()=>ov.remove()},'Not yet'))));
   document.body.append(ov); beep('level'); say(`${B.name} appears! ${B.taunt}`);
 }
-function startBossBattle(){
-  const B = bossFor(K.level);
-  K.bossLog = K.bossLog || {}; const rec = K.bossLog[K.level] = Object.assign({ tries:0, wins:0 }, K.bossLog[K.level] || {});
+function startBossBattle(level){
+  level = level || K.level;
+  const B = bossFor(level);
+  K.bossLog = K.bossLog || {}; const rec = K.bossLog[level] = Object.assign({ tries:0, wins:0 }, K.bossLog[level] || {});
   rec.tries++; save();
   const story = Object.assign({ series:'boss' }, B.story);
   if (kid === 'daughter'){
-    startQuietRead(story, { storyKey:'boss_' + K.level, boss:B });
+    startQuietRead(story, { storyKey:'boss_' + level, boss:B, level });
     run.opts.boss = B; bossHud();
   } else {
     const pages = storyPages(story.text);
-    beginRun({ kind:'story', level:K.level, title:'⚔️ ' + story.title, emoji:B.e, story, storyKey:'boss_' + K.level, series:'boss', pages }, { mode:'normal', boss:B });
+    beginRun({ kind:'story', level, title:'⚔️ ' + story.title, emoji:B.e, story, storyKey:'boss_' + level, series:'boss', pages }, { mode:'normal', boss:B });
   }
 }
 // Boss power: Miles = 60% from reading + 40% from questions; Gianna = 100% from questions
@@ -3232,6 +3422,16 @@ async function bossResult(){
     total:R.total||0, correct:R.correct||0, helped:R.helped||0, accuracy: a.quiet ? Math.round(quiz.c / quiz.t * 1000)/10 : Math.round((R.accuracy||0)*1000)/10,
     wcpm:R.wcpm||null, quiz: quiz.c + '/' + quiz.t, missed:[...new Set(R.missed||[])].slice(0,20), stars: won ? 3 : 1, ms: Date.now() - r.startedAt });
   const rec = K.bossLog[a.level];
+  const replay = a.level !== K.level || (K.bossesBeaten || []).includes(a.level);
+  if (won && replay){
+    rec.wins++; rec.date = todayStr();
+    K.bossesBeaten = [...new Set((K.bossesBeaten || []).concat(a.level))];
+    K.stars += 3; save();
+    confetti(100); beep('level'); burst('K.O.!'); say(`You beat ${B.name} again!`);
+    await modal(el('div',{}, el('div',{class:'big-e'}, B.e), el('h2',{}, `${B.name} defeated again!`), el('p',{}, `"${B.defeat}" +3 ⭐`)), [['🎁 Get my loot!','',1]]);
+    await bossGearDrop(a.level, true);
+    await checkBadges(); run = null; return screenQuestMap();
+  }
   if (won){
     rec.wins++; rec.date = todayStr();
     K.bossesBeaten = [...new Set((K.bossesBeaten || []).concat(a.level))];
@@ -3245,7 +3445,7 @@ async function bossResult(){
         el('div',{class:'boss-face big defeated'}, B.e),
         el('h2',{}, 'BOSS DEFEATED!'), el('p',{class:'boss-taunt'}, `"${B.defeat}"`),
         el('p',{style:'font-size:22px;font-weight:700'}, top ? '👑 You beat the FINAL BOSS! You are a reading legend!' : `${kid === 'daughter' ? 'Rank' : 'Level'} ${K.level} unlocked! +10 ⭐ +5 💫`),
-        el('button',{class:'btn big', onclick:async()=>{ ov.remove(); await checkBadges(); run = null; screenHome(); }},'🏆 Victory! ▶')));
+        el('button',{class:'btn big', onclick:async()=>{ ov.remove(); await bossGearDrop(a.level, false); await checkBadges(); run = null; screenHome(); }},'🏆 Victory! Get my loot ▶')));
     document.body.append(ov); confetti(160); beep('level'); burst('K.O.!');
     say(`You defeated ${B.name}! ${B.defeat}`);
   } else {
@@ -3255,7 +3455,7 @@ async function bossResult(){
       : `Words right: ${Math.round((R.accuracy||0)*100)}% (need 90%) · Questions: ${quiz.c} of ${quiz.t} (need ${Math.ceil(quiz.t*0.8)}).`;
     await modal(el('div',{}, el('div',{class:'big-e'}, B.e), el('h2',{}, `${B.name} is still standing!`),
       el('p',{}, `Boss power left: ${pw}%. ${tip}`), el('p',{}, 'Every battle makes you stronger. Try again anytime!')), [['💪 Back','',1]]);
-    await checkBadges(); run = null; screenHome();
+    await checkBadges(); run = null; replay ? screenQuestMap() : screenHome();
   }
 }
 
@@ -3328,6 +3528,622 @@ function retellBook(book){
         useManual() ? null : el('button',{class:'btn big green', onclick:()=>finish(false)},'✅ Done telling'),
         el('button',{class:'btn small gray', onclick:()=>finish(true)},'✓ Grown-up heard it')))));
   say('Tell me about the book! Who was in it, and what happened?');
+}
+
+/* ================= HERO, GEAR SETS & QUEST MAP =================
+   Each kid has a person hero (their own look) with their buddy as a companion.
+   8 gear slots, 9 original tier sets (Traveler starter + one set per level).
+   Loot: a great read at a level drops a random common piece of that level's set.
+   Beating that level's boss drops the rare pieces (helmet + weapon).
+   Beaten bosses can be re-battled on the Quest Map to collect missing pieces.
+   ================================================================= */
+const GEAR_SLOTS = ['helmet','shoulders','chest','gloves','belt','pants','boots','weapon'];
+const SLOT_LABEL = { helmet:'Helmet', shoulders:'Shoulders', chest:'Chest Armor', gloves:'Gloves', belt:'Belt', pants:'Pants', boots:'Boots', weapon:'Weapon' };
+const SLOT_ICON  = { helmet:'⛑️', shoulders:'🛡️', chest:'🦺', gloves:'🧤', belt:'🎗️', pants:'👖', boots:'🥾', weapon:'⚔️' };
+const BOSS_PIECES = ['helmet','weapon'];
+const COMMON_PIECES = GEAR_SLOTS.filter(s => !BOSS_PIECES.includes(s));
+// tier = level that drops it. motif changes the shapes; colors: prim (main), sec, trim (metal), gem (glow)
+const GEAR_SETS = [
+  { id:'traveler', tier:0, name:'Traveler',        title:'Traveler',          motif:'cloth',   prim:'#8b5e3c', sec:'#c9a27a', trim:'#6b4a2e', gem:'#fde68a' },
+  { id:'squire',   tier:1, name:'Oakwood Squire',  title:'Oakwood Squire',    motif:'leaf',    prim:'#6b8e3d', sec:'#a3c26a', trim:'#8b5e3c', gem:'#d9f99d' },
+  { id:'ember',    tier:2, name:'Ember',           title:'Ember Knight',      motif:'flame',   prim:'#b91c1c', sec:'#f97316', trim:'#facc15', gem:'#fde047' },
+  { id:'frost',    tier:3, name:'Frostguard',      title:'Frostguard',        motif:'crystal', prim:'#1e40af', sec:'#93c5fd', trim:'#e0f2fe', gem:'#a5f3fc' },
+  { id:'jade',     tier:4, name:'Jade Guardian',   title:'Jade Guardian',     motif:'leaf',    prim:'#065f46', sec:'#34d399', trim:'#fbbf24', gem:'#6ee7b7' },
+  { id:'storm',    tier:5, name:'Stormcaller',     title:'Stormcaller',       motif:'storm',   prim:'#4c1d95', sec:'#6366f1', trim:'#facc15', gem:'#fde047' },
+  { id:'shadow',   tier:6, name:'Nightshade',      title:'Nightshade Ranger', motif:'shadow',  prim:'#1f1235', sec:'#7e22ce', trim:'#c084fc', gem:'#e879f9' },
+  { id:'starforge',tier:7, name:'Starforged',      title:'Starforged Champion',motif:'star',   prim:'#1e3a8a', sec:'#312e81', trim:'#fbbf24', gem:'#fef08a' },
+  { id:'celestial',tier:8, name:'Celestial',       title:'Celestial Legend',  motif:'wing',    prim:'#f8fafc', sec:'#fde68a', trim:'#f59e0b', gem:'#f0abfc' }
+];
+const SET_BY_ID = Object.fromEntries(GEAR_SETS.map(g => [g.id, g]));
+const setForLevel = lv => GEAR_SETS.find(g => g.tier === lv);
+const SKIN_TONES = ['#fde3c8','#f5c9a0','#e0a878','#c68a5a','#9a6440','#6b4428'];
+const HAIR_COLORS = ['#1f1b18','#5b3a21','#a0612f','#e7c46a','#b5462a','#f472b6','#60a5fa','#a78bfa','#f1f5f9'];
+const HAIR_STYLES = { short:'Short', spiky:'Spiky', long:'Long', ponytail:'Ponytail', curly:'Curly', buns:'Space Buns' };
+
+function heroState(){
+  K.hero = K.hero || null;
+  K.gear = Object.assign({ owned:{ traveler: GEAR_SLOTS.slice() }, eq:{} }, K.gear || {});
+  GEAR_SLOTS.forEach(s => { if (!K.gear.eq[s]) K.gear.eq[s] = 'traveler'; });
+  return K.gear;
+}
+const hasPiece = (setId, slot) => (heroState().owned[setId] || []).includes(slot);
+function givePiece(setId, slot){ const G = heroState(); G.owned[setId] = G.owned[setId] || []; if (!G.owned[setId].includes(slot)) G.owned[setId].push(slot); save(); }
+function fullSetOn(){ const G = heroState(); const id = G.eq.helmet; return id && id !== 'traveler' && GEAR_SLOTS.every(s => G.eq[s] === id) ? SET_BY_ID[id] : null; }
+function setCount(setId){ return (heroState().owned[setId] || []).length; }
+
+/* ---------- hero drawing ---------- */
+function spikes(cx, cy, n, len, spread, base, col, stroke){
+  let s = '';
+  for (let i = 0; i < n; i++){ const a = (base - spread/2 + spread * (n === 1 ? .5 : i/(n-1))) * Math.PI/180;
+    const x2 = cx + Math.cos(a) * len, y2 = cy + Math.sin(a) * len, px = Math.cos(a + Math.PI/2) * 5, py = Math.sin(a + Math.PI/2) * 5;
+    s += `<path d="M${cx+px} ${cy+py} L${x2} ${y2} L${cx-px} ${cy-py}Z" fill="${col}" stroke="${stroke}" stroke-width="1.5" stroke-linejoin="round"/>`; }
+  return s;
+}
+const flameShape = (x, y, k, c1, c2) => `<g transform="translate(${x} ${y}) scale(${k})"><path d="M0 0 C-10 -8 -6 -20 0 -30 C2 -22 8 -20 6 -12 C10 -16 12 -22 10 -28 C18 -18 16 -4 0 0Z" fill="${c1}"/><path d="M2 -2 C-2 -8 0 -14 3 -18 C5 -12 8 -10 6 -4Z" fill="${c2}"/></g>`;
+const starShape = (x, y, r, c) => `<path d="M${x} ${y-r} l${r*.3} ${r*.62} l${r*.68} ${r*.1} l-${r*.5} ${r*.48} l${r*.12} ${r*.68} l-${r*.6} -${r*.32} l-${r*.6} ${r*.32} l${r*.12} -${r*.68} l-${r*.5} -${r*.48} l${r*.68} -${r*.1}z" fill="${c}"/>`;
+const INK = '#1f2937';
+
+function gearPiece(slot, S, hero){
+  const { prim, sec, trim, gem, motif } = S;
+  const glow = S.tier >= 2 ? `filter="url(#hglow)"` : '';
+  switch (slot){
+    case 'pants': return `<rect x="72" y="160" width="27" height="52" rx="6" fill="${prim}" stroke="${INK}" stroke-width="3"/><rect x="101" y="160" width="27" height="52" rx="6" fill="${prim}" stroke="${INK}" stroke-width="3"/>
+      ${S.tier ? `<rect x="76" y="176" width="19" height="14" rx="4" fill="${sec}" stroke="${trim}" stroke-width="2"/><rect x="105" y="176" width="19" height="14" rx="4" fill="${sec}" stroke="${trim}" stroke-width="2"/>` : ''}
+      ${motif === 'flame' ? flameShape(85, 206, .5, sec, gem) + flameShape(114, 206, .5, sec, gem) : ''}${motif === 'star' ? starShape(85, 198, 5, trim) + starShape(114, 198, 5, trim) : ''}`;
+    case 'boots': return `<path d="M70 204 h30 v22 q0 8 -8 8 h-30 q-6 0 -4 -7 l6 -5 z" fill="${S.tier ? sec : '#5b3a21'}" stroke="${INK}" stroke-width="3" stroke-linejoin="round"/><path d="M100 204 h30 v22 q0 8 -8 8 h-18 q-6 0 -4 -7z" fill="${S.tier ? sec : '#5b3a21'}" stroke="${INK}" stroke-width="3" stroke-linejoin="round"/>
+      ${S.tier ? `<rect x="70" y="204" width="30" height="7" fill="${trim}" stroke="${INK}" stroke-width="2"/><rect x="100" y="204" width="30" height="7" fill="${trim}" stroke="${INK}" stroke-width="2"/>` : ''}
+      ${motif === 'wing' ? `<path d="M70 210 q-14 -6 -16 -16 q10 4 16 6z M130 210 q14 -6 16 -16 q-10 4 -16 6z" fill="#fff" stroke="${trim}" stroke-width="1.5"/>` : ''}
+      ${motif === 'crystal' ? spikes(70, 212, 2, 12, 40, 200, '#e0f2fe', '#60a5fa') + spikes(130, 212, 2, 12, 40, 340, '#e0f2fe', '#60a5fa') : ''}${motif === 'flame' ? flameShape(68, 214, .45, '#f97316', '#fde047') + flameShape(132, 214, .45, '#f97316', '#fde047') : ''}`;
+    case 'chest': return `<path d="M68 104 q32 -10 64 0 l4 56 h-72z" fill="${prim}" stroke="${INK}" stroke-width="3" stroke-linejoin="round"/>
+      ${S.tier ? `<path d="M80 108 q20 -6 40 0 l-2 34 q-18 10 -36 0z" fill="${sec}" stroke="${trim}" stroke-width="3"/><path d="M100 108 v42" stroke="${trim}" stroke-width="2"/>` : `<path d="M90 104 l10 14 l10 -14" stroke="${S.sec}" stroke-width="3" fill="none"/>`}
+      ${S.tier >= 2 ? `<circle cx="100" cy="126" r="7" fill="${gem}" stroke="${trim}" stroke-width="2.5" ${glow}/>` : ''}
+      ${motif === 'flame' ? flameShape(100, 120, .55, '#f97316', gem) : ''}${motif === 'leaf' && S.tier ? `<path d="M100 132 q-10 -10 0 -20 q10 10 0 20z" fill="${trim}"/>` : ''}
+      ${motif === 'storm' ? `<path d="M104 112 l-8 14 h7 l-5 12 l12 -16 h-7 l5 -10z" fill="${gem}" stroke="${INK}" stroke-width="1.2"/>` : ''}
+      ${motif === 'star' ? starShape(100, 126, 9, trim) : ''}${motif === 'shadow' ? `<path d="M86 112 q14 26 28 0" stroke="${trim}" stroke-width="2.5" fill="none"/>` : ''}
+      ${motif === 'wing' ? `<path d="M100 114 q-14 6 -18 18 q10 -4 18 -4 q8 0 18 4 q-4 -12 -18 -18z" fill="${trim}"/>` : ''}
+      ${S.tier ? `<path d="M64 160 h72 l-4 16 h-64z" fill="${sec}" stroke="${INK}" stroke-width="2.5"/><path d="M76 160 v16 M88 160 v16 M100 160 v16 M112 160 v16 M124 160 v16" stroke="${trim}" stroke-width="1.5"/>` : ''}`;
+    case 'belt': return `<rect x="66" y="152" width="68" height="11" rx="3" fill="${S.tier ? trim : '#5b3a21'}" stroke="${INK}" stroke-width="2.5"/><rect x="93" y="149" width="14" height="17" rx="3" fill="${S.tier ? gem : '#c9a27a'}" stroke="${INK}" stroke-width="2.5"/>`;
+    case 'gloves': return [52, 148].map(x => `<circle cx="${x}" cy="160" r="9" fill="${S.tier ? sec : hero.skin}" stroke="${INK}" stroke-width="3"/>${S.tier ? `<rect x="${x-10}" y="146" width="20" height="9" rx="3" fill="${trim}" stroke="${INK}" stroke-width="2"/>` : ''}${motif === 'crystal' ? spikes(x, 148, 1, 10, 0, x < 100 ? 200 : 340, '#e0f2fe', '#60a5fa') : ''}`).join('');
+    case 'shoulders': {
+      if (!S.tier) return `<circle cx="66" cy="106" r="10" fill="${prim}" stroke="${INK}" stroke-width="3"/><circle cx="134" cy="106" r="10" fill="${prim}" stroke="${INK}" stroke-width="3"/>`;
+      const big = 12 + Math.min(S.tier, 6) * 1.5;
+      let s = '';
+      [[66, -1], [134, 1]].forEach(([x, d]) => {
+        const outA = d < 0 ? 200 : 340;
+        if (motif === 'flame') s += flameShape(x + d*6, 96, .9, '#f97316', gem) + flameShape(x - d*4, 94, .7, '#ef4444', '#fde047');
+        if (motif === 'crystal') s += spikes(x, 100, 3, big + 10, 80, d < 0 ? 230 : 310, '#e0f2fe', '#60a5fa');
+        if (motif === 'storm') s += `<path d="M${x} 96 l${d*16} -20 l${-d*4} 12 l${d*14} -6 l${-d*18} 22z" fill="${gem}" stroke="${INK}" stroke-width="1.5"/>`;
+        if (motif === 'shadow') s += `<path d="M${x} 98 q${d*24} -8 ${d*20} -34 q${-d*4} 18 ${-d*18} 30z" fill="${sec}" stroke="${INK}" stroke-width="2"/>`;
+        if (motif === 'wing') s += `<path d="M${x} 100 q${d*30} -30 ${d*38} -6 q${-d*12} -2 ${-d*16} 6 q${-d*6} -6 ${-d*18} 4z" fill="#fff" stroke="${trim}" stroke-width="2"/>`;
+        if (motif === 'leaf') s += `<path d="M${x} 100 q${d*18} -22 ${d*30} -10 q${-d*14} 16 ${-d*30} 10z" fill="${sec}" stroke="${INK}" stroke-width="1.5"/>`;
+        s += `<ellipse cx="${x}" cy="106" rx="${big}" ry="${big*.8}" fill="${prim}" stroke="${INK}" stroke-width="3"/><path d="M${x-big*.8} 110 q${big*.8} -${big*.7} ${big*1.6} 0" stroke="${trim}" stroke-width="3" fill="none"/>`;
+        if (S.tier >= 3) s += `<circle cx="${x}" cy="104" r="4" fill="${gem}" ${glow}/>`;
+        if (motif === 'star') s += starShape(x, 104, 6, trim);
+        void outA;
+      });
+      return s; }
+    case 'helmet': {
+      if (!S.tier) return `<path d="M64 52 q36 -30 72 0 l-4 6 q-32 -18 -64 0z" fill="${prim}" stroke="${INK}" stroke-width="2.5"/><path d="M64 52 q36 -30 72 0" stroke="${S.sec}" stroke-width="3" fill="none"/>`;
+      let s = '';
+      if (motif === 'shadow') return `<path d="M58 70 q-2 -56 42 -58 q44 2 42 58 q-6 18 -10 30 q-2 -36 -32 -38 q-30 2 -32 38 q-6 -12 -10 -30z" fill="${prim}" stroke="${INK}" stroke-width="3"/><path d="M70 44 q30 -22 60 0" stroke="${trim}" stroke-width="2.5" fill="none"/><circle cx="100" cy="30" r="4" fill="${gem}" ${glow}/>`;
+      if (motif === 'wing') s += `<path d="M66 50 q-30 -14 -34 -36 q16 4 26 18 q-4 -14 2 -24 q10 14 14 32z" fill="#fff" stroke="${trim}" stroke-width="2"/><path d="M134 50 q30 -14 34 -36 q-16 4 -26 18 q4 -14 -2 -24 q-10 14 -14 32z" fill="#fff" stroke="${trim}" stroke-width="2"/>`;
+      if (motif === 'crystal') s += spikes(100, 30, 5, 22, 100, 270, '#e0f2fe', '#60a5fa');
+      if (motif === 'flame') s += flameShape(100, 26, 1.1, '#f97316', gem) + flameShape(84, 32, .7, '#ef4444', '#fde047') + flameShape(116, 32, .7, '#ef4444', '#fde047');
+      if (motif === 'storm') s += `<path d="M70 40 l-14 -26 l18 14z M130 40 l14 -26 l-18 14z" fill="${gem}" stroke="${INK}" stroke-width="1.5"/>`;
+      if (motif === 'leaf') s += `<path d="M78 34 q-14 -22 -4 -30 q8 12 10 26z M122 34 q14 -22 4 -30 q-8 12 -10 26z" fill="${sec}" stroke="${INK}" stroke-width="1.5"/>`;
+      if (motif === 'star') s += starShape(100, 18, 14, trim) + starShape(78, 30, 6, trim) + starShape(122, 30, 6, trim);
+      s += `<path d="M62 66 q-2 -42 38 -44 q40 2 38 44 l-8 0 q-2 -26 -30 -28 q-28 2 -30 28z" fill="${prim}" stroke="${INK}" stroke-width="3" stroke-linejoin="round"/>
+        <path d="M62 66 l-2 24 q6 4 10 0 l2 -24z M138 66 l2 24 q-6 4 -10 0 l-2 -24z" fill="${sec}" stroke="${INK}" stroke-width="2.5"/>
+        <path d="M66 50 q34 -20 68 0" stroke="${trim}" stroke-width="3.5" fill="none"/>`;
+      if (S.tier >= 2) s += `<path d="M94 38 h12 l-6 10z" fill="${gem}" stroke="${trim}" stroke-width="1.5" ${glow}/>`;
+      return s; }
+    case 'weapon': {
+      if (hero.weapon === 'laser'){
+        const c = S.tier ? S.gem : '#38bdf8', len = 100 + S.tier * 4;
+        return `<path d="M160 146 L160 ${146-len}" stroke="${c}" stroke-width="22" stroke-linecap="round" opacity=".45"/><path d="M160 146 L160 ${146-len}" stroke="${c}" stroke-width="10" stroke-linecap="round"/><path d="M160 146 L160 ${146-len}" stroke="#fff" stroke-width="4" stroke-linecap="round"/>
+          <rect x="153" y="144" width="14" height="32" rx="4" fill="${S.tier ? S.trim : '#94a3b8'}" stroke="${INK}" stroke-width="2.5"/><rect x="153" y="152" width="14" height="4" fill="${INK}"/><rect x="153" y="162" width="14" height="4" fill="${INK}"/><circle cx="160" cy="148" r="2.5" fill="${c}"/>`;
+      }
+      if ((hero.weapon || 'sword') === 'staff'){
+        return `<path d="M158 238 L160 58" stroke="${S.tier ? trim : '#6b4a2e'}" stroke-width="7" stroke-linecap="round"/><path d="M158 238 L160 58" stroke="${S.tier ? sec : '#8b5e3c'}" stroke-width="3" stroke-linecap="round"/>
+          ${motif === 'wing' ? `<path d="M160 52 q-26 -6 -30 -24 q14 6 30 14 q16 -8 30 -14 q-4 18 -30 24z" fill="#fff" stroke="${trim}" stroke-width="2"/>` : ''}
+          ${motif === 'crystal' ? spikes(160, 46, 3, 18, 70, 270, '#e0f2fe', '#60a5fa') : ''}${motif === 'flame' ? flameShape(160, 44, 1, '#f97316', gem) : ''}
+          <circle cx="160" cy="46" r="${S.tier ? 13 : 8}" fill="${S.tier ? gem : '#a3c26a'}" stroke="${INK}" stroke-width="3" ${S.tier >= 2 ? glow : ''}/><circle cx="156" cy="42" r="3.5" fill="#fff" opacity=".8"/>`;
+      }
+      const blade = S.tier ? (motif === 'shadow' ? '#a855f7' : motif === 'flame' ? '#fdba74' : motif === 'crystal' ? '#bae6fd' : motif === 'storm' ? '#c7d2fe' : motif === 'wing' ? '#fef9c3' : '#e2e8f0') : '#cbd5e1';
+      const len = 92 + S.tier * 4;
+      let s = '';
+      if (S.tier >= 2) s += `<path d="M154 ${150-len} L166 ${150-len} L168 146 L152 146Z" fill="${gem}" opacity=".45"/>`;
+      s += `<path d="M160 ${140-len} L168 ${150-len+12} L167 146 L153 146 L152 ${150-len+12}Z" fill="${blade}" stroke="${INK}" stroke-width="3" stroke-linejoin="round"/><path d="M160 ${146-len} V142" stroke="#fff" stroke-width="2" opacity=".7"/>`;
+      if (motif === 'flame') s += flameShape(150, 120, .6, '#f97316', gem) + flameShape(170, 96, .5, '#ef4444', gem);
+      if (motif === 'storm') s += `<path d="M152 ${150-len*.6} l16 10 l-12 2 l14 12" stroke="${gem}" stroke-width="2.5" fill="none"/>`;
+      s += `<rect x="140" y="144" width="40" height="8" rx="4" fill="${S.tier ? trim : '#6b4a2e'}" stroke="${INK}" stroke-width="2.5"/><rect x="155" y="150" width="10" height="22" rx="3" fill="${S.tier ? prim : '#5b3a21'}" stroke="${INK}" stroke-width="2.5"/><circle cx="160" cy="175" r="5" fill="${S.tier ? gem : '#c9a27a'}" stroke="${INK}" stroke-width="2"/>`;
+      if (motif === 'wing') s += `<path d="M140 148 q-16 -14 -10 -26 q8 10 14 22z M180 148 q16 -14 10 -26 q-8 10 -14 22z" fill="#fff" stroke="${trim}" stroke-width="1.5"/>`;
+      return s; }
+  }
+  return '';
+}
+function hairBack(h){
+  const c = h.hairColor;
+  if (h.hairStyle === 'long') return `<path d="M62 60 q-6 60 6 84 q32 10 64 0 q12 -24 6 -84z" fill="${c}" stroke="${INK}" stroke-width="3"/>`;
+  if (h.hairStyle === 'ponytail') return `<path d="M128 44 q34 6 30 46 q-4 26 -16 36 q8 -30 -6 -50z" fill="${c}" stroke="${INK}" stroke-width="3"/>`;
+  if (h.hairStyle === 'buns') return `<circle cx="66" cy="34" r="16" fill="${c}" stroke="${INK}" stroke-width="3"/><circle cx="134" cy="34" r="16" fill="${c}" stroke="${INK}" stroke-width="3"/>`;
+  if (h.hairStyle === 'curly') return `<g fill="${c}" stroke="${INK}" stroke-width="3">${[[62,64],[60,86],[140,64],[140,86]].map(([x,y]) => `<circle cx="${x}" cy="${y}" r="13"/>`).join('')}</g>`;
+  return '';
+}
+function hairFront(h){
+  const c = h.hairColor;
+  if (h.hairStyle === 'spiky') return `<path d="M64 60 l-2 -20 l12 6 l2 -20 l12 12 l10 -18 l8 18 l12 -14 l2 20 l14 -6 l-4 22 q-30 -20 -66 0z" fill="${c}" stroke="${INK}" stroke-width="3" stroke-linejoin="round"/>`;
+  if (h.hairStyle === 'curly') return `<g fill="${c}" stroke="${INK}" stroke-width="3">${[[70,44],[86,34],[102,32],[118,36],[132,46],[78,54]].map(([x,y]) => `<circle cx="${x}" cy="${y}" r="12"/>`).join('')}</g>`;
+  return `<path d="M64 64 q-4 -40 36 -40 q40 0 36 40 q-10 -18 -30 -20 q-2 10 -12 12 q4 -8 2 -12 q-20 4 -32 20z" fill="${c}" stroke="${INK}" stroke-width="3" stroke-linejoin="round"/>`;
+}
+function heroSVG(size=200, override={}){
+  const h = Object.assign({ skin:SKIN_TONES[1], hairColor:HAIR_COLORS[1], hairStyle:'short', weapon:'sword' }, K.hero || {}, override.hero || {});
+  const G = heroState(), eq = Object.assign({}, G.eq, override.eq || {});
+  const S = slot => SET_BY_ID[eq[slot]] || SET_BY_ID.traveler;
+  const full = override.eq ? null : fullSetOn();
+  const helmOn = S('helmet').tier > 0;
+  let s = `<svg viewBox="0 0 200 250" width="${size}" height="${size*1.25}" xmlns="http://www.w3.org/2000/svg" class="hero-svg">
+  <defs><filter id="hglow" x="-50%" y="-50%" width="200%" height="200%"><feGaussianBlur stdDeviation="3" result="b"/><feMerge><feMergeNode in="b"/><feMergeNode in="SourceGraphic"/></feMerge></filter>
+  <radialGradient id="haura"><stop offset="0" stop-color="${full ? full.gem : '#fff'}" stop-opacity=".75"/><stop offset="1" stop-color="${full ? full.gem : '#fff'}" stop-opacity="0"/></radialGradient></defs>`;
+  if (full) s += `<ellipse class="hero-aura" cx="100" cy="130" rx="96" ry="118" fill="url(#haura)"/>${[[30,60],[170,80],[24,170],[176,190],[60,20],[150,24]].map(([x,y],i) => `<g class="hero-spark" style="animation-delay:-${i*.4}s">${starShape(x, y, 6, full.gem)}</g>`).join('')}`;
+  s += `<ellipse cx="100" cy="238" rx="56" ry="8" fill="#000" opacity=".18"/>`;
+  if (!helmOn || h.hairStyle === 'long' || h.hairStyle === 'ponytail') s += hairBack(h);
+  // arms (skin), then body pieces
+  s += `<path d="M68 106 L52 158" stroke="${INK}" stroke-width="15" stroke-linecap="round"/><path d="M68 106 L52 158" stroke="${S('chest').tier ? S('chest').sec : S('chest').prim}" stroke-width="10" stroke-linecap="round"/>
+        <path d="M132 106 L148 158" stroke="${INK}" stroke-width="15" stroke-linecap="round"/><path d="M132 106 L148 158" stroke="${S('chest').tier ? S('chest').sec : S('chest').prim}" stroke-width="10" stroke-linecap="round"/>`;
+  s += gearPiece('pants', S('pants'), h) + gearPiece('boots', S('boots'), h) + gearPiece('chest', S('chest'), h) + gearPiece('belt', S('belt'), h);
+  s += `<rect x="92" y="90" width="16" height="16" fill="${h.skin}" stroke="${INK}" stroke-width="3"/>`;
+  s += gearPiece('shoulders', S('shoulders'), h);
+  // head + face
+  s += `<circle cx="100" cy="64" r="34" fill="${h.skin}" stroke="${INK}" stroke-width="3"/>
+    <ellipse cx="88" cy="68" rx="4.5" ry="6" fill="${INK}"/><ellipse cx="112" cy="68" rx="4.5" ry="6" fill="${INK}"/><circle cx="89.5" cy="66" r="1.7" fill="#fff"/><circle cx="113.5" cy="66" r="1.7" fill="#fff"/>
+    <path d="M92 80 q8 7 16 0" stroke="${INK}" stroke-width="3" fill="none" stroke-linecap="round"/>
+    <ellipse cx="80" cy="78" rx="6" ry="3.5" fill="#fb7185" opacity=".45"/><ellipse cx="120" cy="78" rx="6" ry="3.5" fill="#fb7185" opacity=".45"/>`;
+  s += helmOn ? gearPiece('helmet', S('helmet'), h) : hairFront(h) + (S('helmet').id === 'traveler' && override.showCap ? gearPiece('helmet', S('helmet'), h) : '');
+  s += gearPiece('gloves', S('gloves'), h);
+  s += gearPiece('weapon', S('weapon'), h);
+  return s + '</svg>';
+}
+function profileHero(k){ const keep = K; K = DB.kids[k]; try { return heroNode(110); } finally { K = keep; } }
+function heroNode(size=170, withBuddy=true){
+  const wrap = el('div',{class:'hero-wrap'}, el('div',{class:'hero-main', html: heroSVG(size)}));
+  if (withBuddy && K.avatar && K.avatar.base) wrap.append(el('div',{class:'hero-buddy', html: avatarSVG(K.avatar, Math.round(size*.42))}));
+  const full = fullSetOn();
+  if (full) wrap.append(el('div',{class:'hero-title', style:`--gem:${full.gem}`}, '✨ ' + full.title));
+  return wrap;
+}
+
+/* ---------- hero creator ---------- */
+function screenHeroCreate(after){
+  const h = Object.assign({ skin:SKIN_TONES[1], hairColor:HAIR_COLORS[1], hairStyle: kid === 'daughter' ? 'long' : 'spiky', weapon:'sword' }, K.hero || {});
+  const prev = el('div',{class:'hero-create-prev'});
+  const draw = () => { prev.innerHTML = heroSVG(220, { hero:h }); };
+  const row = (label, items, render, key) => el('div',{class:'hc-row'}, el('h3',{}, label),
+    el('div',{class:'hc-opts'}, ...items.map(v => { const b = el('button',{class:'hc-opt' + (h[key] === v ? ' on' : ''), onclick:()=>{ h[key] = v; [...b.parentNode.children].forEach(x => x.classList.toggle('on', x === b)); draw(); beep('tap'); }}, render(v)); return b; })));
+  draw();
+  show(el('div',{class:'screen'},
+    el('div',{class:'topbar'}, el('div'), el('h1',{class:'title'}, `Make your hero, ${kidName()}!`), el('div')),
+    el('div',{class:'hero-create'}, el('div',{class:'card center'}, prev, el('p',{class:'muted'}, 'Your buddy will be your companion on every quest!')),
+      el('div',{class:'card grow'},
+        row('Skin', SKIN_TONES, v => el('span',{class:'swatch', style:`background:${v}`}), 'skin'),
+        row('Hair style', Object.keys(HAIR_STYLES), v => HAIR_STYLES[v], 'hairStyle'),
+        row('Hair color', HAIR_COLORS, v => el('span',{class:'swatch', style:`background:${v}`}), 'hairColor'),
+        row('Weapon', ['sword','staff','laser'], v => ({ sword:'⚔️ Sword', staff:'🪄 Magic Staff', laser:'✨ Laser Sword' })[v], 'weapon'),
+        el('button',{class:'btn big', style:'margin-top:16px', onclick:()=>{ K.hero = h; heroState(); save(); confetti(70); beep('level'); say('Your hero is ready for adventure!'); (after || screenHome)(); }},'✅ This is me!')))));
+}
+
+/* ---------- loot ---------- */
+function lootReveal(setId, slot, fromBoss){
+  const S = SET_BY_ID[setId];
+  return new Promise(res => {
+    const ov = el('div',{class:'epic-overlay loot-overlay', style:`--gem:${S.gem}`}, el('div',{class:'epic-rays'}),
+      el('div',{class:'epic-card'},
+        el('div',{class:'epic-tier'}, fromBoss ? '🏆 BOSS LOOT 🏆' : '🎁 GEAR DROP 🎁'),
+        el('div',{class:'loot-hero', html: heroSVG(190, { eq: Object.assign({}, heroState().eq, { [slot]: setId }) })}),
+        el('h2',{class:'epic-title'}, `${S.name} ${SLOT_LABEL[slot]}!`),
+        el('p',{class:'epic-sub'}, `${setCount(setId)} of 8 ${S.name} pieces · ${8 - setCount(setId) ? `${8 - setCount(setId)} more for the full set glow!` : 'FULL SET! Wear them all to glow!'}`),
+        el('div',{class:'row center'},
+          el('button',{class:'btn big', onclick:()=>{ heroState().eq[slot] = setId; save(); ov.remove(); res(); }},'⚔️ Equip it!'),
+          el('button',{class:'btn small gray', onclick:()=>{ ov.remove(); res(); }},'Later'))));
+    document.body.append(ov); confetti(fromBoss ? 120 : 60); beep('level');
+    say(`You got the ${S.name} ${SLOT_LABEL[slot]}!`);
+  });
+}
+// after a great read: a common piece from this level's set (or a lower conquered set once that one is done)
+async function maybeGearDrop(){
+  if (!K.hero) return;
+  const tiers = [K.level].concat((K.bossesBeaten || []).slice().sort((a,b) => b - a));
+  for (const lv of tiers){
+    const S = setForLevel(lv); if (!S) continue;
+    const missing = COMMON_PIECES.filter(p => !hasPiece(S.id, p));
+    if (missing.length){ const p = pick(missing); givePiece(S.id, p); await lootReveal(S.id, p, false); return; }
+  }
+}
+async function bossGearDrop(level, replay){
+  if (!K.hero) return;
+  const S = setForLevel(level); if (!S) return;
+  const missing = (replay ? GEAR_SLOTS : BOSS_PIECES).filter(p => !hasPiece(S.id, p));
+  const drops = replay ? missing.slice(0, 1) : missing;
+  for (const p of drops){ givePiece(S.id, p); await lootReveal(S.id, p, true); }
+  if (!drops.length) { K.stars += 5; save(); await modal(el('div',{}, el('div',{class:'big-e'},'💰'), el('h2',{},'Treasure!'), el('p',{}, `You already have the whole ${S.name} set. +5 ⭐`)), [['Yay! ▶','',1]]); }
+  if (setCount(S.id) === 8 && !(K.setsDone || []).includes(S.id)){
+    K.setsDone = (K.setsDone || []).concat(S.id); save(); addCosmic(3, `Full ${S.name} set!`);
+  }
+}
+
+/* ---------- armory ---------- */
+let armorySlot = 'chest';
+function screenArmory(){
+  stopAll();
+  const G = heroState();
+  const prev = el('div',{class:'armory-prev'}, heroNode(230));
+  const grid = el('div',{class:'armory-grid'});
+  GEAR_SETS.forEach(S => {
+    const owned = hasPiece(S.id, armorySlot), on = G.eq[armorySlot] === S.id;
+    const where = S.tier === 0 ? 'Starter gear' : BOSS_PIECES.includes(armorySlot) ? `Beat the Level ${S.tier} boss` : `Great reads at Level ${S.tier}`;
+    grid.append(el('button',{class:'armory-item' + (owned ? '' : ' locked') + (on ? ' on' : ''), style:`--gem:${S.gem};--prim:${S.prim}`, onclick:()=>{
+        if (!owned){ say(`${S.name} ${SLOT_LABEL[armorySlot]}. ${where} to get it!`); return; }
+        G.eq[armorySlot] = S.id; save(); beep('tap'); screenArmory(); }},
+      el('div',{class:'ai-pic', html: owned ? heroSVG(84, { eq: Object.assign({}, G.eq, { [armorySlot]: S.id }) }) : ''}, owned ? null : '🔒'),
+      el('div',{class:'ai-name'}, S.name), el('div',{class:'ai-sub'}, owned ? (on ? '✓ Wearing' : 'Tap to wear') : where)));
+  });
+  const sets = el('div',{class:'set-list'}, ...GEAR_SETS.filter(S => S.tier).map(S => {
+    const n = setCount(S.id);
+    return el('div',{class:'set-row', style:`--gem:${S.gem};--prim:${S.prim}`},
+      el('span',{class:'set-dot'}), el('b',{}, S.name), el('span',{class:'muted'}, `Level ${S.tier}`),
+      el('div',{class:'set-bar'}, el('div',{style:`width:${n/8*100}%`})), el('span',{}, `${n}/8`),
+      n === 8 ? el('button',{class:'btn small', onclick:()=>{ GEAR_SLOTS.forEach(s => G.eq[s] = S.id); save(); burst('SET!'); screenArmory(); }},'Wear set') : null);
+  }));
+  show(el('div',{class:'screen'},
+    el('div',{class:'topbar'}, el('button',{class:'btn ghost small', onclick:()=>screenHome()},'← Back'), el('h1',{class:'title'},'🛡️ Armory'),
+      el('button',{class:'btn small blue', onclick:()=>screenHeroCreate(screenArmory)},'✏️ Change look')),
+    el('div',{class:'shop-layout'}, prev,
+      el('div',{class:'grow'},
+        el('div',{class:'tabs shop-tabs'}, ...GEAR_SLOTS.map(sl => el('button',{class:'tab' + (sl === armorySlot ? ' active' : ''), onclick:()=>{ armorySlot = sl; screenArmory(); }}, SLOT_ICON[sl] + ' ' + SLOT_LABEL[sl]))),
+        grid,
+        el('div',{class:'card', style:'margin-top:16px'}, el('h2',{style:'margin-top:0'},'Gear sets'),
+          el('p',{class:'muted'},'Wear all 8 pieces of one set to unlock its glowing set bonus and title!'), sets)))));
+}
+
+
+/* ---------- Hall of Heroes: profile showcase ---------- */
+function screenHeroHall(){
+  stopAll();
+  const other = kid === 'son' ? 'daughter' : 'son', O = DB.kids[other];
+  const tile = (icon, n, label, on=true) => el('div',{class:'hh-tile' + (on ? '' : ' off'), title:label}, el('span',{class:'hh-ic'}, icon), n != null ? el('span',{class:'hh-n'}, n) : null);
+  const buddies = Object.entries(AVATAR_BASES).filter(([,b]) => b.kid === kid).map(([id,b]) => tile(b.emoji, null, b.name, K.avatar.owned.includes(id) || K.level >= AVATAR_UNLOCK_LEVEL));
+  const bosses = T.levels.map((_, i) => { const B = bossFor(i+1); if (!B) return null; const r = (K.bossLog||{})[i+1]; return tile((K.bossesBeaten||[]).includes(i+1) ? B.e : '❔', r && r.wins ? r.wins : null, B.name, (K.bossesBeaten||[]).includes(i+1)); }).filter(Boolean);
+  const sets = GEAR_SETS.filter(g => g.tier).map(g => el('div',{class:'hh-tile set' + (setCount(g.id) ? '' : ' off'), style:`--gem:${g.gem};--prim:${g.prim}`, title:g.name}, el('span',{class:'hh-gem'}), el('span',{class:'hh-n'}, setCount(g.id) + '/8')));
+  const stage = el('div',{class:'hh-stage'},
+    el('div',{class:'hh-spot main'}, heroNode(200), el('div',{class:'hh-name'}, kidName()), el('div',{class:'hh-sub'}, `${kid==='daughter'?'Rank':'Level'} ${K.level} · ${(fullSetOn() || {}).title || 'Adventurer'}`)));
+  if (O && O.hero){ const keep = K; K = O; try { stage.append(el('div',{class:'hh-spot side'}, heroNode(130), el('div',{class:'hh-name small'}, kidName(other)))); } finally { K = keep; } }
+  show(el('div',{class:'screen'},
+    el('div',{class:'topbar'}, el('button',{class:'btn ghost small', onclick:()=>screenHome()},'← Back'), el('h1',{class:'title'},'🏛️ Hall of Heroes'), el('button',{class:'btn small', onclick:screenArmory},'🛡️ Armory')),
+    el('div',{class:'hh-panel'},
+      el('div',{class:'hh-rows'},
+        el('div',{class:'hh-box'}, el('h3',{},'Companions'), el('div',{class:'hh-row'}, ...buddies)),
+        el('div',{class:'hh-box grow'}, el('h3',{},'Bosses Defeated'), el('div',{class:'hh-row'}, ...bosses)),
+        el('div',{class:'hh-box grow'}, el('h3',{},'Gear Sets'), el('div',{class:'hh-row'}, ...sets))),
+      stage,
+      el('div',{class:'hh-stats'}, ...[['⭐', balance(), 'Stars'],['💫', cosmicBal(), 'Cosmic'],['🔥', K.streak.count||0, 'Day streak'],['📖', normalSessions(K).length, 'Stories'],['📚', (K.realBooks||[]).length, 'Real books'],['🎯', masteredWords(K).length, 'Words mastered'],['🎖️', K.badges.length, 'Badges']]
+        .map(([e,n,l]) => el('div',{class:'hh-stat'}, el('b',{}, e + ' ' + n), el('span',{}, l)))))));
+}
+/* ---------- quest map ---------- */
+const MAP_SPOTS = [[9,82],[25,60],[14,34],[34,18],[52,40],[46,72],[68,80],[88,46]];
+function screenQuestMap(){
+  stopAll();
+  const map = el('div',{class:'quest-map'});
+  let path = 'M' + MAP_SPOTS.map(([x,y]) => `${x*10} ${y*6}`).join(' L');
+  map.innerHTML = `<svg viewBox="0 0 1000 600" preserveAspectRatio="none" class="qm-svg"><path d="${path}" stroke="#7c5a33" stroke-width="12" fill="none" stroke-dasharray="2 22" stroke-linecap="round"/></svg>`;
+  for (let lv = 1; lv <= T.levels.length; lv++){
+    const B = bossFor(lv), S = setForLevel(lv), [x, y] = MAP_SPOTS[lv-1] || [50,50];
+    if (!B) continue;
+    const beaten = (K.bossesBeaten || []).includes(lv), current = lv === K.level && !beaten, ready = current && bossReady();
+    const state = beaten ? 'beaten' : current ? (ready ? 'ready' : 'current') : lv < K.level ? 'skipped' : 'locked';
+    const node = el('button',{class:'qm-node ' + state, style:`left:${x}%;top:${y}%;--boss:${B.color};--gem:${S ? S.gem : '#fff'}`, onclick:()=>{
+      if (state === 'locked'){ say(`${B.name} is far ahead. Keep reading to get there!`); return; }
+      if (state === 'current'){ const left = Math.max(0, LEVEL_UP_STREAK - (K.passStreak || 0)); say(`${B.name} is sleeping. Read ${left} more great stor${left === 1 ? 'y' : 'ies'} to wake the boss!`); return; }
+      bossIntro(lv); }},
+      el('div',{class:'qm-face'}, state === 'locked' ? '❔' : B.e),
+      el('div',{class:'qm-label'}, el('b',{}, state === 'locked' ? '???' : B.name), el('span',{}, `${S ? S.name : ''} set ${S ? setCount(S.id) : 0}/8`)),
+      el('div',{class:'qm-badge'}, state === 'beaten' ? '✅ Re-battle for gear' : state === 'ready' ? '⚔️ BATTLE!' : state === 'current' ? '💤 Read to wake' : state === 'skipped' ? '⚔️ Battle for gear' : '🔒'));
+    map.append(node);
+  }
+  const here = MAP_SPOTS[Math.min(K.level, T.levels.length) - 1];
+  if (here) map.append(el('div',{class:'qm-you', style:`left:${here[0]}%;top:${here[1]}%`, html: heroSVG(70)}));
+  show(el('div',{class:'screen'},
+    el('div',{class:'topbar'}, el('button',{class:'btn ghost small', onclick:()=>screenHome()},'← Back'), el('h1',{class:'title'},'🗺️ Quest Map'),
+      el('button',{class:'btn small', onclick:screenArmory},'🛡️ Armory')),
+    el('p',{class:'subtitle'}, 'Great reads wake each boss and drop gear. Beat a boss for its helmet and weapon. Beaten bosses can be battled again for missing pieces!'),
+    map));
+}
+
+/* ================= TOWN SQUARE (shared plaza) =================
+   Both heroes live here. Tap the ground to walk, tap a building to go in, tap your brother or sister
+   to wave or high-five. With cloud save on (the Claude link), each kid's spot and waves are shared
+   live through the docs rq/plaza_son and rq/plaza_daughter. On the GitHub site this works on one iPad
+   only, so a wave left for someone not in town waits as a note until they come back. */
+const PZ_W = 1600, PZ_H = 1120, PZ_C = { x:800, y:620 };
+const PZ_EMOTES = [['👋','Wave'],['✋','High five'],['💃','Dance'],['🎉','Cheer'],['❤️','Hug'],['😂','Silly']];
+const PZ_BUILDINGS = [
+  { id:'townhall', x:800, y:330, w:320, h:200, wall:'#f6ead3', roof:'#c2410c', trim:'#d9b26a', kind:'dome', icon:'🗺️', name:'Town Hall', sub:'Quest Map', go:() => screenQuestMap() },
+  { id:'library',  x:330, y:400, w:230, h:160, wall:'#f3e3c7', roof:'#2f5fc4', trim:'#c9a46a', kind:'gable', icon:'📖', name:'Library', sub:'Read a story', go:() => screenHome() },
+  { id:'shop',     x:1270, y:400, w:230, h:160, wall:'#f6e1e8', roof:'#9333ea', trim:'#d6a6c9', kind:'gable', icon:'🛍️', name:'Shop', sub:'Gear & treats', go:() => screenShop() },
+  { id:'armory',   x:210, y:770, w:210, h:155, wall:'#e7ddd0', roof:'#7f1d1d', trim:'#a8a29e', kind:'gable', icon:'🛡️', name:'Armory', sub:'Your armor', go:() => screenArmory() },
+  { id:'heroes',   x:1390, y:770, w:220, h:165, wall:'#f6ead3', roof:'#b45309', trim:'#d9b26a', kind:'dome', icon:'🏛️', name:'Hall of Heroes', sub:'See both heroes', go:() => screenHeroHall() },
+  { id:'trophy',   x:520, y:1040, w:170, h:170, wall:'#efe6d6', roof:'#ca8a04', trim:'#d9b26a', kind:'tower', icon:'🏆', name:'Trophy Tower', sub:'Trophies', go:() => screenTrophies() },
+  { id:'roost',    x:1080, y:1040, w:200, h:150, wall:'#e8f0e0', roof:'#15803d', trim:'#a3b18a', kind:'gable', icon:'🐾', name:'Pet Roost', sub:'Your collection', go:() => screenCollection() },
+  { id:'portal',   x:800, y:1095, w:150, h:150, kind:'portal', icon:'🏗️', name:'My World', sub:'Build!', go:() => screenWorld() }
+];
+const PZ_NPCS = [
+  { id:'owl',   e:'🦉', name:'Mayor Hoot',    x:1000, y:470 },
+  { id:'baker', e:'🐰', name:'Baker Bun',     x:560,  y:560 },
+  { id:'well',  e:'⛲', name:'Wishing Fountain', x:PZ_C.x, y:PZ_C.y, hidden:true }
+];
+const PZ_WORDS = {
+  son: ['the','and','look','jump','play','said','come','here','little','where','funny','yellow','down','help','make','away'],
+  daughter: ['because','through','friend','enormous','courage','whisper','mystery','discover','treasure','ancient','journey','brilliant','curious','dangerous','imagine','together']
+};
+const PZ_RIDDLES = {
+  son: [['What rhymes with CAT?',['hat','dog','sun']], ['Which word starts like BALL?',['bat','cup','fish']], ['I am yellow and up in the sky. What am I?',['the sun','a fish','a shoe']],
+        ['What rhymes with PIG?',['big','pan','top']], ['Which one is an animal?',['frog','rock','cup']], ['Which word has the short A sound, like apple?',['map','me','go']],
+        ['What do you read?',['a book','a spoon','a sock']], ['What rhymes with RED?',['bed','cat','run']], ['Which word ends like DOG?',['log','dot','sun']], ['What do bees make?',['honey','milk','bread']]],
+  daughter: [['I have keys but open no locks. What am I?',['a piano','a door','a car']], ['What has pages but is not a tree?',['a book','a leaf','a cloud']],
+        ['Which word means very big?',['enormous','tiny','quiet']], ['What gets wetter the more it dries?',['a towel','the sun','a rock']],
+        ['Which word is an action (a verb)?',['jump','blue','table']], ['What is the opposite of brave?',['scared','strong','happy']],
+        ['I have a head and a tail but no body. What am I?',['a coin','a cat','a kite']], ['Which word means the same as quick?',['fast','slow','sleepy']],
+        ['What can you catch but not throw?',['a cold','a ball','a fish']], ['Which word is a compound word?',['sunflower','happy','running']]]
+};
+const PZ = { pos:null, sub:false, beat:null, mine:null, timers:[] };
+const pzOther = () => kid === 'son' ? 'daughter' : 'son';
+const pzDayIdx = () => Math.floor(Date.now() / 86400000);
+function pzRec(k){ DB.plaza = DB.plaza || {}; return DB.plaza[k] || null; }
+function pzOnline(r){ return !!(r && r.here && Date.now() - r.ts < 75000); }
+function pzPush(extra = {}){
+  DB.plaza = DB.plaza || {};
+  const prev = DB.plaza[kid] || { sent:[] };
+  const rec = Object.assign({}, prev, { x:PZ.pos.x, y:PZ.pos.y, here:true, name:kidName() }, extra, { ts:Date.now() });
+  rec.sent = (rec.sent || []).slice(-8);
+  DB.plaza[kid] = rec; K.plazaPos = { x:PZ.pos.x, y:PZ.pos.y }; save();
+  if (CLOUD.on && CLOUD.db){ try { CLOUD.db.doc('rq/plaza_' + kid).set({ json:JSON.stringify(rec), ts:rec.ts }).catch(()=>{}); } catch(e){} }
+}
+function pzSubscribe(){
+  if (PZ.sub || !CLOUD.on || !CLOUD.db) return;
+  PZ.sub = true;
+  ['son','daughter'].forEach(k => {
+    try {
+      CLOUD.db.doc('rq/plaza_' + k).onSnapshot(snap => {
+        const d = snap.exists ? snap.data() : null; if (!d || typeof d.json !== 'string') return;
+        let r; try { r = JSON.parse(d.json); } catch(e){ return; }
+        DB.plaza = DB.plaza || {};
+        if (k === kid && document.querySelector('.plaza-world')) return; // I'm the one moving here
+        if (!DB.plaza[k] || r.ts >= DB.plaza[k].ts){ DB.plaza[k] = r; if (PZ.onRemote && k !== kid) PZ.onRemote(r); }
+      }, () => {});
+    } catch(e){}
+  });
+}
+function pzToast(text){
+  const t = el('div',{class:'pz-toast'}, text); document.body.append(t);
+  setTimeout(() => t.classList.add('out'), 3200); setTimeout(() => t.remove(), 3800);
+}
+function pzHeroFor(k, size){
+  const D = DB.kids[k];
+  if (D.hero){ const keep = K; K = D; try { return heroNode(size); } finally { K = keep; } }
+  return el('div',{class:'hero-wrap', html: D.avatar && D.avatar.base ? avatarSVG(D.avatar, size) : `<div style="font-size:${size*.7}px">${k === 'son' ? '🐲' : '🐰'}</div>`});
+}
+
+/* ----- the drawn town ----- */
+function pzTree(x, y, s, gold, R){
+  const cols = gold ? ['#f2b705','#f5c542','#e09c00','#fcd34d'] : ['#4caf50','#66bb6a','#2e7d32','#81c784'];
+  let g = `<g transform="translate(${x} ${y}) scale(${s})"><ellipse cx="0" cy="4" rx="34" ry="9" fill="#000" opacity=".12"/><path d="M-6 0 q2 -40 -4 -60 h20 q-6 20 -4 60z" fill="#8b5a2b" stroke="#5b3a1a" stroke-width="2"/>`;
+  for (let i = 0; i < 7; i++){ const a = i / 7 * Math.PI * 2; g += `<circle cx="${Math.cos(a)*24}" cy="${-82 + Math.sin(a)*20}" r="${22 + R()*8}" fill="${cols[i % 4]}"/>`; }
+  return g + `<circle cx="0" cy="-86" r="26" fill="${cols[3]}"/><circle cx="-8" cy="-96" r="9" fill="#fff" opacity=".25"/></g>`;
+}
+function pzCottage(x, y, roof){
+  return `<g><rect x="${x-50}" y="${y-70}" width="100" height="70" fill="#f1e6d2" stroke="#5b4636" stroke-width="3"/><path d="M${x-62} ${y-66} L${x} ${y-120} L${x+62} ${y-66}z" fill="${roof}" stroke="#1e293b" stroke-width="3" stroke-linejoin="round"/>
+    <rect x="${x-12}" y="${y-40}" width="24" height="40" rx="10" fill="#7c4a24"/><rect x="${x-40}" y="${y-56}" width="18" height="18" fill="#fde68a" stroke="#5b4636" stroke-width="2"/><rect x="${x+22}" y="${y-56}" width="18" height="18" fill="#fde68a" stroke="#5b4636" stroke-width="2"/>
+    <rect x="${x+24}" y="${y-118}" width="12" height="30" fill="#8b6b4a"/></g>`;
+}
+function pzBuildingSVG(b){
+  const ink = '#2a2118', L = b.x - b.w/2, T = b.y - b.h;
+  if (b.kind === 'portal') return `<g data-b="${b.id}" class="pz-b"><ellipse cx="${b.x}" cy="${b.y}" rx="90" ry="20" fill="#000" opacity=".15"/>
+    <path d="M${b.x-70} ${b.y} v-90 a70 70 0 0 1 140 0 v90" fill="none" stroke="#a78bfa" stroke-width="22"/><path d="M${b.x-70} ${b.y} v-90 a70 70 0 0 1 140 0 v90" fill="none" stroke="#ede9fe" stroke-width="8"/>
+    <path d="M${b.x-56} ${b.y} v-86 a56 56 0 0 1 112 0 v86z" fill="url(#pzPortal)" class="pz-portal"/>
+    <rect x="${b.x-70}" y="${b.y-200}" width="140" height="32" rx="10" fill="#fff" stroke="${ink}" stroke-width="3"/><text x="${b.x}" y="${b.y-178}" text-anchor="middle" class="pz-sign">${b.icon} ${b.name}</text></g>`;
+  let roof = '';
+  if (b.kind === 'dome') roof = `<rect x="${L-10}" y="${T-14}" width="${b.w+20}" height="16" fill="${b.trim}" stroke="${ink}" stroke-width="3"/>
+    <path d="M${b.x-b.w*.32} ${T-14} a${b.w*.32} ${b.w*.3} 0 0 1 ${b.w*.64} 0z" fill="${b.roof}" stroke="${ink}" stroke-width="3"/>
+    <path d="M${b.x-b.w*.2} ${T-30} q${b.w*.2} -${b.w*.16} ${b.w*.4} 0" fill="none" stroke="#fcd34d" stroke-width="4" opacity=".7"/>
+    <path d="M${b.x} ${T-14-b.w*.3} v-26" stroke="${ink}" stroke-width="4"/><circle cx="${b.x}" cy="${T-14-b.w*.3-30}" r="8" fill="#facc15" stroke="${ink}" stroke-width="2"/>
+    ${[L-4, L+b.w-30].map(x => `<rect x="${x}" y="${T-60}" width="34" height="${b.h+60}" fill="${b.wall}" stroke="${ink}" stroke-width="3"/><path d="M${x-6} ${T-58} L${x+17} ${T-100} L${x+40} ${T-58}z" fill="${b.roof}" stroke="${ink}" stroke-width="3"/><rect x="${x+10}" y="${T-30}" width="14" height="24" rx="7" fill="#fde68a" stroke="${ink}" stroke-width="2"/>`).join('')}`;
+  else if (b.kind === 'tower') roof = `<path d="M${L-16} ${T+2} L${b.x} ${T-110} L${L+b.w+16} ${T+2}z" fill="${b.roof}" stroke="${ink}" stroke-width="3" stroke-linejoin="round"/><path d="M${b.x} ${T-110} v-24 l20 7 l-20 7" fill="#ef4444" stroke="${ink}" stroke-width="2"/>`;
+  else roof = `<path d="M${L-16} ${T+4} L${b.x} ${T-b.h*.5} L${L+b.w+16} ${T+4}z" fill="${b.roof}" stroke="${ink}" stroke-width="3" stroke-linejoin="round"/><path d="M${L-4} ${T-6} L${b.x} ${T-b.h*.5+14}" stroke="#fff" stroke-width="3" opacity=".25"/>`;
+  const nWin = Math.max(2, Math.floor(b.w / 64)), gap = b.w / nWin;
+  let wins = '';
+  for (let i = 0; i < nWin; i++){ const wx = L + gap*i + gap/2 - 12; wins += `<path d="M${wx} ${T+60} v-26 a12 12 0 0 1 24 0 v26z" fill="#fde68a" stroke="${ink}" stroke-width="2.5"/><path d="M${wx+12} ${T+22} v38" stroke="${ink}" stroke-width="1.5" opacity=".5"/>`; }
+  return `<g data-b="${b.id}" class="pz-b"><ellipse cx="${b.x}" cy="${b.y+4}" rx="${b.w*.62}" ry="18" fill="#000" opacity=".14"/>
+    <rect x="${L}" y="${T}" width="${b.w}" height="${b.h}" rx="4" fill="${b.wall}" stroke="${ink}" stroke-width="3"/>${roof}${wins}
+    <rect x="${L-6}" y="${b.y-12}" width="${b.w+12}" height="12" fill="${b.trim}" stroke="${ink}" stroke-width="2.5"/>
+    <path d="M${b.x-22} ${b.y-12} v-40 a22 22 0 0 1 44 0 v40z" fill="#7c4a24" stroke="${ink}" stroke-width="3"/><circle cx="${b.x+12}" cy="${b.y-34}" r="3" fill="#facc15"/>
+    ${[b.x-36, b.x+36].map(x => `<circle cx="${x}" cy="${b.y-56}" r="12" fill="#fde68a" opacity=".45" class="sc-firefly"/><circle cx="${x}" cy="${b.y-56}" r="5" fill="#fff7c2" stroke="${ink}" stroke-width="1.5"/>`).join('')}
+    <rect x="${b.x-90}" y="${T+70}" width="180" height="${b.h > 160 ? 46 : 40}" rx="10" fill="#fff" stroke="${ink}" stroke-width="3"/><text x="${b.x}" y="${T+92}" text-anchor="middle" class="pz-sign">${b.icon} ${b.name}</text><text x="${b.x}" y="${T+106}" text-anchor="middle" class="pz-sub">${b.sub}</text></g>`;
+}
+function pzSceneSVG(){
+  const R = seeded(77), C = PZ_C;
+  let s = `<svg viewBox="0 0 ${PZ_W} ${PZ_H}" width="${PZ_W}" height="${PZ_H}" xmlns="http://www.w3.org/2000/svg">
+    <defs><radialGradient id="pzGrass" cx="50%" cy="55%" r="70%"><stop offset="0" stop-color="#8fd16a"/><stop offset="1" stop-color="#4f9e3c"/></radialGradient>
+    <radialGradient id="pzPortal" cx="50%" cy="60%" r="60%"><stop offset="0" stop-color="#fff"/><stop offset=".4" stop-color="#c4b5fd"/><stop offset="1" stop-color="#6d28d9"/></radialGradient>
+    <pattern id="pzCobble" width="28" height="22" patternUnits="userSpaceOnUse"><rect width="28" height="22" fill="#efe4cf"/><path d="M0 11 h28 M14 0 v11 M0 0 v0 M7 11 v11 M21 11 v11" stroke="#d6c6a6" stroke-width="2"/></pattern></defs>
+    <rect width="${PZ_W}" height="${PZ_H}" fill="url(#pzGrass)"/>`;
+  for (let i = 0; i < 260; i++) s += `<path d="M${R()*PZ_W} ${R()*PZ_H} l3 -9 l3 9" stroke="#3f8a33" stroke-width="2" fill="none" opacity=".5"/>`;
+  // winding cobblestone paths from the plaza to every door
+  PZ_BUILDINGS.forEach((b, i) => {
+    const dx = b.x - C.x, dy = (b.y + 10) - C.y, len = Math.hypot(dx, dy) || 1, bend = (i % 2 ? 1 : -1) * Math.min(120, len * .25);
+    const mx = C.x + dx/2 - dy/len*bend, my = C.y + dy/2 + dx/len*bend, d = `M${C.x} ${C.y} Q${mx} ${my} ${b.x} ${b.y+14}`;
+    s += `<path d="${d}" stroke="#bfa982" stroke-width="80" fill="none" stroke-linecap="round"/><path d="${d}" stroke="url(#pzCobble)" stroke-width="68" fill="none" stroke-linecap="round"/>`;
+  });
+  // flower beds between the paths
+  const beds = [[560,760],[1040,760],[620,440],[980,880],[440,620],[1160,600]];
+  beds.forEach(([x, y]) => { s += `<ellipse cx="${x}" cy="${y}" rx="70" ry="34" fill="#5fae45" stroke="#c9b48c" stroke-width="6"/>`;
+    for (let i = 0; i < 14; i++) s += `<circle cx="${x - 55 + R()*110}" cy="${y - 22 + R()*44}" r="${4 + R()*3}" fill="${['#f472b6','#facc15','#fb7185','#a78bfa','#fff'][i % 5]}"/>`; });
+  // central plaza, garden ring, fountain and statue
+  s += `<circle cx="${C.x}" cy="${C.y}" r="190" fill="#bfa982"/><circle cx="${C.x}" cy="${C.y}" r="182" fill="url(#pzCobble)"/>
+    <circle cx="${C.x}" cy="${C.y}" r="120" fill="#5fae45" stroke="#d9b26a" stroke-width="8"/>`;
+  for (let i = 0; i < 26; i++){ const a = i / 26 * Math.PI * 2; s += `<circle cx="${C.x + Math.cos(a)*102}" cy="${C.y + Math.sin(a)*102}" r="7" fill="${['#f472b6','#fde047','#fff','#c084fc'][i % 4]}"/>`; }
+  s += `<g data-b="well" class="pz-b"><circle cx="${C.x}" cy="${C.y}" r="76" fill="#e7dcc8" stroke="#8a7a5c" stroke-width="4"/><circle cx="${C.x}" cy="${C.y}" r="62" fill="#60a5fa"/>
+    <circle cx="${C.x}" cy="${C.y}" r="40" fill="none" stroke="#dbeafe" stroke-width="3" class="pz-ripple"/><circle cx="${C.x}" cy="${C.y}" r="52" fill="none" stroke="#dbeafe" stroke-width="2" class="pz-ripple d2"/>
+    <rect x="${C.x-16}" y="${C.y-60}" width="32" height="60" fill="#e7dcc8" stroke="#8a7a5c" stroke-width="3"/>
+    <path d="M${C.x-40} ${C.y-66} q20 -16 40 0 q20 -16 40 0 v-4 q-20 -14 -40 0 q-20 -14 -40 0z" fill="#facc15" stroke="#a16207" stroke-width="3"/><path d="M${C.x} ${C.y-70} v-4" stroke="#a16207" stroke-width="3"/>
+    <path d="M${C.x} ${C.y-112} l7 15 l16 2 l-12 11 l3 16 l-14 -8 l-14 8 l3 -16 l-12 -11 l16 -2z" fill="#fde047" stroke="#a16207" stroke-width="2.5" class="pz-star"/></g>`;
+  // cottages and lamps around the edges
+  [[90,260,'#2f5fc4'],[1510,260,'#2f5fc4'],[110,1090,'#2f5fc4'],[1490,1090,'#2f5fc4'],[300,1110,'#c2410c'],[1300,1110,'#c2410c'],[560,180,'#2f5fc4'],[1040,180,'#2f5fc4']].forEach(([x, y, r]) => s += pzCottage(x, y, r));
+  [[640,620],[960,620],[800,430],[800,820],[470,520],[1130,520],[470,860],[1130,860]].forEach(([x, y]) => s += `<path d="M${x} ${y} v-60" stroke="#334155" stroke-width="5"/><rect x="${x-9}" y="${y-76}" width="18" height="20" rx="4" fill="#fde68a" stroke="#334155" stroke-width="3"/><circle cx="${x}" cy="${y-66}" r="18" fill="#fde68a" opacity=".3" class="sc-firefly"/>`);
+  // golden and green trees, back to front
+  const trees = [[40,120],[200,100],[420,90],[680,70],[930,70],[1180,90],[1400,100],[1560,140],[40,520],[1560,520],[60,900],[1540,900],[380,620],[1220,620],[700,980],[900,980],[300,960],[1300,960],[620,280],[980,280]];
+  trees.sort((a, b) => a[1] - b[1]).forEach(([x, y], i) => s += pzTree(x, y, .9 + R()*.35, i % 3 !== 2, R));
+  PZ_BUILDINGS.forEach(b => s += pzBuildingSVG(b));
+  return s + '</svg>';
+}
+
+/* ----- screen ----- */
+function screenTownSquare(){
+  if (!K.hero) return screenHeroCreate(screenTownSquare);
+  pzSubscribe();
+  PZ.pos = Object.assign({ x:760, y:760 }, K.plazaPos || {});
+  const other = pzOther(), oName = kidName(other);
+  const world = el('div',{class:'plaza-world', html: pzSceneSVG()});
+  const view = el('div',{class:'plaza-view'}, world), frame = el('div',{class:'plaza-frame'}, view);
+  const actor = (node, name, cls) => el('div',{class:'plaza-actor ' + (cls || '')}, el('div',{class:'pz-tag'}, name), node);
+  const me = actor(pzHeroFor(kid, 96), kidName(), 'me');
+  const sib = actor(pzHeroFor(other, 96), oName, 'sib');
+  world.append(me, sib);
+  const put = (n, x, y, w = 96) => { n.style.left = (x - w/2) + 'px'; n.style.top = (y - w*1.25 - 30) + 'px'; n.style.zIndex = Math.round(y); };
+  const bubble = (n, text, big) => { n.querySelectorAll('.pz-bubble').forEach(b => b.remove()); const b = el('div',{class:'pz-bubble' + (big ? ' big' : '')}, text); n.append(b); setTimeout(() => b.remove(), 2600); };
+  const camera = (x, y, smooth = true) => view.scrollTo({ left: x - view.clientWidth/2, top: y - view.clientHeight/2, behavior: smooth ? 'smooth' : 'auto' });
+
+  // the other kid: live if they're in town now, otherwise napping at their last spot
+  let sibPos = { x:900, y:720 }, seenEmote = 0;
+  const drawSib = r => {
+    const live = pzOnline(r);
+    if (r && typeof r.x === 'number') sibPos = { x:r.x, y:r.y };
+    const dur = live ? Math.min(3, Math.hypot(sibPos.x - (sib._x || sibPos.x), sibPos.y - (sib._y || sibPos.y)) / 240) : 0;
+    sib.style.transitionDuration = dur + 's';
+    if (sib._x != null && live) sib.classList.toggle('flip', sibPos.x < sib._x);
+    if (dur > .05){ sib.classList.add('walking'); setTimeout(() => sib.classList.remove('walking'), dur*1000); }
+    put(sib, sibPos.x, sibPos.y); sib._x = sibPos.x; sib._y = sibPos.y;
+    sib.classList.toggle('away', !live);
+    sib.querySelector('.pz-tag').textContent = live ? oName + ' 🟢' : oName + ' 💤';
+    if (live && r.emote && r.emoteTs > seenEmote && Date.now() - r.emoteTs < 15000){ seenEmote = r.emoteTs; bubble(sib, r.emote, true); if (r.emote === '💃') { sib.classList.add('dance'); setTimeout(() => sib.classList.remove('dance'), 2000); } }
+    readMail(r, live);
+  };
+  const readMail = (r, live) => {
+    const fresh = ((r && r.sent) || []).filter(m => m.ts > (K.plazaSeen || 0));
+    if (!fresh.length) return;
+    fresh.forEach((m, i) => setTimeout(() => { pzToast(live && Date.now() - m.ts < 20000 ? `${oName}: ${m.e} ${m.label}!` : `${oName} left you a ${m.e} ${m.label} while you were away!`); beep('ok'); }, i * 900));
+    K.plazaSeen = Math.max(...fresh.map(m => m.ts)); save();
+  };
+  PZ.onRemote = r => { if (document.body.contains(world)) drawSib(r); };
+
+  // walking
+  let walkT = null, walkId = 0;
+  const walkTo = (x, y, then) => {
+    x = Math.max(50, Math.min(PZ_W - 50, x)); y = Math.max(150, Math.min(PZ_H - 20, y));
+    const dc = Math.hypot(x - PZ_C.x, y - PZ_C.y); if (dc < 84){ const k = 84 / (dc || 1); x = PZ_C.x + (x - PZ_C.x)*k; y = PZ_C.y + (y - PZ_C.y)*k + (dc ? 0 : 84); }
+    const d = Math.hypot(x - PZ.pos.x, y - PZ.pos.y), dur = Math.max(.2, d / 260), id = ++walkId;
+    me.style.transitionDuration = dur + 's';
+    if (Math.abs(x - PZ.pos.x) > 4) me.classList.toggle('flip', x < PZ.pos.x);
+    me.classList.add('walking'); put(me, x, y); camera(x, y);
+    frame.querySelectorAll('.pz-pop').forEach(p => p.remove());
+    clearTimeout(walkT);
+    walkT = setTimeout(() => { if (id !== walkId) return; me.classList.remove('walking'); PZ.pos = { x, y }; pzPush(); then && then(); }, dur * 1000);
+    PZ.pos = { x: PZ.pos.x, y: PZ.pos.y }; PZ._target = { x, y };
+  };
+  // pop-up cards dock at the bottom of the town view so they're never cut off
+  const pop = (x, y, ...kids) => { frame.querySelectorAll('.pz-pop').forEach(p => p.remove()); const p = el('div',{class:'pz-pop'}, ...kids, el('button',{class:'pz-x', onclick:e => { e.stopPropagation(); p.remove(); }},'✕')); p.onclick = e => e.stopPropagation(); frame.append(p); return p; };
+  const leave = fn => { pzPush({ here:false }); fn(); };
+
+  // buildings and the fountain
+  world.addEventListener('click', e => {
+    if (e.target.closest('.plaza-actor, .pz-npc, .pz-pop')) return;
+    const g = e.target.closest('[data-b]');
+    if (g && g.dataset.b === 'well') return walkTo(PZ_C.x, PZ_C.y + 96, wish);
+    if (g){ const b = PZ_BUILDINGS.find(x => x.id === g.dataset.b); beep('tap');
+      return walkTo(b.x, b.y + 30, () => { say(b.name + '. ' + b.sub); pop(b.x, b.y - 30, el('div',{class:'pz-pop-e'}, b.icon), el('b',{}, b.name), el('small',{}, b.sub), el('button',{class:'btn small', onclick:() => leave(b.go)}, 'Go in ▶')); }); }
+    const r = world.getBoundingClientRect(); walkTo(e.clientX - r.left, e.clientY - r.top + 10);
+  });
+  function wish(){
+    const today = todayStr();
+    if (K.pzWish === today){ say('The fountain is resting. Come back tomorrow for another wish!'); return pop(PZ_C.x, PZ_C.y - 60, el('div',{class:'pz-pop-e'},'⛲'), el('b',{},'Wishing Fountain'), el('small',{},'One wish a day. Come back tomorrow!')); }
+    pop(PZ_C.x, PZ_C.y - 60, el('div',{class:'pz-pop-e'},'⛲'), el('b',{},'Wishing Fountain'), el('small',{},'Toss a coin and make a wish!'),
+      el('button',{class:'btn small', onclick:() => { K.pzWish = today; const n = 1 + Math.floor(Math.random()*5); K.stars += n; save(); frame.querySelectorAll('.pz-pop').forEach(p => p.remove());
+        const coin = el('div',{class:'pz-coin', style:`left:${PZ.pos.x}px;top:${PZ.pos.y - 120}px`},'🪙'); world.append(coin); setTimeout(() => coin.remove(), 1200);
+        setTimeout(() => { beep('star'); confetti(30); bubble(me, `+${n}⭐`, true); say(`Your wish came true! ${n} stars!`); }, 900); }}, '🪙 Make a wish'));
+  }
+
+  // townsfolk
+  PZ_NPCS.filter(n => !n.hidden).forEach(n => {
+    const node = el('div',{class:'pz-npc', style:`left:${n.x-36}px;top:${n.y-90}px;z-index:${n.y}`}, el('div',{class:'pz-tag'}, n.name), el('div',{class:'pz-npc-e'}, n.e));
+    if (n.id === 'baker') node.append(el('div',{class:'pz-stall'},'🥐🧁🍪'));
+    node.onclick = e => { e.stopPropagation(); beep('tap'); walkTo(n.x + 70, n.y + 10, () => n.id === 'owl' ? owl(n) : baker(n)); };
+    world.append(node);
+  });
+  function owl(n){
+    const list = PZ_WORDS[kid], w = list[pzDayIdx() % list.length], done = K.pzWord === todayStr();
+    say(`Hoot hoot! The word of the day is: ${w}. Can you read it out loud?`);
+    pop(n.x, n.y - 100, el('div',{class:'pz-pop-e'},'🦉'), el('small',{},'Word of the day'), el('div',{class:'pz-word'}, w),
+      el('button',{class:'btn small ghost', onclick:() => say(w)}, '🔊 Hear it'),
+      done ? el('small',{},'✅ You got today\'s word star!') : el('button',{class:'btn small', onclick:e => { K.pzWord = todayStr(); K.stars += 1; save(); beep('star'); bubble(me,'+1⭐',true); say('Hoot! Great reading!'); e.target.replaceWith(el('small',{},'✅ +1 ⭐')); }}, '🗣️ I read it!'));
+  }
+  function baker(n){
+    const list = PZ_RIDDLES[kid], [q, opts] = list[pzDayIdx() % list.length];
+    if (K.pzRiddle === todayStr()){ say('You already solved my riddle today! Come back tomorrow for a new one.'); return pop(n.x, n.y - 100, el('div',{class:'pz-pop-e'},'🐰'), el('b',{},'Baker Bun'), el('small',{},'New riddle tomorrow! 🧁')); }
+    say(q);
+    const p = pop(n.x, n.y - 100, el('div',{class:'pz-pop-e'},'🧁'), el('b',{},'Riddle time!'), el('div',{class:'pz-q'}, q));
+    shuffle(opts.map((o, i) => [o, i === 0])).forEach(([o, right]) => p.insertBefore(el('button',{class:'btn small blue', onclick:e => {
+      if (right){ K.pzRiddle = todayStr(); K.stars += 2; save(); beep('star'); confetti(25); bubble(me,'+2⭐',true); say('Yes! You got it! Here are two stars.'); setTimeout(() => p.remove(), 1200); }
+      else { beep('bad'); e.target.disabled = true; say('Not quite. Try again!'); }
+    }}, o), p.querySelector('.pz-x')));
+  }
+
+  // tap the other kid
+  sib.onclick = e => {
+    e.stopPropagation(); beep('tap');
+    const r = pzRec(other), live = pzOnline(r);
+    walkTo(sibPos.x + (PZ.pos.x < sibPos.x ? -90 : 90), sibPos.y, () => {
+      pop(sibPos.x, sibPos.y - 170, el('b',{}, live ? `${oName} is here!` : `${oName} is away 💤`), el('small',{}, live ? 'Send a wave or a high five!' : 'Leave something. They\'ll see it next time!'),
+        el('div',{class:'pz-emotes'}, ...PZ_EMOTES.map(([em, label]) => el('button',{class:'pz-em', onclick:() => { frame.querySelectorAll('.pz-pop').forEach(p => p.remove()); emote(em, label); }}, em))));
+    });
+  };
+  // emotes
+  function emote(em, label){
+    bubble(me, em, true); beep('ok');
+    if (em === '💃'){ me.classList.add('dance'); setTimeout(() => me.classList.remove('dance'), 2000); }
+    const prev = pzRec(kid) || {}, sent = (prev.sent || []).concat([{ e:em, label, ts:Date.now() }]);
+    pzPush({ emote:em, emoteTs:Date.now(), sent });
+    const r = pzRec(other), near = Math.hypot(PZ.pos.x - sibPos.x, PZ.pos.y - sibPos.y) < 220;
+    if (em === '✋' && pzOnline(r) && near && K.pzHigh5 !== todayStr()){
+      K.pzHigh5 = todayStr(); K.stars += 2; save(); setTimeout(() => { confetti(40); burst('HIGH FIVE!'); bubble(me, '+2⭐', true); say('Team high five! Two stars!'); }, 400);
+    } else if (!pzOnline(r)) pzToast(`${em} sent! ${oName} will see it next time.`);
+  }
+  const bar = el('div',{class:'pz-bar'}, el('span',{class:'pz-bar-l'},'Say hi:'), ...PZ_EMOTES.map(([em, label]) => el('button',{class:'pz-em', title:label, onclick:() => emote(em, label)}, em)));
+
+  // a little life: critters wander
+  const critters = ['🐈','🐓','🦆','🐿️','🦋'].map((c, i) => { const n = el('div',{class:'pz-critter'}, c); n._x = 300 + i*260; n._y = 560 + (i % 2)*300; n.style.left = n._x + 'px'; n.style.top = n._y + 'px'; world.append(n); return n; });
+  const wander = () => { if (!document.body.contains(world)) return; const n = pick(critters); const nx = Math.max(60, Math.min(PZ_W-60, n._x + (Math.random()-.5)*260)), ny = Math.max(200, Math.min(PZ_H-60, n._y + (Math.random()-.5)*160));
+    n.classList.toggle('flip', nx > n._x); n._x = nx; n._y = ny; n.style.left = nx + 'px'; n.style.top = ny + 'px'; n.style.zIndex = Math.round(ny); setTimeout(wander, 1400 + Math.random()*1600); };
+  setTimeout(wander, 800);
+
+  const status = el('div',{class:'pz-status'}, CLOUD.on ? `☁️ Town is live. When ${oName} opens Town Square on their iPad, you'll see each other here.` : `📱 On this link, ${oName} can only visit from this iPad. Use the Claude link to play together on two iPads.`);
+  show(el('div',{class:'screen plaza-screen'},
+    el('div',{class:'topbar'}, el('button',{class:'btn small', onclick:() => leave(() => screenHome())}, '← Back'), el('h1',{class:'title'}, '🏰 Storybrook Square'), el('div')),
+    frame, bar, status));
+  put(me, PZ.pos.x, PZ.pos.y); me.style.transitionDuration = '0s';
+  drawSib(pzRec(other));
+  requestAnimationFrame(() => camera(PZ.pos.x, PZ.pos.y, false));
+  pzPush();
+  clearInterval(PZ.beat);
+  PZ.beat = setInterval(() => { if (!document.body.contains(world)){ clearInterval(PZ.beat); return; } pzPush(); drawSib(pzRec(other)); }, 30000);
+  if (!K.pzHello){ K.pzHello = 1; save(); say(`Welcome to Storybrook Square! Tap anywhere to walk. Tap a building to go inside.`); }
 }
 
 /* ================= PARENT AREA ================= */
