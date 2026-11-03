@@ -20,7 +20,7 @@ const SON_TRACK = {
   mascot: '🐱',
   levels: [
     {
-      n: 1, title: 'Letter Sounds', kind: 'letters', roundSize: 8, pass: 0.87,
+      n: 1, title: 'Letter Sounds', kind: 'letters', roundSize: 8, pass: 0.75,
       intro: 'Say the sound each letter makes!',
       items: [
         ['a','🍎','apple'],['b','🐻','bear'],['c','🐱','cat'],['d','🐶','dog'],
@@ -33,7 +33,7 @@ const SON_TRACK = {
       ]
     },
     {
-      n: 2, title: 'Short Words', kind: 'words', roundSize: 10, pass: 0.9,
+      n: 2, title: 'Short Words', kind: 'words', roundSize: 10, pass: 0.8,
       intro: 'Sound it out: c - a - t!',
       items: ('cat hat bat sat mat rat map cap nap tap sun run fun bun hug bug ' +
               'rug mug cup pup dog log hop top pot hot pig big dig wig sit hit ' +
@@ -41,7 +41,7 @@ const SON_TRACK = {
               'jam ham van can fan man dad mom kid lid zip web hum').split(' ')
     },
     {
-      n: 3, title: 'Sight Words', kind: 'words', roundSize: 10, pass: 0.9,
+      n: 3, title: 'Sight Words', kind: 'words', roundSize: 10, pass: 0.8,
       intro: 'These words show up everywhere!',
       items: ('the a and to is in it you said for up look we can see my ' +
               'go me like on at he she was are of they here come play blue ' +

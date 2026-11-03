@@ -596,7 +596,7 @@ function goalBar(){
     el('div',{class:'goal-track'}, el('div',{class:'goal-fill', style:`width:${pct}%`})));
 }
 
-// How close the kid is to the next level: 3 great (3-star) reads level up; a rough read starts the count over (see commitResults).
+// How close the kid is to the next level: 3 great (3-star) reads level up; a rough read takes one away (see commitResults).
 const LEVEL_UP_STREAK = 3;
 function levelProgress(){
   const word = kid==='daughter' ? 'Rank' : 'Level';
@@ -1039,7 +1039,13 @@ async function startRecog(){
       const ok = pg.letter ? letterMatch(pg.letter, pg.keyword, pool) : pool.some(h => wordMatch(pg.tokens[0].n, h, true));
       if (ok){ if (pg.done) return; pg.done = true; pg.status[0] = 'ok'; paintWords(); beep('ok'); flash(0); setTimeout(()=>nextPage(false, true), 700); }
       else if (ev.results[ev.results.length-1].isFinal){
-        pg.tries++; beep('bad'); setHint(pg.tries >= 2 ? 'Hmm, try once more, or a grown-up can tap ✓ or ✗.' : 'Almost! Try again.');
+        pg.tries++;
+        // the mic is bad at hearing lone letter sounds ("mmm", "sss"), so a real second try earns half credit
+        if (pg.letter && pg.tries >= 2 && !pg.done){
+          pg.done = true; pg.status[0] = 'ok'; pg.helped[0] = true; paintWords(); beep('ok'); setHint('Good try! 👍');
+          setTimeout(()=>nextPage(false, true), 700); return;
+        }
+        beep('bad'); setHint(pg.tries >= 2 ? 'Hmm, try once more, or a grown-up can tap ✓ or ✗.' : 'Almost! Try again.');
       }
       return;
     }
@@ -1341,7 +1347,7 @@ function screenResults(){
     const passAcc = a.kind === 'story' ? 0.95 : (L.pass || 0.9);
     const passQ = !quiz || quiz.c / quiz.t >= 0.8;
     if (R.accuracy >= passAcc && passQ) return 3;
-    if (R.accuracy >= 0.85 && (!quiz || quiz.c / quiz.t >= 0.6)) return 2;
+    if (R.accuracy >= Math.min(0.85, passAcc - 0.1) && (!quiz || quiz.c / quiz.t >= 0.6)) return 2;
     return 1;
   };
   const statsBox = el('div',{class:'result-grid'});
@@ -1444,12 +1450,14 @@ async function commitResults(stars, quiz){
     const failAcc = a.kind === 'story' ? 0.85 : (a.kind === 'letters' ? 0.6 : 0.7);
     const passed = R.accuracy >= passAcc && (!quiz || quiz.c / quiz.t >= 0.8);
     const failed = R.accuracy < failAcc || (quiz && quiz.c / quiz.t < 0.6);
-    // a great read adds to the level-up count, a rough read starts it over, an okay read leaves it alone
+    // a great read adds to the level-up count, a rough read takes one away, an okay read leaves it alone
     if (passed){ K.passStreak++; K.failStreak = 0; }
-    else if (failed){ K.failStreak++; K.passStreak = 0; }
+    else if (failed){ K.failStreak++; K.passStreak = Math.max(0, (K.passStreak||0) - 1); }
     else K.failStreak = 0;
-    if (K.passStreak >= 3 && K.level < T.levels.length){ K.level++; K.passStreak = 0; levelUp = true; }
-    else if (K.failStreak >= 2 && K.level > 1){ K.level--; K.failStreak = 0;
+    // drop back only after 3 rough reads in a row, and never back to Miles' mic-unfriendly letter sounds
+    const floor = kid === 'son' ? 2 : 1;
+    if (K.passStreak >= LEVEL_UP_STREAK && K.level < T.levels.length){ K.level++; K.passStreak = 0; K.failStreak = 0; levelUp = true; }
+    else if (K.failStreak >= 3 && K.level > floor){ K.level--; K.failStreak = 0; K.passStreak = 0;
       levelMsg = kid==='daughter' ? '🛡️ Training mission! Let\'s build your dragon skills with some practice stories.' : '💪 Practice time! Let\'s make your reading muscles super strong.'; }
   }
   save();
