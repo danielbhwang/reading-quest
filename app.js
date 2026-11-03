@@ -50,7 +50,9 @@ function load(){
     K0.missed = {};
     K0.avatar = Object.assign({ base:null, owned:[], equipped:{} }, K0.avatar||{});
   }
+  if (d.kids.dev){ d.kids.dev = Object.assign(freshKid(), d.kids.dev); d.kids.dev.avatar = Object.assign({ base:null, owned:[], equipped:{} }, d.kids.dev.avatar||{}); }
   d.names = Object.assign({ daughter:'Gianna', son:'Miles' }, d.names||{});
+  d.devName = d.devName || 'The Wizard';
   return d;
 }
 function save(){ try { localStorage.setItem(STORE_KEY, JSON.stringify(DB)); } catch(e){} try { cloudQueue(); } catch(e){ /* cloud code not set up yet during startup */ } }
@@ -134,7 +136,7 @@ function say(text, opts={}){
       speechSynthesis.cancel();
       const u = new SpeechSynthesisUtterance(text.replace(/[🌀-🫶☀-➿️]/gu,''));
       if (voice) u.voice = voice;
-      u.lang = voice ? voice.lang : 'en-US'; u.rate = opts.rate || (kid==='son' ? 0.9 : 0.95); u.pitch = 1;
+      u.lang = voice ? voice.lang : 'en-US'; u.rate = opts.rate || (TK==='son' ? 0.9 : 0.95); u.pitch = 1;
       u.onend = res; u.onerror = res;
       speechSynthesis.speak(u);
       setTimeout(res, 8000);
@@ -268,12 +270,14 @@ function micFailed(){
 let kid = null;               // 'son' | 'daughter'
 let K = null;                 // DB.kids[kid]
 let T = null;                 // track
+let TK = null;                // whose reading track is in use ('son' or 'daughter'); the Wizard can switch
+const isDev = () => kid === 'dev';
 let run = null;               // current passage run
 
-function kidName(k){ return DB.names[k||kid]; }
+function kidName(k){ k = k || kid; return k === 'dev' ? (DB.devName || 'The Wizard') : DB.names[k]; }
 function setKid(k){
-  kid = k; K = DB.kids[k]; T = TRACKS[k]; DB.lastKid = k; save();
-  document.body.className = 'theme-' + k;
+  kid = k; K = DB.kids[k]; TK = k === 'dev' ? (DB.devTrack || 'daughter') : k; T = TRACKS[TK]; if (k !== 'dev') DB.lastKid = k; save();
+  document.body.className = 'theme-' + TK + (k === 'dev' ? ' wizard-mode' : '');
 }
 function levelDef(n){ return T.levels[Math.min(Math.max(n,1), T.levels.length) - 1]; }
 function show(node){
@@ -429,7 +433,7 @@ function biscuitSVG(){
 </svg>`;
 }
 function mascotNode(){
-  if (kid === 'son'){ const d = el('div',{html:biscuitSVG()}); return d.firstElementChild; }
+  if (TK === 'son'){ const d = el('div',{html:biscuitSVG()}); return d.firstElementChild; }
   return el('div',{class:'mascot emoji'},'🐲');
 }
 
@@ -444,7 +448,9 @@ function screenProfiles(){
       el('button',{class:'profile daughter', onclick:()=>{ beep('tap'); enterKid('daughter'); }},
         DB.kids.daughter.hero ? profileHero('daughter') : DB.kids.daughter.avatar.base ? el('div',{html: avatarSVG(DB.kids.daughter.avatar, 120)}) : el('div',{class:'pic'},'🐰'), DB.names.daughter, el('small',{},'Dragon Academy · Sunny Day Club')),
       el('button',{class:'profile son', onclick:()=>{ beep('tap'); enterKid('son'); }},
-        DB.kids.son.hero ? profileHero('son') : DB.kids.son.avatar.base ? el('div',{html: avatarSVG(DB.kids.son.avatar, 120)}) : el('div',{class:'pic'},'🐲'), DB.names.son, el('small',{},`${CAT} & Pals · Detective ${CAT}`))
+        DB.kids.son.hero ? profileHero('son') : DB.kids.son.avatar.base ? el('div',{html: avatarSVG(DB.kids.son.avatar, 120)}) : el('div',{class:'pic'},'🐲'), DB.names.son, el('small',{},`${CAT} & Pals · Detective ${CAT}`)),
+      DB.devOn && DB.kids.dev ? el('button',{class:'profile wizard', onclick:()=>{ beep('tap'); enterKid('dev'); }},
+        DB.kids.dev.hero ? profileHero('dev') : el('div',{class:'pic'},'🧙'), kidName('dev'), el('small',{},'Master Developer · everything unlocked')) : null
     ),
     cloudStatusNode(),
     el('button',{class:'gear', onclick:()=>screenPin()},'⚙︎ Grown-ups')
@@ -457,7 +463,9 @@ function screenProfiles(){
 function homeBtn(){ return el('button',{class:'btn small home-btn', onclick:()=>{ beep('tap'); screenProfiles(); }},'🏠 Home'); }
 
 function enterKid(k){
+  if (k === 'dev'){ DB.devOn = true; DB.kids.dev = DB.kids.dev || freshKid(); DB.kids.dev.avatar = Object.assign({ base:null, owned:[], equipped:{} }, DB.kids.dev.avatar || {}); }
   setKid(k);
+  if (k === 'dev') wizardSetup();
   // Gianna reads quietly, so she skips the read-aloud placement check (a grown-up can set her rank)
   if (!K.placed && k === 'daughter'){ K.placed = true; K.level = K.level || 1; awardTrophiesUpTo(K.level); save(); }
   if (!K.placed) screenPlacementIntro(); else if (!K.avatar.base) screenAvatarPick(); else screenHome();
@@ -490,11 +498,11 @@ function screenHome(msg){
   const today = K.today.date === todayStr() ? K.today.ms : 0;
   const doneToday = today >= goalMs();
   const todo = practiceWords(K);
-  const rankWord = kid==='daughter' ? 'Rank' : 'Level';
+  const rankWord = TK==='daughter' ? 'Rank' : 'Level';
   // one card per story series available at this level (or one card for word/letter rounds)
   const cards = [];
   if (bossReady()) cards.push(bossCard());
-  if (kid === 'daughter'){
+  if (TK === 'daughter'){
     // Gianna: three sections, read quietly, 5 questions each
     const st = nextQuietStory(), book = currentBook(), bs = book && bookState(book.id);
     cards.push(
@@ -517,11 +525,11 @@ function screenHome(msg){
         el('p',{},'Hear a word, then type it. 8 words · +1 ⭐ for each one you spell right.'),
         el('button',{class:'btn big blue', onclick:()=>{ beep('tap'); startSpellCheck(); }},'✏️ Start')));
   }
-  if (kid !== 'daughter' && L.kind !== 'story') cards.push(el('div',{class:'card next-card'},
+  if (TK !== 'daughter' && L.kind !== 'story') cards.push(el('div',{class:'card next-card'},
       el('div',{class:'series-tag'}, L.kind === 'letters' ? '🔤 Practice' : '⭐ Practice'), COUNTS_TAG(),
       el('h2',{}, L.kind === 'letters' ? 'Letter Sounds Round' : L.title + ' Round'), el('p',{}, L.intro),
       el('button',{class:'btn big', onclick:()=>{ beep('tap'); startActivity(); }},'▶ Start')));
-  if (kid !== 'daughter'){
+  if (TK !== 'daughter'){
     seriesAt(K.level).forEach(sid => {
       const st = storyFor(K.level, sid).story, info = (T.series||{})[sid] || { name:'', emoji:'' };
       cards.push(el('div',{class:'card next-card series-card'},
@@ -530,12 +538,12 @@ function screenHome(msg){
         el('button',{class:'btn big', onclick:()=>{ beep('tap'); startActivity(sid); }},'▶ Read')));
     });
   }
-  if (kid !== 'daughter' && todo.length) cards.push(el('div',{class:'card next-card practice-card'},
+  if (TK !== 'daughter' && todo.length) cards.push(el('div',{class:'card next-card practice-card'},
     el('div',{class:'series-tag'},'🎯 My Words'),
     el('h2',{}, `${todo.length} tricky word${todo.length>1?'s':''} to practice`),
     el('p',{}, todo.slice(0,6).map(w => K.words[w].disp||w).join(' · ')),
     el('button',{class:'btn big blue', onclick:()=>{ beep('tap'); startPractice(); }},'💪 Practice')));
-  if (kid !== 'daughter' && spellWords().length) cards.push(el('div',{class:'card next-card spell-card'},
+  if (TK !== 'daughter' && spellWords().length) cards.push(el('div',{class:'card next-card spell-card'},
     el('div',{class:'series-tag'},'✏️ Spelling'),
     el('h2',{},'Spelling Practice'),
     el('p',{},'Hear a word, then build it with letter tiles! +1 ⭐ for each word you spell on the first try.'),
@@ -547,6 +555,7 @@ function screenHome(msg){
     el('div',{class:'topbar'},
       homeBtn(),
       el('div',{class:'row'},
+        isDev() ? el('button',{class:'btn small wizard-btn', onclick:()=>{ beep('tap'); screenWizard(); }},'🧙 Wizard') : null,
         el('button',{class:'btn small town-btn', onclick:()=>{ beep('tap'); screenTownSquare(); }},'🏰 Town Square'),
         el('button',{class:'btn ghost small', onclick:()=>screenWorld()},'🏗️ My World'),
         el('button',{class:'btn ghost small', onclick:screenQuestMap},'🗺️ Quest Map'),
@@ -556,21 +565,21 @@ function screenHome(msg){
         el('button',{class:'btn ghost small', onclick:()=>{ ensureSkillStart(); screenPath(); }},'🧠 Skills'),
         el('button',{class:'btn ghost small', onclick:screenShop},'🛍️ Shop'),
         el('button',{class:'btn ghost small', onclick:screenTrophies},'🏆 Trophies'),
-        el('button',{class:'btn ghost small', onclick:screenCollection}, kid==='daughter' ? '🐉 Roost' : '📖 Pals'),
+        el('button',{class:'btn ghost small', onclick:screenCollection}, TK==='daughter' ? '🐉 Roost' : '📖 Pals'),
         el('button',{class:'btn ghost small', onclick:screenWords},'🎯 Words'),
-        el('button',{class:'btn ghost small', onclick:()=>{ beep('tap'); kid === 'daughter' ? startSpellCheck() : startSpelling(); }},'✏️ Spelling'))),
+        el('button',{class:'btn ghost small', onclick:()=>{ beep('tap'); TK === 'daughter' ? startSpellCheck() : startSpelling(); }},'✏️ Spelling'))),
     el('div',{class:'hero'}, avatar,
       el('div',{class:'grow'},
         el('h1',{class:'title'}, `Hi, ${kidName()}!`),
         el('p',{class:'subtitle'}, `${rankWord} ${K.level}: ${L.title}`),
-        el('div',{class:'tier-track'}, ...T.levels.map((Lv,i) => { const n = i+1, tr = TROPHIES[kid][i];
+        el('div',{class:'tier-track'}, ...T.levels.map((Lv,i) => { const n = i+1, tr = TROPHIES[TK][i];
           return el('div',{class:'tier' + (n < K.level ? ' done' : n === K.level ? ' now' : '')}, el('span',{class:'tier-n'}, n), el('span',{class:'tier-e'}, n <= K.level ? tr[0] : '🔒')); })),
         el('div',{class:'stats'},
           el('span',{class:'pill'},'⭐ ' + balance()),
           el('span',{class:'pill cosmic-pill', onclick:()=>cosmicInfo()},'💫 ' + cosmicBal()),
           el('span',{class:'pill'},'🔥 ' + (K.streak.count||0) + ' day streak'),
           el('span',{class:'pill'},'🏆 ' + K.trophies.length + ' · 🎖️ ' + K.badges.length),
-          el('span',{class:'pill'},(kid==='daughter'?'🐉 ':'🐾 ') + K.collection.length)),
+          el('span',{class:'pill'},(TK==='daughter'?'🐉 ':'🐾 ') + K.collection.length)),
         levelProgress(), goalBar())),
     msg ? el('div',{class:'banner'}, msg) : null,
     doneToday ? el('div',{class:'banner'},`🎉 Great reading today! You reached your goal of ${goalMin()} minutes. You can stop here, or keep going!`) : null,
@@ -617,13 +626,13 @@ function goalBar(){
 // How close the kid is to the next level: 3 great (3-star) reads level up; a rough read takes one away (see commitResults).
 const LEVEL_UP_STREAK = 3;
 function levelProgress(){
-  const word = kid==='daughter' ? 'Rank' : 'Level';
+  const word = TK==='daughter' ? 'Rank' : 'Level';
   if (K.level >= T.levels.length && (K.bossesBeaten||[]).includes(K.level)) return el('div',{class:'lvl-progress'}, el('div',{class:'lvl-tip'}, `👑 You beat the final boss! Reading legend!`));
   const have = Math.min(K.passStreak||0, LEVEL_UP_STREAK), left = LEVEL_UP_STREAK - have;
   return el('div',{class:'lvl-progress'},
     el('div',{class:'lvl-head'}, el('span',{}, `${word} ${K.level}`), el('span',{}, bossFor(K.level) ? `${bossFor(K.level).e} Boss → ${word} ${K.level+1}` : `${word} ${K.level+1} 🔓`)),
     el('div',{class:'lvl-bar'}, ...Array.from({length:LEVEL_UP_STREAK}, (_,i) => el('div',{class:'lvl-seg' + (i < have ? ' on' : '')}, i < have ? '⭐⭐⭐' : ''))),
-    el('div',{class:'lvl-tip'}, kid === 'daughter'
+    el('div',{class:'lvl-tip'}, TK === 'daughter'
       ? (bossReady() ? `⚔️ The boss is waiting! Beat it to reach ${word} ${K.level+1}.` : `${left} more stor${left>1?'ies':'y'} with 4 or 5 questions right to face the boss!`)
       : (bossReady() ? `⚔️ The boss is waiting! Beat it to reach ${word} ${K.level+1}.` : `${left} more ⭐⭐⭐ read${left>1?'s':''} to face the boss!`)),
     bossReady() ? null : el('div',{class:'lvl-rule'}, '⭐⭐⭐ = ' + greatRule().short),
@@ -633,7 +642,7 @@ function levelProgress(){
 // What a ⭐⭐⭐ (great) read means at the kid's current level, in kid words (matches starsFor in screenResults).
 function greatRule(){
   const L = levelDef(K.level);
-  if (kid === 'daughter') return { short:'4 or 5 of the 5 questions right', long:'Get 4 or 5 of the 5 questions right.' };
+  if (TK === 'daughter') return { short:'4 or 5 of the 5 questions right', long:'Get 4 or 5 of the 5 questions right.' };
   if (L.kind === 'letters'){ const n = Math.ceil(L.pass * L.roundSize - 1e-9); return { short:`${n} of ${L.roundSize} letter sounds right`, long:`Say at least ${n} of the ${L.roundSize} letter sounds right.` }; }
   if (L.kind === 'words'){ const n = Math.ceil(L.pass * L.roundSize - 1e-9); return { short:`${n} of ${L.roundSize} words right`, long:`Read at least ${n} of the ${L.roundSize} words right.` }; }
   return { short:'almost every word right + most questions right', long:'Read almost every word right, then get most of the questions right (like 4 out of 5).' };
@@ -642,12 +651,12 @@ const COUNTS_TAG = () => el('span',{class:'counts-tag'},'⬆️ Levels you up');
 
 // Step-by-step "how to level up" guide, with the kid's own progress, read aloud for Miles.
 function levelGuide(){
-  const word = kid === 'daughter' ? 'Rank' : 'Level', next = K.level + 1, rule = greatRule();
+  const word = TK === 'daughter' ? 'Rank' : 'Level', next = K.level + 1, rule = greatRule();
   const have = Math.min(K.passStreak||0, LEVEL_UP_STREAK), boss = bossFor(K.level), ready = bossReady();
   const L = levelDef(K.level);
   const round = L.kind === 'letters' ? 'Letter Sounds Round' : L.title + ' Round';
   // word/letter levels can also have story cards, which use the story rule
-  const how = kid === 'daughter' ? `Read a Short Story or a Chapter Book. ${rule.long}`
+  const how = TK === 'daughter' ? `Read a Short Story or a Chapter Book. ${rule.long}`
     : L.kind === 'story' ? `Read a story card. ${rule.long}`
     : `In the ${round}: ${rule.long.replace(/^./, c => c.toLowerCase())}` + (seriesAt(K.level).length ? ' In a story: read almost every word right and get most questions right.' : '');
   const steps = [
@@ -659,7 +668,7 @@ function levelGuide(){
   const notes = [
     '⭐⭐ Good read: your star boxes stay the same.',
     '⭐ Tricky read: you lose one star box. Keep trying!',
-    kid === 'daughter' ? '✏️ Spelling Checks earn stars for the shop, but they don\'t change your rank.'
+    TK === 'daughter' ? '✏️ Spelling Checks earn stars for the shop, but they don\'t change your rank.'
       : '✏️ Spelling, 🧠 Skills and 💪 Practice earn stars for the shop, but they don\'t change your level.'
   ];
   const ov = el('div',{class:'overlay'});
@@ -679,7 +688,7 @@ function levelGuide(){
 /* ---------- spelling practice ---------- */
 // Words come from the kid's tricky-word list first, then from their current level.
 function spellWords(n = 5, minLen = 3){
-  const L = levelDef(K.level), maxLen = kid==='son' ? 6 : 9;
+  const L = levelDef(K.level), maxLen = TK==='son' ? 6 : 9;
   let pool;
   if (L.kind === 'words') pool = L.items.slice();
   else if (L.kind === 'letters') pool = levelDef(2).items.slice();
@@ -909,8 +918,8 @@ function placementProbes(){
 function screenPlacementIntro(){
   const s = el('div',{class:'screen'},
     el('div',{class:'topbar'}, homeBtn(), el('div')),
-    el('div',{class:'hero'}, mascotNode(), el('div',{}, el('h1',{class:'title'}, kid==='daughter' ? 'Welcome to Skyfire Academy!' : `Hi! I'm ${CAT}!`),
-      el('p',{class:'subtitle'}, kid==='daughter' ? 'Master Oona wants to hear you read, so she can pick the right rank for you.' : 'Let\'s read a little so I know where to start!'))),
+    el('div',{class:'hero'}, mascotNode(), el('div',{}, el('h1',{class:'title'}, TK==='daughter' ? 'Welcome to Skyfire Academy!' : `Hi! I'm ${CAT}!`),
+      el('p',{class:'subtitle'}, TK==='daughter' ? 'Master Oona wants to hear you read, so she can pick the right rank for you.' : 'Let\'s read a little so I know where to start!'))),
     el('div',{class:'card', style:'margin-top:24px'},
       el('p',{style:'font-size:22px;margin-top:0'},'Read each line out loud. It\'s okay if it gets hard. That just tells us where to start!'),
       el('div',{class:'row'},
@@ -922,7 +931,7 @@ function screenPlacementIntro(){
 }
 // Miles already reads early "Level 2" readers, so skipping placement drops him into short stories, not letter drills.
 const SKIP_START = { son: 5, daughter: 1 };
-function skipLevel(){ return SKIP_START[kid] || 1; }
+function skipLevel(){ return SKIP_START[TK] || 1; }
 function startPlacement(){
   const probes = placementProbes();
   const a = { kind:'placement', level:0, title:'Quick Check', pages: probes.map(p => Object.assign({ probeLevel:p.level }, p.page)) };
@@ -937,8 +946,8 @@ function finishPlacement(r){
   }
   K.level = start; K.placed = true; K.passStreak = 0; K.failStreak = 0; awardTrophiesUpTo(start); save();
   confetti(50); beep('level');
-  modal(el('div',{}, el('div',{class:'big-e'}, kid==='daughter'?'🏅':'🎉'),
-    el('h2',{}, kid==='daughter' ? `You start at Rank ${start}!` : `You start at Level ${start}!`),
+  modal(el('div',{}, el('div',{class:'big-e'}, TK==='daughter'?'🏅':'🎉'),
+    el('h2',{}, TK==='daughter' ? `You start at Rank ${start}!` : `You start at Level ${start}!`),
     el('p',{}, levelDef(start).title)), [['Yay! ▶','',1]]).then(()=>{ K.avatar.base ? screenHome() : screenAvatarPick(); });
 }
 
@@ -995,7 +1004,7 @@ function renderReader(){
       el('div',{style:'width:80px'})),
     el('div',{class:'reader-wrap'}, pageCard, hint, heard,
       el('div',{class:'controls'},
-        (r.opts.echo || kid === 'son') && !single ? el('button',{class:'btn blue', onclick:()=>{ if (recogOn) stopRecog(); readAlong(); }},'👂 Hear it first') : null,
+        (r.opts.echo || TK === 'son') && !single ? el('button',{class:'btn blue', onclick:()=>{ if (recogOn) stopRecog(); readAlong(); }},'👂 Hear it first') : null,
         p.blend && !manual ? el('button',{class:'btn', onclick:()=>{ p.helped[0] = true; paintWords(); say(p.tokens[0].disp, {rate:0.35}); }},'🐢 Say it slowly') : null,
         micBtn, nextBtn), checks)
   );
@@ -1184,7 +1193,7 @@ function computeReading(){
   run.act.pages.forEach(p => p.tokens.forEach((t,i) => {
     if (t.skip) return;
     total++;
-    if (p.helped[i]) { helped++; missed.push(t.n); if (kid === 'son') correct += 0.5; }
+    if (p.helped[i]) { helped++; missed.push(t.n); if (TK === 'son') correct += 0.5; }
     else if (p.status[i] === 'ok') correct++;
     else missed.push(t.n);
   }));
@@ -1273,7 +1282,7 @@ function renderQuestion(){
           el('button',{class:'btn small blue', onclick:()=>say(item.q)},'🔊')),
         opts, fb, proofBox, el('div',{class:'row', style:'margin-top:10px'}, nextBtn))));
   show(s);
-  if (kid === 'son'){ (async()=>{ await say(item.q); })(); }
+  if (TK === 'son'){ (async()=>{ await say(item.q); })(); }
 }
 const pick = a => a[Math.floor(Math.random()*a.length)];
 /* Kid-friendly meanings for harder words in the stories (📖 Meaning tool). Keys are base forms;
@@ -1445,7 +1454,7 @@ function screenResults(){
       const failAcc = a.kind === 'story' ? 0.85 : (a.kind === 'letters' ? 0.6 : 0.7);
       const rough = R.accuracy < failAcc || (quiz && quiz.c / quiz.t < 0.6), cur = Math.min(K.passStreak||0, LEVEL_UP_STREAK);
       lvlNote.textContent = gap + (st === 3
-        ? (have >= LEVEL_UP_STREAK ? (bossFor(K.level) ? `🎉 That's ${LEVEL_UP_STREAK} great reads. ⚔️ The boss is coming!` : `🎉 That's ${LEVEL_UP_STREAK} great reads. ${kid === 'daughter' ? 'Rank' : 'Level'} up!`) : `✅ This counts! ${have} of ${LEVEL_UP_STREAK} toward the next ${kid === 'daughter' ? 'rank' : 'level'}.`)
+        ? (have >= LEVEL_UP_STREAK ? (bossFor(K.level) ? `🎉 That's ${LEVEL_UP_STREAK} great reads. ⚔️ The boss is coming!` : `🎉 That's ${LEVEL_UP_STREAK} great reads. ${TK === 'daughter' ? 'Rank' : 'Level'} up!`) : `✅ This counts! ${have} of ${LEVEL_UP_STREAK} toward the next ${TK === 'daughter' ? 'rank' : 'level'}.`)
         : rough ? `Your star boxes go from ${cur} to ${Math.max(0, cur - 1)} of ${LEVEL_UP_STREAK}. You can do it next time!`
         : `Good read! Your star boxes stay at ${cur} of ${LEVEL_UP_STREAK}.`);
     }
@@ -1543,8 +1552,8 @@ async function commitResults(stars, quiz){
     if (K.passStreak >= 3 && bossFor(K.level) && K.bossReady !== K.level && !(K.level >= T.levels.length && (K.bossesBeaten||[]).includes(K.level))){ K.bossReady = K.level; K.passStreak = 0; bossUnlocked = true; }
     else if (K.passStreak >= 3 && K.level < T.levels.length && !bossFor(K.level)){ K.level++; K.passStreak = 0; levelUp = true; cosmicGains.push([5, 'You leveled up!']); }
     // drop back only after 3 rough reads in a row, and never back to Miles' mic-unfriendly letter sounds
-    else if (K.failStreak >= 3 && K.level > (kid === 'son' ? 2 : 1)){ K.level--; K.failStreak = 0; K.passStreak = 0;
-      levelMsg = kid==='daughter' ? '🛡️ Training mission! Let\'s build your dragon skills with some practice stories.' : '💪 Practice time! Let\'s make your reading muscles super strong.'; }
+    else if (K.failStreak >= 3 && K.level > (TK === 'son' ? 2 : 1)){ K.level--; K.failStreak = 0; K.passStreak = 0;
+      levelMsg = TK==='daughter' ? '🛡️ Training mission! Let\'s build your dragon skills with some practice stories.' : '💪 Practice time! Let\'s make your reading muscles super strong.'; }
   }
   save();
   cosmicGains.forEach(([n, why]) => addCosmic(n, why));
@@ -1562,19 +1571,19 @@ async function commitResults(stars, quiz){
   if (levelUp){
     const newTrophies = awardTrophiesUpTo(K.level); save();
     confetti(120); beep('level');
-    say(kid==='daughter' ? `Amazing! You reached rank ${K.level}!` : `Wow! You made it to level ${K.level}!`);
-    const tr = TROPHIES[kid][K.level-1];
+    say(TK==='daughter' ? `Amazing! You reached rank ${K.level}!` : `Wow! You made it to level ${K.level}!`);
+    const tr = TROPHIES[TK][K.level-1];
     await modal(el('div',{}, el('div',{class:'big-e'}, tr ? tr[0] : '🏆'),
-      el('h2',{}, (kid==='daughter' ? 'New Rank: ' : 'Level ') + K.level + '!'),
+      el('h2',{}, (TK==='daughter' ? 'New Rank: ' : 'Level ') + K.level + '!'),
       el('p',{}, (tr ? 'You won the ' + tr[1] + ' trophy! ' : '') + levelDef(K.level).title + ' unlocked.'),
       K.level === AVATAR_UNLOCK_LEVEL ? el('p',{style:'font-weight:700;color:#7c3aed'}, '🎁 A new reading buddy is unlocked in the Star Shop!') : null,
-      legendaryAt(K.level) ? el('p',{style:'font-weight:700;color:#d97706'}, '✨ A legendary ' + (kid==='daughter'?'dragon':'Pocket Pal') + ' can now appear!') : null), [['Awesome! ▶','',1]]);
+      legendaryAt(K.level) ? el('p',{style:'font-weight:700;color:#d97706'}, '✨ A legendary ' + (TK==='daughter'?'dragon':'Pocket Pal') + ' can now appear!') : null), [['Awesome! ▶','',1]]);
   }
   if (bossUnlocked){
     const B = bossFor(K.level); confetti(80); beep('level'); burst('BOSS!');
     say(`A boss appeared! ${B.name} is guarding the next level!`);
     await modal(el('div',{}, el('div',{class:'big-e boss-shake'}, B.e), el('h2',{}, '⚔️ BOSS UNLOCKED!'),
-      el('p',{}, `${B.name} guards ${kid === 'daughter' ? 'Rank' : 'Level'} ${K.level + 1}. Beat the boss story to level up!`), el('p',{class:'boss-taunt'}, `"${B.taunt}"`)), [['⚔️ Let me at it!','',1]]);
+      el('p',{}, `${B.name} guards ${TK === 'daughter' ? 'Rank' : 'Level'} ${K.level + 1}. Beat the boss story to level up!`), el('p',{class:'boss-taunt'}, `"${B.taunt}"`)), [['⚔️ Let me at it!','',1]]);
   }
   if (goalJustHit) await celebrateGoal();
   if (bookDone){
@@ -1593,13 +1602,13 @@ async function giveReward(){
   const owned = new Set(K.collection);
   const eligible = list.filter(r => !owned.has(r[1]) && (r[3]||0) <= K.level);
   // legendaries the kid has unlocked come first; otherwise normal order
-  const available = eligible.filter(r => r[3]).concat(kid==='son' ? shuffle(eligible.filter(r => !r[3])) : eligible.filter(r => !r[3]));
+  const available = eligible.filter(r => r[3]).concat(TK==='son' ? shuffle(eligible.filter(r => !r[3])) : eligible.filter(r => !r[3]));
   if (!available.length){
     K.stars += 3; save(); beep('star');
     await modal(el('div',{}, el('div',{class:'big-e'},'🎁'), el('h2',{},'Bonus stars!'), el('p',{},'You found everyone at this level! +3 ⭐ for the Star Shop. Level up to unlock legendary friends!')), [['Yay! ▶','',1]]);
     return;
   }
-  if (kid === 'daughter'){
+  if (TK === 'daughter'){
     K.eggProgress = (K.eggProgress||0) + 1;
     if (K.eggProgress < 2){
       save();
@@ -1630,8 +1639,8 @@ function screenCollection(){
     lv ? el('div',{class:'muted'}, owned.has(n) ? '✨ Legendary' : '✨ Legendary · Level ' + lv) : (type && owned.has(n) ? el('div',{class:'muted'}, type + ' dragon') : null))));
   const s = el('div',{class:'screen'},
     el('div',{class:'topbar'}, el('button',{class:'btn ghost small', onclick:()=>screenHome()},'← Back'),
-      el('h1',{class:'title'}, kid==='daughter' ? '🐉 Dragon Roost' : '📖 Creature Book'), el('div')),
-    kid==='daughter' ? el('div',{class:'card', style:'margin-bottom:16px; display:flex; align-items:center; gap:20px'},
+      el('h1',{class:'title'}, TK==='daughter' ? '🐉 Dragon Roost' : '📖 Creature Book'), el('div')),
+    TK==='daughter' ? el('div',{class:'card', style:'margin-bottom:16px; display:flex; align-items:center; gap:20px'},
       el('div',{class:'egg'},'🥚'), el('div',{style:'font-size:22px'}, `Egg warmth: ${'🔥'.repeat(K.eggProgress||0)}${'⚪'.repeat(2-(K.eggProgress||0))}`, el('br'), el('span',{class:'muted'},'Great stories (2+ stars) warm your egg. 2 warmth = hatch!'))) : null,
     el('p',{class:'subtitle'}, `${K.collection.length} of ${T.rewards.length} found`),
     grid);
@@ -1814,10 +1823,10 @@ function avatarNode(size=150, override){
   return d;
 }
 function rarity(price, lvl){ return lvl || price >= 60 ? 'legendary' : price >= 40 ? 'epic' : price >= 25 ? 'rare' : price >= 15 ? 'uncommon' : 'common'; }
-function balance(){ return (K.stars||0) - (K.spent||0); }
+function balance(){ return isDev() ? 999999 : (K.stars||0) - (K.spent||0); }
 /* 💫 Cosmic Power: rare second currency for pets and legendary things.
    Collected only for great reading moments (see addCosmic calls). */
-function cosmicBal(){ return (K.cosmic||0) - (K.cosmicSpent||0); }
+function cosmicBal(){ return isDev() ? 99999 : (K.cosmic||0) - (K.cosmicSpent||0); }
 function addCosmic(n, why){
   if (!n) return; K.cosmic = (K.cosmic||0) + n; save();
   const t = el('div',{class:'cosmic-toast'}, el('span',{class:'ct-e'},'💫'), el('div',{}, el('b',{}, `+${n} Cosmic Power`), el('small',{}, why || '')));
@@ -1844,14 +1853,14 @@ const costLabel = c => (c.cur === 'cosmic' ? '💫 ' : '⭐ ') + c.amt;
 
 /* ---------- avatar pick (first time) ---------- */
 function screenAvatarPick(){
-  const choices = Object.entries(AVATAR_BASES).filter(([,b]) => b.kid === kid);
+  const choices = Object.entries(AVATAR_BASES).filter(([,b]) => (isDev() || b.kid === TK));
   const name = kidName();
   const s = el('div',{class:'screen'},
     el('div',{class:'topbar'}, homeBtn(), el('div')),
     el('div',{class:'topbar center'}, el('div',{}, el('h1',{class:'title center'}, `Pick your reading buddy, ${name}!`),
       el('p',{class:'subtitle center'}, `Choose one now. The ${choices.length > 2 ? 'others unlock' : 'other one unlocks'} at Level ${AVATAR_UNLOCK_LEVEL}!`))),
     el('div',{class:'profiles'}, ...choices.map(([id,b]) => {
-      const btn = el('button',{class:'profile ' + (kid==='son'?'son':'daughter'), onclick:()=>{
+      const btn = el('button',{class:'profile ' + (TK==='son'?'son':'daughter'), onclick:()=>{
         K.avatar.base = id; if (!K.avatar.owned.includes(id)) K.avatar.owned.push(id); save(); beep('level'); confetti(50);
         say(`Hooray! Your ${b.name} is ready to read!`); screenHome(); }});
       btn.append(el('div',{html: avatarSVG({base:id, equipped:{}}, 170)}), b.name);
@@ -1870,7 +1879,7 @@ function screenShop(){
   const renderGrid = () => {
     grid.innerHTML = '';
     if (shopTab === 'base'){
-      Object.entries(AVATAR_BASES).filter(([,b]) => b.kid === kid).forEach(([id,b]) => {
+      Object.entries(AVATAR_BASES).filter(([,b]) => (isDev() || b.kid === TK)).forEach(([id,b]) => {
         const owned = K.avatar.owned.includes(id) || K.level >= AVATAR_UNLOCK_LEVEL;
         if (owned && !K.avatar.owned.includes(id)) { K.avatar.owned.push(id); save(); }
         const on = K.avatar.base === id;
@@ -1949,13 +1958,13 @@ const BADGES = [
   ['skill1','⚡','Skill Up','Master a phonics skill in your stories', k => Object.values(k.skills||{}).some(s => s.mastered)],
   ['skill5','🧠','Sound Expert','Master 5 phonics skills', k => Object.values(k.skills||{}).filter(s => s.mastered).length >= 5],
   ['speed','🚀','Speed Reader','Beat your own reading speed', k => Object.keys((k.path||{}).best||{}).length >= 1],
-  ['top','🏆','Top of the Track','Reach the highest level', k => k.level >= TRACKS[kid].levels.length],
+  ['top','🏆','Top of the Track','Reach the highest level', k => k.level >= TRACKS[TK].levels.length],
   ['gear1','🛡️','Geared Up','Collect your first gear piece', k => Object.entries((k.gear||{}).owned||{}).some(([id, l]) => id !== 'traveler' && l.length)],
   ['set1','✨','Full Set','Collect a complete 8-piece gear set', k => (k.setsDone||[]).length >= 1],
   ['set4','👑','Armor Master','Collect 4 complete gear sets', k => (k.setsDone||[]).length >= 4],
   ['boss1','⚔️','Boss Slayer','Defeat your first boss', k => (k.bossesBeaten||[]).length >= 1],
   ['boss4','🛡️','Boss Hunter','Defeat 4 bosses', k => (k.bossesBeaten||[]).length >= 4],
-  ['bossfinal','👑','Reading Legend','Defeat the final boss', k => (k.bossesBeaten||[]).includes(TRACKS[kid].levels.length)],
+  ['bossfinal','👑','Reading Legend','Defeat the final boss', k => (k.bossesBeaten||[]).includes(TRACKS[TK].levels.length)],
   ['realbook1','📕','Real Reader','Add a real book you finished', k => (k.realBooks||[]).length >= 1],
   ['realbook10','🐛','Bookworm','Finish 10 real books', k => (k.realBooks||[]).length >= 10],
   ['legend1','✨','Legend Hunter','Own a legendary or mythic item', k => (k.legendOwned||[]).length + (k.mythics||[]).length >= 1]
@@ -1974,7 +1983,7 @@ async function checkBadges(){
   await checkLegends();
 }
 function screenTrophies(){
-  const tlist = TROPHIES[kid];
+  const tlist = TROPHIES[TK];
   const s = el('div',{class:'screen'},
     el('div',{class:'topbar'}, el('button',{class:'btn ghost small', onclick:()=>screenHome()},'← Back'), el('h1',{class:'title'},'🏆 Trophy Hall'), el('div')),
     el('h2',{class:'subtitle', style:'font-size:24px'}, 'Level Trophies'),
@@ -2319,7 +2328,7 @@ MYTHICS.forEach(m => { const row = ['mythic', m.id, m.e, m.name, 0]; WORLD_ITEMS
 const LEGEND_FX = Object.fromEntries(LEGENDS.concat(MYTHICS).map(x => [x.id, x.fx]));
 // requirement id -> [label, () => [have, need]]
 function legendReq(req){
-  const word = kid === 'daughter' ? 'Rank' : 'Level', top = T.levels.length;
+  const word = TK === 'daughter' ? 'Rank' : 'Level', top = T.levels.length;
   const perfect = () => normalSessions(K).filter(s => s.quiz && s.quiz.split('/')[0] === s.quiz.split('/')[1]).length;
   return {
     level6:    [`Reach ${word} 6`, () => [Math.min(K.level, 6), 6]],
@@ -2581,15 +2590,15 @@ function worldOf(k){
   return D.world;
 }
 function friendItems(k){
-  const D = DB.kids[k], T2 = TRACKS[k];
-  return (D.collection || []).map(n => { const r = T2.rewards.find(x => x[1] === n); return r ? ['friends','f_'+n, r[0], n, 0] : null; }).filter(Boolean);
+  const D = DB.kids[k], all = k === 'dev' ? TRACKS.son.rewards.concat(TRACKS.daughter.rewards) : TRACKS[k].rewards;
+  return (D.collection || []).map(n => { const r = all.find(x => x[1] === n); return r ? ['friends','f_'+n, r[0], n, 0] : null; }).filter(Boolean);
 }
 
 let worldSel = null, worldCat = 'home';
 function screenWorld(visitKid){
   const owner = visitKid || kid, readOnly = !!visitKid && visitKid !== kid;
   const W = worldOf(owner), theme = WORLD_THEMES[W.theme] || WORLD_THEMES.meadow;
-  const otherKid = kid === 'son' ? 'daughter' : 'son';
+  const otherKid = kid === 'son' ? 'daughter' : 'son', visitBoth = isDev();
   const themeId = WORLD_THEMES[W.theme] ? W.theme : 'meadow';
   const stage = el('div',{class:'world-stage', style:`width:${WORLD_W}px;height:${WORLD_H}px;background:${(SCENE_PAL[themeId] || SCENE_PAL.meadow).sky[1]}`});
   stage.append(el('div',{class:'world-scene', html: sceneSVG(themeId)}), el('div',{class:'world-front', html: frontGrassSVG(themeId)}));
@@ -2737,7 +2746,8 @@ function screenWorld(visitKid){
       el('button',{class:'btn ghost small', onclick:()=>{ worldSel = null; screenHome(); }},'← Back'),
       el('h1',{class:'title'}, readOnly ? `${kidName(owner)}'s World` : `${kidName()}'s World`),
       readOnly ? el('button',{class:'btn small', onclick:()=>screenWorld()},'🏠 My World')
-               : el('div',{class:'row'}, bal, el('button',{class:'btn small blue', onclick:()=>{ worldSel = null; screenWorld(otherKid); }}, `👀 Visit ${kidName(otherKid)}`))),
+               : el('div',{class:'row'}, bal, el('button',{class:'btn small blue', onclick:()=>{ worldSel = null; screenWorld(otherKid); }}, `👀 Visit ${kidName(otherKid)}`),
+                 visitBoth ? el('button',{class:'btn small blue', onclick:()=>{ worldSel = null; screenWorld('daughter'); }}, `👀 Visit ${kidName('daughter')}`) : null)),
     readOnly && !DB.kids[owner].world?.items?.length ? el('div',{class:'banner'}, `${kidName(owner)} hasn't built anything here yet. (Visiting shows worlds saved on this iPad, for now.)`) : null,
     scroller,
     el('div',{class:'row', style:'margin-top:10px'},
@@ -2971,7 +2981,7 @@ function pathIntro(){
       el('p',{style:'font-size:20px'},'Read 4 short lines of words. Easy ones first, then harder. It tells us which lesson to start on, so you never repeat stuff you already know.'),
       el('div',{class:'row'},
         el('button',{class:'btn big', onclick:startPathCheck},'▶ Start the check'),
-        el('button',{class:'btn small gray', onclick:()=>{ setPathStart(PHONICS_DEFAULT_START[kid]); screenPath(); }}, `Skip: start at lesson ${PHONICS_DEFAULT_START[kid]}`))));
+        el('button',{class:'btn small gray', onclick:()=>{ setPathStart(PHONICS_DEFAULT_START[TK]); screenPath(); }}, `Skip: start at lesson ${PHONICS_DEFAULT_START[TK]}`))));
   show(s);
 }
 function setPathStart(id){
@@ -3158,7 +3168,7 @@ function screenLessonQuiz(done){
         passageCard('📖 ' + LS.lesson.title, LS.lesson.text, LS.marks || (LS.marks = {})),
         el('div',{class:'card'}, el('div',{class:'row', style:'align-items:flex-start'}, el('p',{class:'q-text grow'}, item.q), el('button',{class:'btn small blue', onclick:()=>say(item.q)},'🔊')),
           opts, fb, el('div',{class:'row', style:'margin-top:10px'}, next)))));
-    if (kid === 'son') say(item.q);
+    if (TK === 'son') say(item.q);
   };
   render();
 }
@@ -3253,7 +3263,7 @@ PHONICS.forEach(l => (l.heart || []).forEach(([w, part, tip]) => { HEART_WORDS[n
 const heartNew = w => HEART_WORDS[w] && !skillKnown(HEART_WORDS[w].lesson);
 
 function skillsState(){ K.skills = K.skills || {}; return K.skills; }
-function ensureSkillStart(){ const P = pathState(); if (!P.placed) setPathStart(PHONICS_DEFAULT_START[kid]); skillsState(); }
+function ensureSkillStart(){ const P = pathState(); if (!P.placed) setPathStart(PHONICS_DEFAULT_START[TK]); skillsState(); }
 function skillKnown(id){ const P = pathState(); return !!P.done[id] || !!(skillsState()[id] && skillsState()[id].mastered); }
 function chooseFocus(story){
   ensureSkillStart();
@@ -3346,7 +3356,7 @@ async function commitSkill(act, focus){
      Miles (read aloud): 90%+ of words read right AND 80%+ questions right
      Gianna (quiet):     4 or 5 of 5 tough questions right
    Reading pages and right answers knock the boss's power bar down live. */
-function bossFor(level){ return (BOSSES[kid] || {})[level] || null; }
+function bossFor(level){ return (BOSSES[TK] || {})[level] || null; }
 function bossReady(){ return K.bossReady === K.level && !!bossFor(K.level); }
 function bossCard(){
   const B = bossFor(K.level); if (!B) return null;
@@ -3358,7 +3368,7 @@ function bossCard(){
       el('div',{class:'grow'},
         el('h2',{}, B.name), el('p',{class:'boss-taunt'}, `"${B.taunt}"`),
         el('div',{class:'hp'}, el('div',{class:'hp-fill', style:'width:100%'}), el('span',{}, 'BOSS POWER 100%')),
-        el('p',{class:'muted', style:'color:#fff;opacity:.9'}, kid === 'daughter'
+        el('p',{class:'muted', style:'color:#fff;opacity:.9'}, TK === 'daughter'
           ? 'Read the boss story, then get 4 or 5 tough questions right to win!'
           : 'Read the boss story out loud (90% of words right), then answer the questions to win!'),
         rec.tries ? el('p',{class:'muted', style:'color:#fde68a'}, `Battles tried: ${rec.tries}. You can do it!`) : null,
@@ -3384,7 +3394,7 @@ function startBossBattle(level){
   K.bossLog = K.bossLog || {}; const rec = K.bossLog[level] = Object.assign({ tries:0, wins:0 }, K.bossLog[level] || {});
   rec.tries++; save();
   const story = Object.assign({ series:'boss' }, B.story);
-  if (kid === 'daughter'){
+  if (TK === 'daughter'){
     startQuietRead(story, { storyKey:'boss_' + level, boss:B, level });
     run.opts.boss = B; bossHud();
   } else {
@@ -3444,7 +3454,7 @@ async function bossResult(){
       el('div',{class:'boss-intro-card'},
         el('div',{class:'boss-face big defeated'}, B.e),
         el('h2',{}, 'BOSS DEFEATED!'), el('p',{class:'boss-taunt'}, `"${B.defeat}"`),
-        el('p',{style:'font-size:22px;font-weight:700'}, top ? '👑 You beat the FINAL BOSS! You are a reading legend!' : `${kid === 'daughter' ? 'Rank' : 'Level'} ${K.level} unlocked! +10 ⭐ +5 💫`),
+        el('p',{style:'font-size:22px;font-weight:700'}, top ? '👑 You beat the FINAL BOSS! You are a reading legend!' : `${TK === 'daughter' ? 'Rank' : 'Level'} ${K.level} unlocked! +10 ⭐ +5 💫`),
         el('button',{class:'btn big', onclick:async()=>{ ov.remove(); await bossGearDrop(a.level, false); await checkBadges(); run = null; screenHome(); }},'🏆 Victory! Get my loot ▶')));
     document.body.append(ov); confetti(160); beep('level'); burst('K.O.!');
     say(`You defeated ${B.name}! ${B.defeat}`);
@@ -3482,7 +3492,7 @@ function screenRealBooks(){
 function addRealBook(){
   let cover = BOOK_COVERS[0], rating = 0;
   const title = el('input',{type:'text', class:'rb-input', placeholder:'Book title'});
-  const ideas = el('div',{class:'rb-ideas'}, ...REAL_BOOK_IDEAS[kid].map(t => el('button',{class:'chip', onclick:()=>{ title.value = t; }}, t)));
+  const ideas = el('div',{class:'rb-ideas'}, ...REAL_BOOK_IDEAS[TK].map(t => el('button',{class:'chip', onclick:()=>{ title.value = t; }}, t)));
   const covers = el('div',{class:'rb-covers'}, ...BOOK_COVERS.map(c => { const b = el('button',{class:'rb-cov' + (c === cover ? ' on' : ''), onclick:()=>{ cover = c; [...covers.children].forEach(x => x.classList.toggle('on', x === b)); }}, c); return b; }));
   const stars = el('div',{class:'rb-stars'}, ...[1,2,3,4,5].map(n => { const b = el('button',{onclick:()=>{ rating = n; [...stars.children].forEach((x,i) => x.textContent = i < n ? '⭐' : '☆'); }}, '☆'); return b; }));
   show(el('div',{class:'screen'},
@@ -3499,7 +3509,7 @@ function retellBook(book){
   let words = [], listening = false, rec = null;
   const out = el('div',{class:'rb-heard'}, 'Tap the 🎤 and tell what happened in the book: who was in it, what happened, and how it ended.');
   const count = el('div',{class:'muted'});
-  const need = kid === 'son' ? 12 : 25;
+  const need = TK === 'son' ? 12 : 25;
   const mic = el('button',{class:'mic', onclick:()=>{
     if (useManual()){ return; }
     if (listening){ try { rec.stop(); } catch(e){} return; }
@@ -3554,7 +3564,9 @@ const GEAR_SETS = [
   { id:'starforge',tier:7, name:'Starforged',      title:'Starforged Champion',motif:'star',   prim:'#1e3a8a', sec:'#312e81', trim:'#fbbf24', gem:'#fef08a' },
   { id:'celestial',tier:8, name:'Celestial',       title:'Celestial Legend',  motif:'wing',    prim:'#f8fafc', sec:'#fde68a', trim:'#f59e0b', gem:'#f0abfc' }
 ];
-const SET_BY_ID = Object.fromEntries(GEAR_SETS.map(g => [g.id, g]));
+const ARCHMAGE = { id:'archmage', tier:9, name:'Archmage', title:'Archmage Supreme', motif:'wizard', prim:'#3b0764', sec:'#7c3aed', trim:'#fbbf24', gem:'#67e8f9' };
+const SET_BY_ID = Object.fromEntries(GEAR_SETS.concat([ARCHMAGE]).map(g => [g.id, g]));
+const armorySets = () => isDev() ? GEAR_SETS.concat([ARCHMAGE]) : GEAR_SETS;
 const setForLevel = lv => GEAR_SETS.find(g => g.tier === lv);
 const SKIN_TONES = ['#fde3c8','#f5c9a0','#e0a878','#c68a5a','#9a6440','#6b4428'];
 const HAIR_COLORS = ['#1f1b18','#5b3a21','#a0612f','#e7c46a','#b5462a','#f472b6','#60a5fa','#a78bfa','#f1f5f9'];
@@ -3594,7 +3606,11 @@ function gearPiece(slot, S, hero){
       ${S.tier ? `<rect x="70" y="204" width="30" height="7" fill="${trim}" stroke="${INK}" stroke-width="2"/><rect x="100" y="204" width="30" height="7" fill="${trim}" stroke="${INK}" stroke-width="2"/>` : ''}
       ${motif === 'wing' ? `<path d="M70 210 q-14 -6 -16 -16 q10 4 16 6z M130 210 q14 -6 16 -16 q-10 4 -16 6z" fill="#fff" stroke="${trim}" stroke-width="1.5"/>` : ''}
       ${motif === 'crystal' ? spikes(70, 212, 2, 12, 40, 200, '#e0f2fe', '#60a5fa') + spikes(130, 212, 2, 12, 40, 340, '#e0f2fe', '#60a5fa') : ''}${motif === 'flame' ? flameShape(68, 214, .45, '#f97316', '#fde047') + flameShape(132, 214, .45, '#f97316', '#fde047') : ''}`;
-    case 'chest': return `<path d="M68 104 q32 -10 64 0 l4 56 h-72z" fill="${prim}" stroke="${INK}" stroke-width="3" stroke-linejoin="round"/>
+    case 'chest': if (motif === 'wizard') return `<path d="M68 104 q32 -10 64 0 l14 112 q-46 10 -92 0z" fill="${prim}" stroke="${INK}" stroke-width="3" stroke-linejoin="round"/>
+        <path d="M100 100 v114" stroke="${trim}" stroke-width="4"/><path d="M56 208 q44 10 88 0" stroke="${trim}" stroke-width="4" fill="none"/>
+        ${starShape(80, 150, 6, trim)}${starShape(122, 176, 5, gem)}${starShape(76, 192, 4, gem)}${starShape(124, 132, 4, trim)}<path d="M84 130 a6 6 0 1 0 7 -7 a5 5 0 1 1 -7 7z" fill="${trim}"/>
+        <circle cx="100" cy="120" r="7" fill="${gem}" stroke="${trim}" stroke-width="2.5" ${glow}/>`;
+      return `<path d="M68 104 q32 -10 64 0 l4 56 h-72z" fill="${prim}" stroke="${INK}" stroke-width="3" stroke-linejoin="round"/>
       ${S.tier ? `<path d="M80 108 q20 -6 40 0 l-2 34 q-18 10 -36 0z" fill="${sec}" stroke="${trim}" stroke-width="3"/><path d="M100 108 v42" stroke="${trim}" stroke-width="2"/>` : `<path d="M90 104 l10 14 l10 -14" stroke="${S.sec}" stroke-width="3" fill="none"/>`}
       ${S.tier >= 2 ? `<circle cx="100" cy="126" r="7" fill="${gem}" stroke="${trim}" stroke-width="2.5" ${glow}/>` : ''}
       ${motif === 'flame' ? flameShape(100, 120, .55, '#f97316', gem) : ''}${motif === 'leaf' && S.tier ? `<path d="M100 132 q-10 -10 0 -20 q10 10 0 20z" fill="${trim}"/>` : ''}
@@ -3623,6 +3639,10 @@ function gearPiece(slot, S, hero){
       });
       return s; }
     case 'helmet': {
+      if (motif === 'wizard') return `<path d="M50 60 q50 -16 100 0 q-4 10 -50 10 q-46 0 -50 -10z" fill="${prim}" stroke="${INK}" stroke-width="3"/>
+        <path d="M66 58 q14 -40 30 -58 q22 -24 46 -20 q-20 6 -26 22 q-8 26 -2 56z" fill="${prim}" stroke="${INK}" stroke-width="3" stroke-linejoin="round"/>
+        <path d="M68 52 q26 8 50 0 l1 -9 q-26 8 -49 0z" fill="${trim}" stroke="${INK}" stroke-width="2"/>
+        ${starShape(92, 30, 6, trim)}${starShape(110, 14, 4, gem)}<path d="M78 40 a5 5 0 1 0 6 -6 a4 4 0 1 1 -6 6z" fill="${trim}"/><circle cx="142" cy="-20" r="5" fill="${gem}" ${glow}/>`;
       if (!S.tier) return `<path d="M64 52 q36 -30 72 0 l-4 6 q-32 -18 -64 0z" fill="${prim}" stroke="${INK}" stroke-width="2.5"/><path d="M64 52 q36 -30 72 0" stroke="${S.sec}" stroke-width="3" fill="none"/>`;
       let s = '';
       if (motif === 'shadow') return `<path d="M58 70 q-2 -56 42 -58 q44 2 42 58 q-6 18 -10 30 q-2 -36 -32 -38 q-30 2 -32 38 q-6 -12 -10 -30z" fill="${prim}" stroke="${INK}" stroke-width="3"/><path d="M70 44 q30 -22 60 0" stroke="${trim}" stroke-width="2.5" fill="none"/><circle cx="100" cy="30" r="4" fill="${gem}" ${glow}/>`;
@@ -3642,6 +3662,12 @@ function gearPiece(slot, S, hero){
         const c = S.tier ? S.gem : '#38bdf8', len = 100 + S.tier * 4;
         return `<path d="M160 146 L160 ${146-len}" stroke="${c}" stroke-width="22" stroke-linecap="round" opacity=".45"/><path d="M160 146 L160 ${146-len}" stroke="${c}" stroke-width="10" stroke-linecap="round"/><path d="M160 146 L160 ${146-len}" stroke="#fff" stroke-width="4" stroke-linecap="round"/>
           <rect x="153" y="144" width="14" height="32" rx="4" fill="${S.tier ? S.trim : '#94a3b8'}" stroke="${INK}" stroke-width="2.5"/><rect x="153" y="152" width="14" height="4" fill="${INK}"/><rect x="153" y="162" width="14" height="4" fill="${INK}"/><circle cx="160" cy="148" r="2.5" fill="${c}"/>`;
+      }
+      if (motif === 'wizard' || hero.weapon === 'wizard'){
+        return `<path d="M158 238 L160 50" stroke="#5b3a21" stroke-width="8" stroke-linecap="round"/><path d="M158 238 L160 50" stroke="#8b5e3c" stroke-width="3.5" stroke-linecap="round"/>
+          <path d="M160 58 q-18 -6 -16 -24 q4 12 16 14 q12 -2 16 -14 q2 18 -16 24z" fill="${trim}" stroke="${INK}" stroke-width="2"/>
+          <circle cx="160" cy="30" r="16" fill="${gem}" opacity=".45" ${glow}/>${starShape(160, 30, 13, '#fff')}${starShape(160, 30, 8, gem)}
+          <g class="hero-spark">${starShape(140, 14, 4, trim)}</g><g class="hero-spark" style="animation-delay:-.6s">${starShape(182, 40, 3.5, '#fff')}</g>`;
       }
       if ((hero.weapon || 'sword') === 'staff'){
         return `<path d="M158 238 L160 58" stroke="${S.tier ? trim : '#6b4a2e'}" stroke-width="7" stroke-linecap="round"/><path d="M158 238 L160 58" stroke="${S.tier ? sec : '#8b5e3c'}" stroke-width="3" stroke-linecap="round"/>
@@ -3699,6 +3725,7 @@ function heroSVG(size=200, override={}){
     <ellipse cx="88" cy="68" rx="4.5" ry="6" fill="${INK}"/><ellipse cx="112" cy="68" rx="4.5" ry="6" fill="${INK}"/><circle cx="89.5" cy="66" r="1.7" fill="#fff"/><circle cx="113.5" cy="66" r="1.7" fill="#fff"/>
     <path d="M92 80 q8 7 16 0" stroke="${INK}" stroke-width="3" fill="none" stroke-linecap="round"/>
     <ellipse cx="80" cy="78" rx="6" ry="3.5" fill="#fb7185" opacity=".45"/><ellipse cx="120" cy="78" rx="6" ry="3.5" fill="#fb7185" opacity=".45"/>`;
+  if (h.beard) s += `<path d="M70 70 q4 22 14 34 q8 26 16 34 q8 -8 16 -34 q10 -12 14 -34 q-6 14 -18 16 q-12 -6 -24 0 q-12 -2 -18 -16z" fill="${h.beardColor || '#f1f5f9'}" stroke="${INK}" stroke-width="2.5" stroke-linejoin="round"/><path d="M90 86 q10 -5 20 0" stroke="${INK}" stroke-width="2.5" fill="none" stroke-linecap="round"/>`;
   s += helmOn ? gearPiece('helmet', S('helmet'), h) : hairFront(h) + (S('helmet').id === 'traveler' && override.showCap ? gearPiece('helmet', S('helmet'), h) : '');
   s += gearPiece('gloves', S('gloves'), h);
   s += gearPiece('weapon', S('weapon'), h);
@@ -3715,7 +3742,7 @@ function heroNode(size=170, withBuddy=true){
 
 /* ---------- hero creator ---------- */
 function screenHeroCreate(after){
-  const h = Object.assign({ skin:SKIN_TONES[1], hairColor:HAIR_COLORS[1], hairStyle: kid === 'daughter' ? 'long' : 'spiky', weapon:'sword' }, K.hero || {});
+  const h = Object.assign({ skin:SKIN_TONES[1], hairColor:HAIR_COLORS[1], hairStyle: TK === 'daughter' ? 'long' : 'spiky', weapon:'sword' }, K.hero || {});
   const prev = el('div',{class:'hero-create-prev'});
   const draw = () => { prev.innerHTML = heroSVG(220, { hero:h }); };
   const row = (label, items, render, key) => el('div',{class:'hc-row'}, el('h3',{}, label),
@@ -3728,7 +3755,8 @@ function screenHeroCreate(after){
         row('Skin', SKIN_TONES, v => el('span',{class:'swatch', style:`background:${v}`}), 'skin'),
         row('Hair style', Object.keys(HAIR_STYLES), v => HAIR_STYLES[v], 'hairStyle'),
         row('Hair color', HAIR_COLORS, v => el('span',{class:'swatch', style:`background:${v}`}), 'hairColor'),
-        row('Weapon', ['sword','staff','laser'], v => ({ sword:'⚔️ Sword', staff:'🪄 Magic Staff', laser:'✨ Laser Sword' })[v], 'weapon'),
+        row('Weapon', isDev() ? ['wizard','staff','sword','laser'] : ['sword','staff','laser'], v => ({ sword:'⚔️ Sword', staff:'🪄 Magic Staff', laser:'✨ Laser Sword', wizard:'🌟 Star Staff' })[v], 'weapon'),
+        isDev() ? row('Beard', [true,false], v => v ? '🧔 Wizard beard' : '🙂 No beard', 'beard') : null,
         el('button',{class:'btn big', style:'margin-top:16px', onclick:()=>{ K.hero = h; heroState(); save(); confetti(70); beep('level'); say('Your hero is ready for adventure!'); (after || screenHome)(); }},'✅ This is me!')))));
 }
 
@@ -3778,7 +3806,7 @@ function screenArmory(){
   const G = heroState();
   const prev = el('div',{class:'armory-prev'}, heroNode(230));
   const grid = el('div',{class:'armory-grid'});
-  GEAR_SETS.forEach(S => {
+  armorySets().forEach(S => {
     const owned = hasPiece(S.id, armorySlot), on = G.eq[armorySlot] === S.id;
     const where = S.tier === 0 ? 'Starter gear' : BOSS_PIECES.includes(armorySlot) ? `Beat the Level ${S.tier} boss` : `Great reads at Level ${S.tier}`;
     grid.append(el('button',{class:'armory-item' + (owned ? '' : ' locked') + (on ? ' on' : ''), style:`--gem:${S.gem};--prim:${S.prim}`, onclick:()=>{
@@ -3787,7 +3815,7 @@ function screenArmory(){
       el('div',{class:'ai-pic', html: owned ? heroSVG(84, { eq: Object.assign({}, G.eq, { [armorySlot]: S.id }) }) : ''}, owned ? null : '🔒'),
       el('div',{class:'ai-name'}, S.name), el('div',{class:'ai-sub'}, owned ? (on ? '✓ Wearing' : 'Tap to wear') : where)));
   });
-  const sets = el('div',{class:'set-list'}, ...GEAR_SETS.filter(S => S.tier).map(S => {
+  const sets = el('div',{class:'set-list'}, ...armorySets().filter(S => S.tier).map(S => {
     const n = setCount(S.id);
     return el('div',{class:'set-row', style:`--gem:${S.gem};--prim:${S.prim}`},
       el('span',{class:'set-dot'}), el('b',{}, S.name), el('span',{class:'muted'}, `Level ${S.tier}`),
@@ -3811,11 +3839,11 @@ function screenHeroHall(){
   stopAll();
   const other = kid === 'son' ? 'daughter' : 'son', O = DB.kids[other];
   const tile = (icon, n, label, on=true) => el('div',{class:'hh-tile' + (on ? '' : ' off'), title:label}, el('span',{class:'hh-ic'}, icon), n != null ? el('span',{class:'hh-n'}, n) : null);
-  const buddies = Object.entries(AVATAR_BASES).filter(([,b]) => b.kid === kid).map(([id,b]) => tile(b.emoji, null, b.name, K.avatar.owned.includes(id) || K.level >= AVATAR_UNLOCK_LEVEL));
+  const buddies = Object.entries(AVATAR_BASES).filter(([,b]) => (isDev() || b.kid === TK)).map(([id,b]) => tile(b.emoji, null, b.name, K.avatar.owned.includes(id) || K.level >= AVATAR_UNLOCK_LEVEL));
   const bosses = T.levels.map((_, i) => { const B = bossFor(i+1); if (!B) return null; const r = (K.bossLog||{})[i+1]; return tile((K.bossesBeaten||[]).includes(i+1) ? B.e : '❔', r && r.wins ? r.wins : null, B.name, (K.bossesBeaten||[]).includes(i+1)); }).filter(Boolean);
   const sets = GEAR_SETS.filter(g => g.tier).map(g => el('div',{class:'hh-tile set' + (setCount(g.id) ? '' : ' off'), style:`--gem:${g.gem};--prim:${g.prim}`, title:g.name}, el('span',{class:'hh-gem'}), el('span',{class:'hh-n'}, setCount(g.id) + '/8')));
   const stage = el('div',{class:'hh-stage'},
-    el('div',{class:'hh-spot main'}, heroNode(200), el('div',{class:'hh-name'}, kidName()), el('div',{class:'hh-sub'}, `${kid==='daughter'?'Rank':'Level'} ${K.level} · ${(fullSetOn() || {}).title || 'Adventurer'}`)));
+    el('div',{class:'hh-spot main'}, heroNode(200), el('div',{class:'hh-name'}, kidName()), el('div',{class:'hh-sub'}, `${TK==='daughter'?'Rank':'Level'} ${K.level} · ${(fullSetOn() || {}).title || 'Adventurer'}`)));
   if (O && O.hero){ const keep = K; K = O; try { stage.append(el('div',{class:'hh-spot side'}, heroNode(130), el('div',{class:'hh-name small'}, kidName(other)))); } finally { K = keep; } }
   show(el('div',{class:'screen'},
     el('div',{class:'topbar'}, el('button',{class:'btn ghost small', onclick:()=>screenHome()},'← Back'), el('h1',{class:'title'},'🏛️ Hall of Heroes'), el('button',{class:'btn small', onclick:screenArmory},'🛡️ Armory')),
@@ -3895,7 +3923,8 @@ const PZ_RIDDLES = {
         ['What can you catch but not throw?',['a cold','a ball','a fish']], ['Which word is a compound word?',['sunflower','happy','running']]]
 };
 const PZ = { pos:null, sub:false, beat:null, mine:null, timers:[] };
-const pzOther = () => kid === 'son' ? 'daughter' : 'son';
+// everyone else who can show up in town: the other kid, plus the Wizard once he has visited
+const pzOthers = () => ['daughter','son','dev'].filter(k => k !== kid && (k !== 'dev' || (DB.plaza && DB.plaza.dev)) && (k !== 'dev' || DB.kids.dev || DB.plaza.dev));
 const pzDayIdx = () => Math.floor(Date.now() / 86400000);
 function pzRec(k){ DB.plaza = DB.plaza || {}; return DB.plaza[k] || null; }
 function pzOnline(r){ return !!(r && r.here && Date.now() - r.ts < 75000); }
@@ -3910,14 +3939,14 @@ function pzPush(extra = {}){
 function pzSubscribe(){
   if (PZ.sub || !CLOUD.on || !CLOUD.db) return;
   PZ.sub = true;
-  ['son','daughter'].forEach(k => {
+  ['son','daughter','dev'].forEach(k => {
     try {
       CLOUD.db.doc('rq/plaza_' + k).onSnapshot(snap => {
         const d = snap.exists ? snap.data() : null; if (!d || typeof d.json !== 'string') return;
         let r; try { r = JSON.parse(d.json); } catch(e){ return; }
         DB.plaza = DB.plaza || {};
         if (k === kid && document.querySelector('.plaza-world')) return; // I'm the one moving here
-        if (!DB.plaza[k] || r.ts >= DB.plaza[k].ts){ DB.plaza[k] = r; if (PZ.onRemote && k !== kid) PZ.onRemote(r); }
+        if (!DB.plaza[k] || r.ts >= DB.plaza[k].ts){ DB.plaza[k] = r; if (PZ.onRemote && k !== kid) PZ.onRemote(r, k); }
       }, () => {});
     } catch(e){}
   });
@@ -4010,45 +4039,55 @@ function screenTownSquare(){
   if (!K.hero) return screenHeroCreate(screenTownSquare);
   pzSubscribe();
   PZ.pos = Object.assign({ x:760, y:760 }, K.plazaPos || {});
-  const other = pzOther(), oName = kidName(other);
   const world = el('div',{class:'plaza-world', html: pzSceneSVG()});
   const view = el('div',{class:'plaza-view'}, world), frame = el('div',{class:'plaza-frame'}, view);
   const actor = (node, name, cls) => el('div',{class:'plaza-actor ' + (cls || '')}, el('div',{class:'pz-tag'}, name), node);
-  const me = actor(pzHeroFor(kid, 96), kidName(), 'me');
-  const sib = actor(pzHeroFor(other, 96), oName, 'sib');
-  world.append(me, sib);
+  const me = actor(pzHeroFor(kid, 96), kidName(), 'me' + (isDev() ? ' wizard' : ''));
+  world.append(me);
   const put = (n, x, y, w = 96) => { n.style.left = (x - w/2) + 'px'; n.style.top = (y - w*1.25 - 30) + 'px'; n.style.zIndex = Math.round(y); };
   const bubble = (n, text, big) => { n.querySelectorAll('.pz-bubble').forEach(b => b.remove()); const b = el('div',{class:'pz-bubble' + (big ? ' big' : '')}, text); n.append(b); setTimeout(() => b.remove(), 2600); };
   const camera = (x, y, smooth = true) => view.scrollTo({ left: x - view.clientWidth/2, top: y - view.clientHeight/2, behavior: smooth ? 'smooth' : 'auto' });
+  K.plazaSeenBy = K.plazaSeenBy || {};
 
-  // the other kid: live if they're in town now, otherwise napping at their last spot
-  let sibPos = { x:900, y:720 }, seenEmote = 0;
-  const drawSib = r => {
-    const live = pzOnline(r);
-    if (r && typeof r.x === 'number') sibPos = { x:r.x, y:r.y };
-    const dur = live ? Math.min(3, Math.hypot(sibPos.x - (sib._x || sibPos.x), sibPos.y - (sib._y || sibPos.y)) / 240) : 0;
-    sib.style.transitionDuration = dur + 's';
-    if (sib._x != null && live) sib.classList.toggle('flip', sibPos.x < sib._x);
-    if (dur > .05){ sib.classList.add('walking'); setTimeout(() => sib.classList.remove('walking'), dur*1000); }
-    put(sib, sibPos.x, sibPos.y); sib._x = sibPos.x; sib._y = sibPos.y;
-    sib.classList.toggle('away', !live);
-    sib.querySelector('.pz-tag').textContent = live ? oName + ' 🟢' : oName + ' 💤';
-    if (live && r.emote && r.emoteTs > seenEmote && Date.now() - r.emoteTs < 15000){ seenEmote = r.emoteTs; bubble(sib, r.emote, true); if (r.emote === '💃') { sib.classList.add('dance'); setTimeout(() => sib.classList.remove('dance'), 2000); } }
-    readMail(r, live);
+  // everyone else in town: live if they're here now, otherwise napping at their last spot
+  const others = pzOthers();
+  const homeSpot = { son:{ x:900, y:720 }, daughter:{ x:680, y:720 }, dev:{ x:1000, y:520 } };
+  const P = {};
+  others.forEach(k => {
+    const n = actor(pzHeroFor(k, 96), kidName(k), 'sib' + (k === 'dev' ? ' wizard' : ''));
+    P[k] = { k, n, pos: Object.assign({}, homeSpot[k]), seenEmote: 0 };
+    world.append(n);
+    n.onclick = e => { e.stopPropagation(); beep('tap'); tapOther(P[k]); };
+  });
+  const forMe = m => !m.to || m.to === 'all' || m.to === kid;
+  const draw = (k, r) => {
+    const o = P[k]; if (!o) return;
+    const live = pzOnline(r), n = o.n, name = kidName(k);
+    if (r && typeof r.x === 'number') o.pos = { x:r.x, y:r.y };
+    const dur = live && n._x != null ? Math.min(3, Math.hypot(o.pos.x - n._x, o.pos.y - n._y) / 240) : 0;
+    n.style.transitionDuration = dur + 's';
+    if (n._x != null && live && Math.abs(o.pos.x - n._x) > 4) n.classList.toggle('flip', o.pos.x < n._x);
+    if (dur > .05){ n.classList.add('walking'); setTimeout(() => n.classList.remove('walking'), dur*1000); }
+    put(n, o.pos.x, o.pos.y); n._x = o.pos.x; n._y = o.pos.y;
+    n.classList.toggle('away', !live);
+    n.querySelector('.pz-tag').textContent = name + (live ? ' 🟢' : ' 💤');
+    if (live && r.emote && r.emoteTs > o.seenEmote && Date.now() - r.emoteTs < 15000 && forMe({ to:r.emoteTo })){
+      o.seenEmote = r.emoteTs; bubble(n, r.emote, true);
+      if (r.emote === '💃'){ n.classList.add('dance'); setTimeout(() => n.classList.remove('dance'), 2000); }
+    }
+    const fresh = ((r && r.sent) || []).filter(m => m.ts > (K.plazaSeenBy[k] || 0) && forMe(m));
+    if (fresh.length){
+      fresh.forEach((m, i) => setTimeout(() => { pzToast(live && Date.now() - m.ts < 20000 ? `${name}: ${m.e} ${m.label}!` : `${name} left you a ${m.e} ${m.label} while you were away!`); beep('ok'); }, i * 900));
+      K.plazaSeenBy[k] = Math.max(...fresh.map(m => m.ts)); save();
+    }
   };
-  const readMail = (r, live) => {
-    const fresh = ((r && r.sent) || []).filter(m => m.ts > (K.plazaSeen || 0));
-    if (!fresh.length) return;
-    fresh.forEach((m, i) => setTimeout(() => { pzToast(live && Date.now() - m.ts < 20000 ? `${oName}: ${m.e} ${m.label}!` : `${oName} left you a ${m.e} ${m.label} while you were away!`); beep('ok'); }, i * 900));
-    K.plazaSeen = Math.max(...fresh.map(m => m.ts)); save();
-  };
-  PZ.onRemote = r => { if (document.body.contains(world)) drawSib(r); };
+  PZ.onRemote = (r, k) => { if (document.body.contains(world)) draw(k, r); };
 
   // walking
   let walkT = null, walkId = 0;
   const walkTo = (x, y, then) => {
     x = Math.max(50, Math.min(PZ_W - 50, x)); y = Math.max(150, Math.min(PZ_H - 20, y));
-    const dc = Math.hypot(x - PZ_C.x, y - PZ_C.y); if (dc < 84){ const k = 84 / (dc || 1); x = PZ_C.x + (x - PZ_C.x)*k; y = PZ_C.y + (y - PZ_C.y)*k + (dc ? 0 : 84); }
+    const dc = Math.hypot(x - PZ_C.x, y - PZ_C.y); if (dc < 84){ const f = 84 / (dc || 1); x = PZ_C.x + (x - PZ_C.x)*f; y = PZ_C.y + (y - PZ_C.y)*f + (dc ? 0 : 84); }
     const d = Math.hypot(x - PZ.pos.x, y - PZ.pos.y), dur = Math.max(.2, d / 260), id = ++walkId;
     me.style.transitionDuration = dur + 's';
     if (Math.abs(x - PZ.pos.x) > 4) me.classList.toggle('flip', x < PZ.pos.x);
@@ -4056,26 +4095,26 @@ function screenTownSquare(){
     frame.querySelectorAll('.pz-pop').forEach(p => p.remove());
     clearTimeout(walkT);
     walkT = setTimeout(() => { if (id !== walkId) return; me.classList.remove('walking'); PZ.pos = { x, y }; pzPush(); then && then(); }, dur * 1000);
-    PZ.pos = { x: PZ.pos.x, y: PZ.pos.y }; PZ._target = { x, y };
   };
   // pop-up cards dock at the bottom of the town view so they're never cut off
-  const pop = (x, y, ...kids) => { frame.querySelectorAll('.pz-pop').forEach(p => p.remove()); const p = el('div',{class:'pz-pop'}, ...kids, el('button',{class:'pz-x', onclick:e => { e.stopPropagation(); p.remove(); }},'✕')); p.onclick = e => e.stopPropagation(); frame.append(p); return p; };
+  const pop = (...kids) => { frame.querySelectorAll('.pz-pop').forEach(p => p.remove()); const p = el('div',{class:'pz-pop'}, ...kids, el('button',{class:'pz-x', onclick:e => { e.stopPropagation(); p.remove(); }},'✕')); p.onclick = e => e.stopPropagation(); frame.append(p); return p; };
+  const closePop = () => frame.querySelectorAll('.pz-pop').forEach(p => p.remove());
   const leave = fn => { pzPush({ here:false }); fn(); };
 
   // buildings and the fountain
   world.addEventListener('click', e => {
-    if (e.target.closest('.plaza-actor, .pz-npc, .pz-pop')) return;
+    if (e.target.closest('.plaza-actor, .pz-npc')) return;
     const g = e.target.closest('[data-b]');
     if (g && g.dataset.b === 'well') return walkTo(PZ_C.x, PZ_C.y + 96, wish);
     if (g){ const b = PZ_BUILDINGS.find(x => x.id === g.dataset.b); beep('tap');
-      return walkTo(b.x, b.y + 30, () => { say(b.name + '. ' + b.sub); pop(b.x, b.y - 30, el('div',{class:'pz-pop-e'}, b.icon), el('b',{}, b.name), el('small',{}, b.sub), el('button',{class:'btn small', onclick:() => leave(b.go)}, 'Go in ▶')); }); }
+      return walkTo(b.x, b.y + 30, () => { say(b.name + '. ' + b.sub); pop(el('div',{class:'pz-pop-e'}, b.icon), el('b',{}, b.name), el('small',{}, b.sub), el('button',{class:'btn small', onclick:() => leave(b.go)}, 'Go in ▶')); }); }
     const r = world.getBoundingClientRect(); walkTo(e.clientX - r.left, e.clientY - r.top + 10);
   });
   function wish(){
     const today = todayStr();
-    if (K.pzWish === today){ say('The fountain is resting. Come back tomorrow for another wish!'); return pop(PZ_C.x, PZ_C.y - 60, el('div',{class:'pz-pop-e'},'⛲'), el('b',{},'Wishing Fountain'), el('small',{},'One wish a day. Come back tomorrow!')); }
-    pop(PZ_C.x, PZ_C.y - 60, el('div',{class:'pz-pop-e'},'⛲'), el('b',{},'Wishing Fountain'), el('small',{},'Toss a coin and make a wish!'),
-      el('button',{class:'btn small', onclick:() => { K.pzWish = today; const n = 1 + Math.floor(Math.random()*5); K.stars += n; save(); frame.querySelectorAll('.pz-pop').forEach(p => p.remove());
+    if (K.pzWish === today && !isDev()){ say('The fountain is resting. Come back tomorrow for another wish!'); return pop(el('div',{class:'pz-pop-e'},'⛲'), el('b',{},'Wishing Fountain'), el('small',{},'One wish a day. Come back tomorrow!')); }
+    pop(el('div',{class:'pz-pop-e'},'⛲'), el('b',{},'Wishing Fountain'), el('small',{},'Toss a coin and make a wish!'),
+      el('button',{class:'btn small', onclick:() => { K.pzWish = today; const n = 1 + Math.floor(Math.random()*5); K.stars += n; save(); closePop();
         const coin = el('div',{class:'pz-coin', style:`left:${PZ.pos.x}px;top:${PZ.pos.y - 120}px`},'🪙'); world.append(coin); setTimeout(() => coin.remove(), 1200);
         setTimeout(() => { beep('star'); confetti(30); bubble(me, `+${n}⭐`, true); say(`Your wish came true! ${n} stars!`); }, 900); }}, '🪙 Make a wish'));
   }
@@ -4084,46 +4123,46 @@ function screenTownSquare(){
   PZ_NPCS.filter(n => !n.hidden).forEach(n => {
     const node = el('div',{class:'pz-npc', style:`left:${n.x-36}px;top:${n.y-90}px;z-index:${n.y}`}, el('div',{class:'pz-tag'}, n.name), el('div',{class:'pz-npc-e'}, n.e));
     if (n.id === 'baker') node.append(el('div',{class:'pz-stall'},'🥐🧁🍪'));
-    node.onclick = e => { e.stopPropagation(); beep('tap'); walkTo(n.x + 70, n.y + 10, () => n.id === 'owl' ? owl(n) : baker(n)); };
+    node.onclick = e => { e.stopPropagation(); beep('tap'); walkTo(n.x + 70, n.y + 10, () => n.id === 'owl' ? owl() : baker()); };
     world.append(node);
   });
-  function owl(n){
-    const list = PZ_WORDS[kid], w = list[pzDayIdx() % list.length], done = K.pzWord === todayStr();
+  function owl(){
+    const list = PZ_WORDS[TK], w = list[pzDayIdx() % list.length], done = K.pzWord === todayStr() && !isDev();
     say(`Hoot hoot! The word of the day is: ${w}. Can you read it out loud?`);
-    pop(n.x, n.y - 100, el('div',{class:'pz-pop-e'},'🦉'), el('small',{},'Word of the day'), el('div',{class:'pz-word'}, w),
+    pop(el('div',{class:'pz-pop-e'},'🦉'), el('small',{},'Word of the day'), el('div',{class:'pz-word'}, w),
       el('button',{class:'btn small ghost', onclick:() => say(w)}, '🔊 Hear it'),
       done ? el('small',{},'✅ You got today\'s word star!') : el('button',{class:'btn small', onclick:e => { K.pzWord = todayStr(); K.stars += 1; save(); beep('star'); bubble(me,'+1⭐',true); say('Hoot! Great reading!'); e.target.replaceWith(el('small',{},'✅ +1 ⭐')); }}, '🗣️ I read it!'));
   }
-  function baker(n){
-    const list = PZ_RIDDLES[kid], [q, opts] = list[pzDayIdx() % list.length];
-    if (K.pzRiddle === todayStr()){ say('You already solved my riddle today! Come back tomorrow for a new one.'); return pop(n.x, n.y - 100, el('div',{class:'pz-pop-e'},'🐰'), el('b',{},'Baker Bun'), el('small',{},'New riddle tomorrow! 🧁')); }
+  function baker(){
+    const list = PZ_RIDDLES[TK], [q, opts] = list[(pzDayIdx() + (isDev() ? Math.floor(Math.random()*list.length) : 0)) % list.length];
+    if (K.pzRiddle === todayStr() && !isDev()){ say('You already solved my riddle today! Come back tomorrow for a new one.'); return pop(el('div',{class:'pz-pop-e'},'🐰'), el('b',{},'Baker Bun'), el('small',{},'New riddle tomorrow! 🧁')); }
     say(q);
-    const p = pop(n.x, n.y - 100, el('div',{class:'pz-pop-e'},'🧁'), el('b',{},'Riddle time!'), el('div',{class:'pz-q'}, q));
+    const p = pop(el('div',{class:'pz-pop-e'},'🧁'), el('b',{},'Riddle time!'), el('div',{class:'pz-q'}, q));
     shuffle(opts.map((o, i) => [o, i === 0])).forEach(([o, right]) => p.insertBefore(el('button',{class:'btn small blue', onclick:e => {
       if (right){ K.pzRiddle = todayStr(); K.stars += 2; save(); beep('star'); confetti(25); bubble(me,'+2⭐',true); say('Yes! You got it! Here are two stars.'); setTimeout(() => p.remove(), 1200); }
       else { beep('bad'); e.target.disabled = true; say('Not quite. Try again!'); }
     }}, o), p.querySelector('.pz-x')));
   }
 
-  // tap the other kid
-  sib.onclick = e => {
-    e.stopPropagation(); beep('tap');
-    const r = pzRec(other), live = pzOnline(r);
-    walkTo(sibPos.x + (PZ.pos.x < sibPos.x ? -90 : 90), sibPos.y, () => {
-      pop(sibPos.x, sibPos.y - 170, el('b',{}, live ? `${oName} is here!` : `${oName} is away 💤`), el('small',{}, live ? 'Send a wave or a high five!' : 'Leave something. They\'ll see it next time!'),
-        el('div',{class:'pz-emotes'}, ...PZ_EMOTES.map(([em, label]) => el('button',{class:'pz-em', onclick:() => { frame.querySelectorAll('.pz-pop').forEach(p => p.remove()); emote(em, label); }}, em))));
+  // tap someone else
+  function tapOther(o){
+    const r = pzRec(o.k), live = pzOnline(r), name = kidName(o.k);
+    walkTo(o.pos.x + (PZ.pos.x < o.pos.x ? -90 : 90), o.pos.y, () => {
+      pop(el('b',{}, live ? `${name} is here!` : `${name} is away 💤`), el('small',{}, live ? 'Send a wave or a high five!' : 'Leave something. They\'ll see it next time!'),
+        el('div',{class:'pz-emotes'}, ...PZ_EMOTES.map(([em, label]) => el('button',{class:'pz-em', onclick:() => { closePop(); emote(em, label, o.k); }}, em))));
     });
-  };
-  // emotes
-  function emote(em, label){
+  }
+  // emotes: to one person, or to everyone in town from the bar
+  function emote(em, label, to = 'all'){
     bubble(me, em, true); beep('ok');
     if (em === '💃'){ me.classList.add('dance'); setTimeout(() => me.classList.remove('dance'), 2000); }
-    const prev = pzRec(kid) || {}, sent = (prev.sent || []).concat([{ e:em, label, ts:Date.now() }]);
-    pzPush({ emote:em, emoteTs:Date.now(), sent });
-    const r = pzRec(other), near = Math.hypot(PZ.pos.x - sibPos.x, PZ.pos.y - sibPos.y) < 220;
-    if (em === '✋' && pzOnline(r) && near && K.pzHigh5 !== todayStr()){
+    const prev = pzRec(kid) || {}, sent = (prev.sent || []).concat([{ e:em, label, to, ts:Date.now() }]);
+    pzPush({ emote:em, emoteTo:to, emoteTs:Date.now(), sent });
+    const targets = to === 'all' ? others : [to];
+    const liveNear = targets.filter(k => pzOnline(pzRec(k)) && Math.hypot(PZ.pos.x - P[k].pos.x, PZ.pos.y - P[k].pos.y) < 220);
+    if (em === '✋' && liveNear.length && K.pzHigh5 !== todayStr()){
       K.pzHigh5 = todayStr(); K.stars += 2; save(); setTimeout(() => { confetti(40); burst('HIGH FIVE!'); bubble(me, '+2⭐', true); say('Team high five! Two stars!'); }, 400);
-    } else if (!pzOnline(r)) pzToast(`${em} sent! ${oName} will see it next time.`);
+    } else if (to !== 'all' && !pzOnline(pzRec(to))) pzToast(`${em} sent! ${kidName(to)} will see it next time.`);
   }
   const bar = el('div',{class:'pz-bar'}, el('span',{class:'pz-bar-l'},'Say hi:'), ...PZ_EMOTES.map(([em, label]) => el('button',{class:'pz-em', title:label, onclick:() => emote(em, label)}, em)));
 
@@ -4133,21 +4172,86 @@ function screenTownSquare(){
     n.classList.toggle('flip', nx > n._x); n._x = nx; n._y = ny; n.style.left = nx + 'px'; n.style.top = ny + 'px'; n.style.zIndex = Math.round(ny); setTimeout(wander, 1400 + Math.random()*1600); };
   setTimeout(wander, 800);
 
-  const status = el('div',{class:'pz-status'}, CLOUD.on ? `☁️ Town is live. When ${oName} opens Town Square on their iPad, you'll see each other here.` : `📱 On this link, ${oName} can only visit from this iPad. Use the Claude link to play together on two iPads.`);
+  const kidsNames = others.filter(k => k !== 'dev').map(k => kidName(k)).join(' and ');
+  const status = el('div',{class:'pz-status'}, CLOUD.on ? `☁️ Town is live. When ${kidsNames} opens Town Square, you'll see each other here.` : `📱 On this link, ${kidsNames} can only visit from this device. Use the Claude link to play together on different iPads.`);
   show(el('div',{class:'screen plaza-screen'},
     el('div',{class:'topbar'}, el('button',{class:'btn small', onclick:() => leave(() => screenHome())}, '← Back'), el('h1',{class:'title'}, '🏰 Storybrook Square'), el('div')),
     frame, bar, status));
   put(me, PZ.pos.x, PZ.pos.y); me.style.transitionDuration = '0s';
-  drawSib(pzRec(other));
+  others.forEach(k => draw(k, pzRec(k)));
   requestAnimationFrame(() => camera(PZ.pos.x, PZ.pos.y, false));
   pzPush();
   clearInterval(PZ.beat);
-  PZ.beat = setInterval(() => { if (!document.body.contains(world)){ clearInterval(PZ.beat); return; } pzPush(); drawSib(pzRec(other)); }, 30000);
+  PZ.beat = setInterval(() => { if (!document.body.contains(world)){ clearInterval(PZ.beat); return; } pzPush(); others.forEach(k => draw(k, pzRec(k))); }, 30000);
   if (!K.pzHello){ K.pzHello = 1; save(); say(`Welcome to Storybrook Square! Tap anywhere to walk. Tap a building to go inside.`); }
 }
 
+/* ================= WIZARD MODE (grown-up, this device only) =================
+   A hidden third player for testing: everything free and unlocked, either reading track, any level.
+   Turned on from Grown-ups › Wizard Mode or by opening the app link with #wizard on the end.
+   Kept only on this device (never sent to cloud save), so the kids' iPads never show it. */
+function wizardSetup(){
+  const W = DB.kids.dev;
+  W.placed = true; W.level = W.level || 1;
+  if (!W.avatar.base){ W.avatar.base = 'dragon'; }
+  if (!W.hero){
+    W.hero = { skin:SKIN_TONES[1], hairColor:'#f1f5f9', hairStyle:'short', weapon:'wizard', beard:true, beardColor:'#f1f5f9' };
+    W.gear = { owned:{ traveler:GEAR_SLOTS.slice(), archmage:GEAR_SLOTS.slice() }, eq:Object.fromEntries(GEAR_SLOTS.map(s => [s, 'archmage'])) };
+    wizardUnlockAll();
+  }
+  save();
+}
+function wizardUnlockAll(){
+  const W = DB.kids.dev;
+  W.gear = W.gear || { owned:{}, eq:{} };
+  GEAR_SETS.concat([ARCHMAGE]).forEach(g => W.gear.owned[g.id] = GEAR_SLOTS.slice());
+  W.avatar.owned = [...new Set((W.avatar.owned || []).concat(Object.keys(AVATAR_BASES).filter(id => AVATAR_BASES[id].kid), SHOP.map(x => x[1])))];
+  W.legendOwned = LEGENDS.map(l => l.id); W.legendSeen = LEGENDS.map(l => l.id);
+  W.mythics = MYTHICS.map(m => m.id);
+  W.collection = [...new Set(['son','daughter'].flatMap(t => TRACKS[t].rewards.map(r => r[1])))];
+  const Wd = (function(){ const keep = K; K = W; try { return worldOf('dev'); } finally { K = keep; } })();
+  Wd.themes = Object.keys(WORLD_THEMES);
+  save();
+}
+function screenWizard(){
+  stopAll();
+  const W = DB.kids.dev, row = (...k) => el('div',{class:'row wiz-row'}, ...k);
+  const sec = (title, ...k) => el('div',{class:'card wiz-card'}, el('h3',{}, title), ...k);
+  const done = t => { pzToast('🧙 ' + t); beep('star'); };
+  const name = el('input',{class:'wiz-input', value: kidName('dev')});
+  const levels = T.levels.map((L, i) => el('button',{class:'btn small' + (W.level === i+1 ? '' : ' ghost'), onclick:()=>{ W.level = i+1; W.placed = true; W.passStreak = 0; W.failStreak = 0; W.bossReady = null; awardTrophiesUpTo(i+1); save(); done(`Now at level ${i+1}: ${L.title}`); screenWizard(); }}, String(i+1)));
+  const bossBtns = T.levels.map((L, i) => bossFor(i+1) ? el('button',{class:'btn small ghost', onclick:()=>{ W.level = i+1; save(); bossIntro(i+1); }}, `${bossFor(i+1).e} ${i+1}`) : null);
+  show(el('div',{class:'screen wizard-screen'},
+    el('div',{class:'topbar'}, el('button',{class:'btn ghost small', onclick:()=>screenHome()},'← Back'), el('h1',{class:'title'},'🧙 Wizard Tools'), el('div')),
+    el('p',{class:'subtitle'}, 'Only on this device. Stars and 💫 never run out, every shop item, place, pet, legendary and gear set is unlocked. The kids never see this profile on their iPads.'),
+    el('div',{class:'wiz-grid'},
+      sec('📚 Reading track',
+        row(el('button',{class:'btn small' + (TK === 'daughter' ? '' : ' ghost'), onclick:()=>{ DB.devTrack = 'daughter'; save(); setKid('dev'); done(`${kidName('daughter')}'s track`); screenWizard(); }}, `🐉 ${kidName('daughter')}'s track`),
+            el('button',{class:'btn small' + (TK === 'son' ? '' : ' ghost'), onclick:()=>{ DB.devTrack = 'son'; save(); setKid('dev'); done(`${kidName('son')}'s track`); screenWizard(); }}, `🐲 ${kidName('son')}'s track`)),
+        el('p',{class:'muted'}, 'Stories, phonics, spelling, bosses and the level guide follow this track.')),
+      sec('🎚️ Jump to level', row(...levels), el('p',{class:'muted'}, 'Reading progress, level-locked items and the next boss follow your level.')),
+      sec('⚔️ Fight a boss now', row(...bossBtns)),
+      sec('🧪 Test things',
+        row(el('button',{class:'btn small blue', onclick:()=>{ W.placed = false; save(); screenPlacementIntro(); }}, '📏 Placement test'),
+            el('button',{class:'btn small blue', onclick:()=>{ ensureSkillStart(); screenPath(); }}, '🧠 Phonics path'),
+            el('button',{class:'btn small blue', onclick:()=>{ beep('tap'); TK === 'daughter' ? startSpellCheck() : startSpelling(); }}, '✏️ Spelling'),
+            el('button',{class:'btn small blue', onclick:()=>{ lootReveal((setForLevel(W.level) || SET_BY_ID.ember).id, pick(GEAR_SLOTS), false); }}, '🎁 Gear drop'),
+            el('button',{class:'btn small blue', onclick:()=>{ W.chestPity = 999; W.mythics = []; maybeStarfallChest().then(() => wizardUnlockAll()); }}, '🌠 Starfall chest')),
+        row(el('button',{class:'btn small', onclick:()=>{ ['pzWish','pzRiddle','pzWord','pzHigh5'].forEach(k => delete W[k]); W.today = { date:null, ms:0 }; save(); done('Daily rewards reset'); }}, '🔄 Reset daily stuff'),
+            el('button',{class:'btn small', onclick:()=>{ wizardUnlockAll(); done('Everything unlocked'); }}, '🔓 Unlock everything again'))),
+      sec('🪄 Your wizard',
+        row(name, el('button',{class:'btn small', onclick:()=>{ DB.devName = name.value.trim() || 'The Wizard'; save(); done('Name saved'); }}, 'Save name')),
+        el('p',{class:'muted'}, 'This is the name the kids see on you in Town Square.'),
+        row(el('button',{class:'btn small blue', onclick:()=>screenHeroCreate(screenWizard)}, '✏️ Change look'), el('button',{class:'btn small blue', onclick:screenArmory}, '🛡️ Armory'),
+            el('button',{class:'btn small blue', onclick:()=>screenWorld()}, '🏗️ My World'), el('button',{class:'btn small blue', onclick:screenTownSquare}, '🏰 Town Square'))),
+      sec('⚠️ Wizard profile',
+        row(el('button',{class:'btn small gray', onclick:async ()=>{ const ok = await modal(el('div',{}, el('h2',{},'Start the Wizard over?'), el('p',{},'Clears the Wizard\'s reading history and world. The kids\' progress is not touched.')), [['Cancel','gray',false],['Start over','',true]]); if (ok){ DB.kids.dev = freshKid(); DB.kids.dev.avatar = { base:null, owned:[], equipped:{} }; save(); enterKid('dev'); } }}, 'Start over'),
+            el('button',{class:'btn small gray', onclick:()=>{ DB.devOn = false; save(); screenProfiles(); }}, 'Hide Wizard on this device')),
+        el('p',{class:'muted'}, 'To bring the Wizard back: Grown-ups › Wizard Mode, or open the app link with #wizard at the end.')))));
+}
+
 /* ================= PARENT AREA ================= */
-function screenPin(){
+function screenPin(after){
   stopAll();
   let entered = '';
   const dots = el('div',{class:'pin-dots'},'○○○○');
@@ -4157,12 +4261,12 @@ function screenPin(){
     if (d === '⌫') entered = entered.slice(0,-1); else if (entered.length < 4) entered += d;
     dots.textContent = '●'.repeat(entered.length) + '○'.repeat(4-entered.length);
     if (entered.length === 4){
-      if (entered === DB.pin) setTimeout(()=>screenParent(kid || 'daughter'), 150);
+      if (entered === DB.pin) setTimeout(()=> after ? after() : screenParent(kid && kid !== 'dev' ? kid : 'daughter'), 150);
       else { msg.textContent = 'Not quite. Try again.'; entered = ''; setTimeout(()=>dots.textContent='○○○○', 300); }
     }
   };
   ['1','2','3','4','5','6','7','8','9','','0','⌫'].forEach(d => pad.append(d ? el('button',{onclick:()=>press(d)}, d) : el('div')));
-  const back = () => kid ? screenHome() : screenProfiles();
+  const back = () => kid && !after ? screenHome() : screenProfiles();
   document.body.className = 'parent';
   show(el('div',{class:'screen center', style:'align-items:center;justify-content:center'},
     el('div',{class:'card', style:'max-width:420px;width:100%;text-align:center'},
@@ -4215,6 +4319,9 @@ function screenParent(which){
   document.body.className = 'parent';
   const k = DB.kids[which], track = TRACKS[which];
   const label = DB.names[which] + (which === 'daughter' ? ' (Dragon Academy · Sunny Day Club)' : ` (${CAT} & Pals · Detective ${CAT})`);
+  const wizRow = el('div',{class:'card', style:'margin-bottom:14px;display:flex;align-items:center;gap:12px;flex-wrap:wrap'}, el('b',{},'🧙 Wizard Mode'),
+    el('span',{class:'muted', style:'flex:1'}, 'A secret grown-up player on this device only: everything free, any track or level, for testing.'),
+    el('button',{class:'btn small', onclick:()=>{ DB.devOn = true; save(); enterKid('dev'); }}, DB.devOn ? 'Open Wizard' : 'Turn on'));
   const tabs = el('div',{class:'tabs'},
     el('button',{class:'tab' + (which==='daughter'?' active':''), onclick:()=>screenParent('daughter')},'🐉 ' + DB.names.daughter),
     el('button',{class:'tab' + (which==='son'?' active':''), onclick:()=>screenParent('son')},'🐲 ' + DB.names.son));
@@ -4244,6 +4351,7 @@ function screenParent(which){
     el('div',{class:'row', style:'justify-content:space-between;margin-bottom:12px'},
       el('h1',{style:'margin:0;font-size:30px'},'Grown-up Dashboard'),
       el('button',{class:'btn small', onclick:()=>{ document.body.className=''; kid ? (setKid(kid), screenHome()) : screenProfiles(); }},'Done')),
+    wizRow,
     tabs,
     weeklySummary(which),
     el('div',{class:'card'},
@@ -4354,7 +4462,8 @@ async function playRec(id, btn){
 /* ---------------- boot ---------------- */
 window.addEventListener('pagehide', stopAll);
 document.addEventListener('visibilitychange', () => { if (document.hidden && recogOn) stopRecog(); });
-if (DB.pinKid && DB.kids[DB.pinKid]) enterKid(DB.pinKid);
+if (/wizard/i.test(location.hash)) DB.devOn && DB.kids.dev ? enterKid('dev') : screenPin(() => enterKid('dev'));
+else if (DB.pinKid && DB.kids[DB.pinKid]) enterKid(DB.pinKid);
 else screenProfiles();
 cloudStart();
 watchForUpdates();
