@@ -38,11 +38,24 @@ function freshKid(){
            avatar:{ base:null, owned:[], equipped:{} } };
 }
 let DB;
-function load(){
+function load(fresh){
   let d = null;
-  try { d = JSON.parse(localStorage.getItem(STORE_KEY)); } catch(e){}
-  if (!d || !d.kids) d = { pin:'1234', record:false, forceManual:false, lastKid:null, kids:{ son:freshKid(), daughter:freshKid() } };
-  for (const k of ['son','daughter']){
+  if (!fresh) try { d = JSON.parse(localStorage.getItem(STORE_KEY)); } catch(e){}
+  const legacy = !!(d && d.kids && (d.kids.son || d.kids.daughter)) || !!(d && d.players);
+  if (!d || !d.kids) d = { pin:'1234', record:false, forceManual:false, lastKid:null, kids:{} };
+  d.names = Object.assign({ daughter:'Gianna', son:'Miles' }, d.names||{});
+  // Player registry: one entry per player. Gianna and Miles keep their old ids ('daughter', 'son').
+  // track = which reading track ('daughter' = Dragon Academy & Sunny Day Club, 'son' = Biscuit & Pals),
+  // style = 'girl' | 'boy' starter outfit, pin = hashed kid PIN (optional), wizard = the hidden grown-up player.
+  d.players = d.players || {};
+  // devices that already had Gianna and Miles keep them as the first two players; a brand-new device starts empty
+  if (legacy && !Object.keys(d.players).some(id => !d.players[id].wizard)){
+    d.players.daughter = Object.assign({ name:d.names.daughter, track:'daughter', style:'girl', order:1 }, d.players.daughter || {});
+    d.players.son = Object.assign({ name:d.names.son, track:'son', style:'boy', order:2 }, d.players.son || {});
+  }
+  if (d.kids.dev && !d.players.dev) d.players.dev = { name:d.devName || 'The Wizard', track:'daughter', style:'boy', wizard:true, order:99 };
+  for (const k of Object.keys(d.players)){
+    if (d.players[k].removed) continue;
     d.kids[k] = Object.assign(freshKid(), d.kids[k]||{});
     const K0 = d.kids[k];
     // migrate the old simple missed-word counts into the word tracker
@@ -50,8 +63,6 @@ function load(){
     K0.missed = {};
     K0.avatar = Object.assign({ base:null, owned:[], equipped:{} }, K0.avatar||{});
   }
-  if (d.kids.dev){ d.kids.dev = Object.assign(freshKid(), d.kids.dev); d.kids.dev.avatar = Object.assign({ base:null, owned:[], equipped:{} }, d.kids.dev.avatar||{}); }
-  d.names = Object.assign({ daughter:'Gianna', son:'Miles' }, d.names||{});
   d.devName = d.devName || 'The Wizard';
   return d;
 }
@@ -63,7 +74,7 @@ const GIFTS = [{ id:'world-refund-2026-11', stars:70, msg:'🎁 Surprise! You go
 DB.gifts = DB.gifts || [];
 GIFTS.forEach(g => {
   if (DB.gifts.includes(g.id)) return;
-  for (const k of ['son','daughter']){ DB.kids[k].stars = (DB.kids[k].stars||0) + g.stars; DB.kids[k].giftMsg = g.msg; }
+  for (const k of ['son','daughter']) if (DB.kids[k]){ DB.kids[k].stars = (DB.kids[k].stars||0) + g.stars; DB.kids[k].giftMsg = g.msg; }
   DB.gifts.push(g.id);
   save();
 });
@@ -274,9 +285,19 @@ let TK = null;                // whose reading track is in use ('son' or 'daught
 const isDev = () => kid === 'dev';
 let run = null;               // current passage run
 
-function kidName(k){ k = k || kid; return k === 'dev' ? (DB.devName || 'The Wizard') : DB.names[k]; }
+function kidName(k){ k = k || kid; if (k === 'dev') return DB.devName || (DB.plaza && DB.plaza.dev && DB.plaza.dev.name) || 'The Wizard';
+  const P = (DB.players || {})[k]; return P ? P.name : (DB.names[k] || (DB.plaza && DB.plaza[k] && DB.plaza[k].name) || 'Friend'); }
+const playerOf = k => (DB.players || {})[k] || null;
+// reading track of a player: 'daughter' (Dragon Academy, ages 6-9) or 'son' (Biscuit & Pals, ages 4-6)
+function trackOf(k){ if (k === 'dev') return DB.devTrack || 'daughter'; const P = playerOf(k); return P && TRACKS[P.track] ? P.track : (k === 'son' ? 'son' : 'daughter'); }
+function styleOf(k){ const P = playerOf(k); return P && P.style ? P.style : (trackOf(k) === 'daughter' ? 'girl' : 'boy'); }
+// players shown to kids (the Wizard only on a device where Wizard Mode is on)
+function playerIds(withWizard){ return Object.keys(DB.players || {}).filter(id => { const P = DB.players[id]; return !P.removed && DB.kids[id] && (!P.wizard || (withWizard && DB.devOn)); })
+  .sort((a, b) => (DB.players[a].order || 50) - (DB.players[b].order || 50)); }
+const TRACK_INFO = { daughter:{ name:'Dragon Academy', sub:'Dragon Academy · Sunny Day Club', ages:'Ages 6–9 · chapter books, read quietly', word:'Rank', icon:'🐉' },
+                     son:{ name:'Biscuit & Pals', sub:'Biscuit & Pals · Detective Biscuit', ages:'Ages 4–6 · read out loud', word:'Level', icon:'🐲' } };
 function setKid(k){
-  kid = k; K = DB.kids[k]; TK = k === 'dev' ? (DB.devTrack || 'daughter') : k; T = TRACKS[TK]; if (k !== 'dev') DB.lastKid = k; save();
+  kid = k; K = DB.kids[k]; TK = trackOf(k); T = TRACKS[TK]; if (k !== 'dev') DB.lastKid = k; save();
   document.body.className = 'theme-' + TK + (k === 'dev' ? ' wizard-mode' : '');
 }
 function levelDef(n){ return T.levels[Math.min(Math.max(n,1), T.levels.length) - 1]; }
@@ -292,25 +313,28 @@ function show(node){
    Docs: rq/son, rq/daughter, rq/settings = { json, ts }. Newest save wins. */
 // The release version is the ?v= on app.js in index.html (bump it there on every release; it also busts caches).
 const APP_VERSION = (function(){ const s = document.querySelector('script[src*="app.js"]'), m = s && /[?&]v=([^&]+)/.exec(s.getAttribute('src')); return m ? m[1] : 'dev'; })();
-const CLOUD_KEYS = ['son','daughter','settings'];
+// what gets saved to the cloud: shared settings (incl. the player list) + one doc per player
+const cloudKeys = () => ['settings'].concat(Object.keys(DB.players || {}).filter(id => DB.kids[id]));
 const CLOUD = { db:null, on:false, status:'local', last:{}, timers:{}, busy:{}, again:{}, mine:{} };
 let onCloudUpdate = null;
 const CLOUD_TEXT = {
   local: /github\.io$/.test(location.hostname) ? '📱 Saved on this iPad only. For cloud save on every device, use the Claude link.' : '📱 Saved on this device only',
   syncing:'☁️ Connecting to cloud save…',
   cloud:'☁️ Cloud save is on: works on every device',
-  offline:'⚠️ Can\'t reach cloud save right now. Saving on this device until it\'s back.'
+  offline:'⚠️ Can\'t reach cloud save right now. Saving on this device until it\'s back.',
+  family:'☁️ Saved to your family account · works on every device',
+  signedout:'🔑 Not signed in. Progress saves on this device only.'
 };
 function cloudStatusNode(){ return el('div',{class:'cloud-status'}, CLOUD_TEXT[CLOUD.status] + ' · v' + APP_VERSION); }
 function setCloudStatus(s){ CLOUD.status = s; document.querySelectorAll('.cloud-status').forEach(n => n.textContent = CLOUD_TEXT[s] + ' · v' + APP_VERSION); }
-const settingsOf = d => ({ pin:d.pin, names:d.names, catName:d.catName || null, gifts:d.gifts || [], record:!!d.record, forceManual:!!d.forceManual, goalMin:d.goalMin || {} });
+const settingsOf = d => ({ pin:d.pin, names:d.names, catName:d.catName || null, gifts:d.gifts || [], record:!!d.record, forceManual:!!d.forceManual, goalMin:d.goalMin || {}, players:d.players || {}, devName:d.devName || null, devTrack:d.devTrack || null });
 const cloudBody = key => key === 'settings' ? settingsOf(DB) : DB.kids[key];
 // real progress only (never stars: a fresh device's one-time gift must not outrank the cloud copy)
 const kidScore = k => (k.sessions||[]).length + ((k.world && k.world.items) || []).length + (k.collection||[]).length + (k.placed ? k.level || 1 : 0);
 function setCloudTs(key, ts){ DB.cloudTs = DB.cloudTs || {}; DB.cloudTs[key] = ts; }
 function cloudQueue(){
   if (!CLOUD.on) return;
-  CLOUD_KEYS.forEach(key => {
+  cloudKeys().forEach(key => {
     if (JSON.stringify(cloudBody(key)) === CLOUD.last[key]) return;
     clearTimeout(CLOUD.timers[key]); CLOUD.timers[key] = setTimeout(() => cloudPush(key), 1200);
   });
@@ -326,7 +350,7 @@ async function cloudPush(key, retried){
   try {
     try { await CLOUD.db.doc('rq/' + key).set({ json:j, ts }); }
     catch(e){
-      if (e && e.code === 'invalid_argument' && key !== 'settings'){ // too big: keep the cloud copy's history shorter
+      if (e && (e.code === 'invalid_argument' || e.code === 'invalid-argument') && key !== 'settings'){ // too big: keep the cloud copy's history shorter
         j = JSON.stringify(Object.assign({}, body, { sessions:(body.sessions||[]).slice(0,40) }));
         await CLOUD.db.doc('rq/' + key).set({ json:j, ts });
       } else throw e;
@@ -354,9 +378,15 @@ function cloudApply(key, snap){
   // after the first sync, a newer cloud save wins; on a device's very first sync, keep whichever copy has more progress
   const takeRemote = base ? d.ts > base : (key === 'settings' || kidScore(remote) >= kidScore(DB.kids[key]));
   if (!takeRemote){ if (!snap.metadata.fromCache) cloudPush(key); return; }
-  if (key === 'settings') Object.assign(DB, settingsOf(Object.assign(settingsOf(DB), remote)));
+  let addLocal = false;
+  if (key === 'settings' && !base){ // first sync on this device: keep players that only this device knows (e.g. Gianna & Miles on an old iPad)
+    const mine = DB.players || {}, theirs = remote.players || {};
+    const extra = Object.keys(mine).filter(id => !theirs[id] && (!mine[id].wizard || DB.devOn));
+    if (extra.length){ remote.players = Object.assign({}, theirs); extra.forEach(id => remote.players[id] = mine[id]); addLocal = true; }
+  }
+  if (key === 'settings'){ Object.assign(DB, settingsOf(Object.assign(settingsOf(DB), remote))); ensurePlayerData(); cloudSubscribeAll(); if (addLocal) setTimeout(() => cloudPush('settings'), 50); }
   else { DB.kids[key] = Object.assign(freshKid(), remote); if (kid === key) K = DB.kids[key]; }
-  CLOUD.last[key] = JSON.stringify(cloudBody(key)); setCloudTs(key, d.ts);
+  CLOUD.last[key] = addLocal ? null : JSON.stringify(cloudBody(key)); setCloudTs(key, d.ts);
   try { localStorage.setItem(STORE_KEY, JSON.stringify(DB)); } catch(e){}
   if (onCloudUpdate) onCloudUpdate();
 }
@@ -382,17 +412,225 @@ async function cloudStart(){
   let db = null;
   try { if (window.claude && window.claude.use) db = await window.claude.use('db'); } catch(e){}
   if (!db){ setCloudStatus('local'); return; }
-  CLOUD.db = db; CLOUD.on = true; setCloudStatus('syncing');
-  const timer = setTimeout(() => { if (CLOUD.status === 'syncing') setCloudStatus('offline'); }, 10000);
-  CLOUD_KEYS.forEach(key => {
+  cloudConnect(db, 'cloud');
+}
+// start syncing every key with a database that has doc(path).set() / .onSnapshot() (Claude artifact db or Firebase)
+function cloudConnect(db, status){
+  CLOUD.db = db; CLOUD.on = true; CLOUD.subs = {}; CLOUD.okStatus = status || 'cloud'; setCloudStatus('syncing');
+  CLOUD.timer = setTimeout(() => { if (CLOUD.status === 'syncing') setCloudStatus('offline'); }, 10000);
+  cloudSubscribeAll();
+}
+function cloudSubscribeAll(){
+  if (!CLOUD.on) return;
+  cloudKeys().forEach(key => {
+    if (CLOUD.subs[key]) return; CLOUD.subs[key] = true;
     try {
-      db.doc('rq/' + key).onSnapshot(snap => {
-        if (!snap.metadata.fromCache){ clearTimeout(timer); if (CLOUD.status !== 'cloud') setCloudStatus('cloud'); }
+      CLOUD.db.doc('rq/' + key).onSnapshot(snap => {
+        if (!snap.metadata.fromCache){ clearTimeout(CLOUD.timer); if (CLOUD.status !== CLOUD.okStatus) setCloudStatus(CLOUD.okStatus); }
         cloudApply(key, snap);
       }, () => setCloudStatus('offline'));
     } catch(e){ setCloudStatus('offline'); }
   });
 }
+// every player in the list has a progress record on this device
+function ensurePlayerData(){
+  Object.keys(DB.players || {}).forEach(id => { if (!DB.kids[id]){ DB.kids[id] = freshKid(); DB.kids[id].avatar = { base:null, owned:[], equipped:{} }; } });
+}
+const savePlayerMeta = () => save();
+
+/* ================= FAMILY ACCOUNTS (Firebase) =================
+   On the GitHub site, a grown-up signs in once per device with the family's email + password.
+   Everything is then saved in the family's own space in Firestore (families/{uid}/rq/...), which the
+   security rules only let that signed-in family read or write. Kids then tap their hero + their PIN.
+   Paste the Firebase web config here to turn it on. Until then the app saves on the device only. */
+const FIREBASE_CONFIG = {
+  apiKey: 'AIzaSyC_GX6ZrutlUioq3gnzpuYQC8J_72PIePw',
+  authDomain: 'reading-quest-68e52.firebaseapp.com',
+  projectId: 'reading-quest-68e52',
+  storageBucket: 'reading-quest-68e52.firebasestorage.app',
+  messagingSenderId: '205472124330',
+  appId: '1:205472124330:web:6d935d910aed39e967efd3'
+};
+const FB_VER = '10.12.2';
+const FB = { ready:false, user:null, auth:null, fs:null, mod:null, failed:false };
+// family accounts run on the GitHub site (the Claude preview keeps its own cloud save)
+const familyMode = () => !!window.__RQ_FIREBASE || (!!FIREBASE_CONFIG && /github\.io$/.test(location.hostname) && !(window.claude && window.claude.use));
+async function fbLoad(){
+  if (FB.mod) return FB.mod;
+  if (window.__RQ_FIREBASE) return (FB.mod = window.__RQ_FIREBASE); // test double
+  const base = `https://www.gstatic.com/firebasejs/${FB_VER}/`;
+  const [app, auth, fs] = await Promise.all([import(base + 'firebase-app.js'), import(base + 'firebase-auth.js'), import(base + 'firebase-firestore.js')]);
+  const a = app.initializeApp(FIREBASE_CONFIG), au = auth.getAuth(a);
+  let db; try { db = fs.initializeFirestore(a, { localCache: fs.persistentLocalCache() }); } catch(e){ db = fs.getFirestore(a); } // offline cache when the browser allows it
+  FB.mod = {
+    onAuth: cb => auth.onAuthStateChanged(au, u => cb(u ? { uid:u.uid, email:u.email } : null)),
+    signIn: (e, p) => auth.signInWithEmailAndPassword(au, e, p),
+    signUp: (e, p) => auth.createUserWithEmailAndPassword(au, e, p),
+    reset: e => auth.sendPasswordResetEmail(au, e),
+    signOut: () => auth.signOut(au),
+    db: uid => ({ doc: path => { const ref = fs.doc(db, 'families', uid, ...path.split('/'));
+      return { set: v => fs.setDoc(ref, v),
+               onSnapshot: (cb, err) => fs.onSnapshot(ref, { includeMetadataChanges:true }, sn => cb({ exists: sn.exists(), data: () => sn.data(), metadata: sn.metadata }), err) }; } })
+  };
+  return FB.mod;
+}
+const FB_ERR = { 'auth/invalid-email':'That email doesn\'t look right.', 'auth/missing-password':'Type the password.', 'auth/weak-password':'Use at least 6 characters for the password.',
+  'auth/email-already-in-use':'That email already has a family account. Tap "I have an account".', 'auth/invalid-credential':'Email or password is wrong.', 'auth/wrong-password':'Email or password is wrong.',
+  'auth/user-not-found':'No family account with that email yet.', 'auth/too-many-requests':'Too many tries. Wait a minute and try again.', 'auth/network-request-failed':'No internet connection right now.' };
+const fbErr = e => FB_ERR[e && e.code] || 'Something went wrong: ' + ((e && (e.code || e.message)) || 'unknown');
+async function familyStart(){
+  setCloudStatus('syncing');
+  let F;
+  try { F = await Promise.race([fbLoad(), new Promise((_, rej) => setTimeout(() => rej(new Error('timeout')), 12000))]); }
+  catch(e){ FB.failed = true; setCloudStatus('offline'); return bootLocal(); }
+  let first = true;
+  F.onAuth(u => {
+    FB.user = u; FB.ready = true;
+    if (!u){ CLOUD.on = false; setCloudStatus('signedout'); if (first || !DB.family) screenFamilyLogin(); first = false; return; }
+    const fresh = DB.family !== u.uid;
+    if (fresh && DB.family){ DB = load(true); } // a different family signed in on this device: start clean
+    DB.family = u.uid; DB.familyEmail = u.email; save();
+    CLOUD_TEXT.family = `☁️ Saved to ${u.email}'s family account · works on every device`;
+    cloudConnect(F.db(u.uid), 'family');
+    if (first || fresh){ first = false; bootLocal(); }
+  });
+}
+function bootLocal(){
+  if (/wizard/i.test(location.hash)) return DB.devOn && DB.kids.dev ? enterKid('dev') : screenPin(() => enterKid('dev'));
+  if (DB.pinKid && DB.kids[DB.pinKid] && playerOf(DB.pinKid) && !playerOf(DB.pinKid).removed) return pickPlayer(DB.pinKid);
+  screenProfiles();
+}
+function screenFamilyLogin(mode = 'in'){
+  stopAll(); document.body.className = 'parent family-login';
+  const email = el('input',{type:'email', placeholder:'Grown-up email', autocomplete:'username', value: DB.familyEmail || ''});
+  const pw = el('input',{type:'password', placeholder: mode === 'up' ? 'New password (6+ characters)' : 'Password', autocomplete: mode === 'up' ? 'new-password' : 'current-password'});
+  const msg = el('p',{class:'fl-msg'});
+  const busy = on => [...document.querySelectorAll('.fl-card button')].forEach(b => b.disabled = on);
+  const go = async () => {
+    const F = FB.mod; if (!F){ msg.textContent = 'Can\'t reach the internet right now.'; return; }
+    busy(true); msg.textContent = mode === 'up' ? 'Creating your family account…' : 'Signing in…';
+    try { mode === 'up' ? await F.signUp(email.value.trim(), pw.value) : await F.signIn(email.value.trim(), pw.value); msg.textContent = '✅ Signed in!'; }
+    catch(e){ msg.textContent = fbErr(e); busy(false); }
+  };
+  pw.addEventListener('keydown', e => { if (e.key === 'Enter') go(); });
+  show(el('div',{class:'screen fl-screen'},
+    el('div',{class:'fl-card card'},
+      el('div',{class:'fl-logo'},'📚'), el('h1',{}, 'Reading Quest'),
+      el('p',{class:'fl-sub'}, mode === 'up' ? 'Create a family account. A grown-up signs in once on each iPad. Then every kid taps their own hero.' : 'Grown-up sign in. You only do this once on each iPad.'),
+      email, pw,
+      el('button',{class:'btn big', onclick:go}, mode === 'up' ? '✨ Create family account' : '🔑 Sign in'),
+      msg,
+      el('div',{class:'fl-links'},
+        mode === 'up' ? el('button',{class:'btn small ghost', onclick:()=>screenFamilyLogin('in')}, 'I have an account') : el('button',{class:'btn small ghost', onclick:()=>screenFamilyLogin('up')}, 'New here? Create a family account'),
+        mode === 'in' ? el('button',{class:'btn small ghost', onclick:async ()=>{ if (!email.value.trim()){ msg.textContent = 'Type your email first, then tap Forgot password.'; return; }
+          try { await FB.mod.reset(email.value.trim()); msg.textContent = '📧 Check your email for a link to set a new password.'; } catch(e){ msg.textContent = fbErr(e); } }}, 'Forgot password?') : null),
+      Object.keys(DB.kids || {}).some(id => (DB.kids[id].sessions || []).length) ? el('button',{class:'btn small gray', onclick:()=>{ setCloudStatus('local'); screenProfiles(); }}, 'Play on this iPad without signing in') : null,
+      el('p',{class:'fl-fine'}, 'We only store your email for sign-in. Kids never type an email: they use a first name and a 4-digit PIN.'))));
+}
+
+/* ---------- kid PINs (a sibling lock; the family sign-in is the real protection) ---------- */
+async function pinHash(id, pin){
+  const txt = 'rq:' + id + ':' + pin;
+  try { const b = await crypto.subtle.digest('SHA-256', new TextEncoder().encode(txt)); return [...new Uint8Array(b)].map(x => x.toString(16).padStart(2, '0')).join(''); }
+  catch(e){ let h = 5381; for (const c of txt) h = (h * 33 + c.charCodeAt(0)) >>> 0; return 'd' + h.toString(16); }
+}
+function screenKidPin(id){
+  stopAll(); setKidTheme(id);
+  let entered = '';
+  const P = playerOf(id), D = DB.kids[id];
+  const dots = el('div',{class:'pin-dots'},'○○○○');
+  const msg = el('p',{class:'muted'}, `Hi ${P.name}! Type your secret PIN.`);
+  const pad = el('div',{class:'pad'});
+  const press = async d => {
+    if (d === '⌫') entered = entered.slice(0,-1); else if (entered.length < 4) entered += d;
+    dots.textContent = '●'.repeat(entered.length) + '○'.repeat(4-entered.length); beep('tap');
+    if (entered.length === 4){
+      if (await pinHash(id, entered) === P.pin){ beep('star'); enterKid(id); }
+      else { msg.textContent = 'Oops, not that one. Try again!'; beep('bad'); entered = ''; dots.classList.add('shake'); setTimeout(()=>{ dots.textContent='○○○○'; dots.classList.remove('shake'); }, 400); }
+    }
+  };
+  ['1','2','3','4','5','6','7','8','9','','0','⌫'].forEach(d => pad.append(d ? el('button',{onclick:()=>press(d)}, d) : el('div')));
+  show(el('div',{class:'screen kidpin-screen'},
+    el('div',{class:'topbar'}, el('button',{class:'btn ghost small', onclick:screenProfiles},'← Back'), el('div')),
+    el('div',{class:'card center kidpin-card'},
+      D.hero ? profileHero(id) : el('div',{class:'big-e'}, trackOf(id) === 'son' ? '🐲' : '🐰'),
+      el('h2',{}, P.name), msg, dots, pad,
+      el('button',{class:'btn small gray', onclick:()=>screenPin(() => screenPlayerEdit(id))}, 'Forgot PIN? Ask a grown-up'))));
+}
+function setKidTheme(id){ document.body.className = 'theme-' + trackOf(id); }
+
+/* ---------- grown-ups: all players ---------- */
+const lastPlayed = D => { const d = (D.sessions || [])[0]; return d ? d.date.slice(0, 10) : (D.today && D.today.date) || null; };
+const ago = d => { if (!d) return 'Not yet'; const n = Math.round((new Date(todayStr()) - new Date(d)) / 86400000); return n <= 0 ? 'Today' : n === 1 ? 'Yesterday' : n + ' days ago'; };
+function screenPlayers(){
+  stopAll(); document.body.className = 'parent';
+  const ids = playerIds(false), removed = Object.keys(DB.players).filter(id => DB.players[id].removed);
+  const weekAgo = Date.now() - 7*86400000;
+  const card = id => { const D = DB.kids[id], P = DB.players[id], tr = trackOf(id), wk = (D.sessions || []).filter(s => s.mode === 'normal' && new Date(s.date).getTime() > weekAgo);
+    return el('div',{class:'pl-card'},
+      el('div',{class:'pl-hero'}, D.hero ? profileHero(id) : el('div',{class:'big-e'}, tr === 'son' ? '🐲' : '🐰')),
+      el('div',{class:'pl-info'},
+        el('h3',{}, P.name, el('span',{class:'pl-track'}, TRACK_INFO[tr].icon + ' ' + TRACK_INFO[tr].name)),
+        el('div',{class:'pl-stats'},
+          el('span',{}, `${TRACK_INFO[tr].word} ${D.level}`), el('span',{}, `⭐ ${(D.stars||0) - (D.spent||0)}`), el('span',{}, `🏆 ${(D.trophies||[]).length}`),
+          el('span',{}, `📖 ${wk.length} reads this week`), el('span',{}, `🕒 ${ago(lastPlayed(D))}`), el('span',{}, P.pin ? '🔒 PIN set' : '🔓 No PIN')),
+        el('div',{class:'row pl-btns'},
+          el('button',{class:'btn small blue', onclick:()=>screenParent(id)}, '📊 Progress'),
+          el('button',{class:'btn small', onclick:()=>screenPlayerEdit(id)}, '✏️ Edit')))); };
+  show(el('div',{class:'screen', style:'max-width:1000px'},
+    el('div',{class:'row', style:'justify-content:space-between;margin-bottom:12px'},
+      el('h1',{style:'margin:0;font-size:30px'},'👨‍👩‍👧 Players'),
+      el('button',{class:'btn small', onclick:()=>{ document.body.className=''; screenProfiles(); }},'Done')),
+    familyCard(),
+    el('div',{class:'pl-list'}, ...ids.map(card)),
+    el('button',{class:'btn big green', style:'margin:14px 0', onclick:()=>screenPlayerEdit(null)}, '➕ Add a player'),
+    removed.length ? el('div',{class:'card'}, el('h3',{style:'margin-top:0'}, 'Removed players'), el('p',{class:'muted'}, 'Their progress is kept. Restore them any time.'),
+      ...removed.map(id => el('div',{class:'row'}, el('b',{}, DB.players[id].name), el('button',{class:'btn small', onclick:()=>{ delete DB.players[id].removed; ensurePlayerData(); save(); screenPlayers(); }}, '↩️ Restore')))) : null,
+    el('div',{class:'card'}, el('h3',{style:'margin-top:0'}, '🧙 Wizard Mode'), el('p',{class:'muted'}, 'A secret grown-up player for testing: everything free, any track or level. Only shows on a device where you turn it on.'),
+      el('button',{class:'btn small', onclick:()=>{ DB.devOn = true; save(); enterKid('dev'); }}, DB.devOn ? 'Open Wizard' : 'Turn on'))));
+}
+function familyCard(){
+  if (!familyMode()) return el('div',{class:'card fam-card'}, el('b',{}, '📱 Saved on this device'), el('p',{class:'muted', style:'margin:4px 0 0'}, 'Family accounts turn on once the Firebase setup is connected.'));
+  if (!FB.user) return el('div',{class:'card fam-card'}, el('b',{}, '☁️ Not signed in'), el('button',{class:'btn small', onclick:()=>screenFamilyLogin('in')}, 'Sign in'));
+  return el('div',{class:'card fam-card'}, el('div',{}, el('b',{}, '☁️ Family account: ' + FB.user.email), el('div',{class:'muted'}, 'Progress saves to the cloud and shows up on every device you sign in on.')),
+    el('button',{class:'btn small gray', onclick:async ()=>{ const ok = await modal(el('div',{}, el('h2',{},'Sign out of this iPad?'), el('p',{},'Everyone\'s progress stays safe in your family account. This iPad will ask for the grown-up sign-in again.')), [['Cancel','gray',false],['Sign out','',true]]);
+      if (!ok) return; try { await FB.mod.signOut(); } catch(e){} localStorage.removeItem(STORE_KEY); location.reload(); }}, 'Sign out'));
+}
+function screenPlayerEdit(id){
+  stopAll(); document.body.className = 'parent';
+  const P = id ? DB.players[id] : { name:'', track:'son', style:'boy' };
+  const name = el('input',{type:'text', placeholder:'First name', value:P.name, maxlength:'20'});
+  let track = P.track, style = P.style;
+  const pick = (opts, cur, set) => { const wrap = el('div',{class:'pe-opts'}); opts.forEach(([v, big, small]) => { const b = el('button',{class:'pe-opt' + (cur === v ? ' on' : ''), onclick:()=>{ set(v); [...wrap.children].forEach(x => x.classList.toggle('on', x === b)); beep('tap'); }}, el('b',{}, big), el('small',{}, small)); wrap.append(b); }); return wrap; };
+  const pin = el('input',{type:'password', inputmode:'numeric', maxlength:'4', placeholder: id && P.pin ? 'New PIN (leave blank to keep)' : '4-digit PIN (optional)'});
+  const msg = el('p',{class:'muted'});
+  const saveIt = async () => {
+    const n = name.value.trim().replace(/[^\p{L} '\-]/gu, '').slice(0, 20);
+    if (!n){ msg.textContent = 'Type a first name.'; return; }
+    if (pin.value && !/^\d{4}$/.test(pin.value)){ msg.textContent = 'The PIN must be exactly 4 numbers.'; return; }
+    let pid = id;
+    if (!pid){ pid = 'p_' + Date.now().toString(36) + Math.random().toString(36).slice(2, 6); DB.players[pid] = { order: 10 + Object.keys(DB.players).length, created: todayStr() }; }
+    Object.assign(DB.players[pid], { name:n, track, style });
+    if (pin.value) DB.players[pid].pin = await pinHash(pid, pin.value);
+    ensurePlayerData(); save(); cloudSubscribeAll(); beep('star');
+    if (!id) await modal(el('div',{}, el('div',{class:'big-e'},'🎉'), el('h2',{}, `${n} joined Reading Quest!`), el('p',{}, `${n} can now tap their hero on the "Who is reading?" screen` + (pin.value ? ' and type their PIN.' : '.'))), [['Great ▶','',1]]);
+    screenPlayers();
+  };
+  show(el('div',{class:'screen', style:'max-width:760px'},
+    el('div',{class:'row', style:'justify-content:space-between;margin-bottom:12px'}, el('h1',{style:'margin:0;font-size:28px'}, id ? '✏️ Edit ' + P.name : '➕ New player'), el('button',{class:'btn small gray', onclick:screenPlayers},'Cancel')),
+    el('div',{class:'card pe-card'},
+      el('h3',{}, 'First name'), name,
+      el('h3',{}, 'Reading track'), pick([['son', '🐲 ' + TRACK_INFO.son.name, TRACK_INFO.son.ages], ['daughter', '🐉 ' + TRACK_INFO.daughter.name, TRACK_INFO.daughter.ages]], track, v => track = v),
+      id && track !== P.track ? null : null,
+      el('h3',{}, 'Starter outfit'), pick([['girl','👗 Blossom','Pink dress & hair bow'], ['boy','🧢 Explorer','Blue jacket & red scarf']], style, v => style = v),
+      el('h3',{}, 'Kid PIN'), pin, el('p',{class:'muted'}, 'Kids type this after tapping their hero, so siblings don\'t play as each other. Forgot it? Set a new one here.'),
+      id && P.pin ? el('button',{class:'btn small gray', onclick:()=>{ delete DB.players[id].pin; save(); msg.textContent = 'PIN removed.'; }}, 'Remove PIN') : null,
+      el('div',{class:'row', style:'margin-top:14px'}, el('button',{class:'btn big', onclick:saveIt}, id ? '💾 Save' : '✨ Add player'),
+        id && !P.wizard ? el('button',{class:'btn small gray', onclick:async ()=>{ const ok = await modal(el('div',{}, el('h2',{}, `Remove ${P.name}?`), el('p',{}, `${P.name} disappears from the "Who is reading?" screen. Their progress is kept, and you can restore them from the Players page.`)), [['Cancel','gray',false],['Remove','',true]]);
+          if (ok){ DB.players[id].removed = true; save(); screenPlayers(); } }}, '🗑️ Remove player') : null),
+      msg)));
+}
+
 function burst(word){
   const b = el('div',{class:'pow'}, word || pick(['POW!','ZAP!','WHAM!','BOOM!','YES!','WOW!']));
   document.body.append(b); setTimeout(()=>b.remove(), 1100);
@@ -444,14 +682,11 @@ function screenProfiles(){
   stopAll();
   const s = el('div',{class:'screen'},
     el('div',{class:'topbar center'}, el('div',{}, el('h1',{class:'title center'},'📚 Reading Quest'), el('p',{class:'subtitle center'},'Who is reading today?'))),
-    el('div',{class:'profiles'},
-      el('button',{class:'profile daughter', onclick:()=>{ beep('tap'); enterKid('daughter'); }},
-        DB.kids.daughter.hero ? profileHero('daughter') : DB.kids.daughter.avatar.base ? el('div',{html: avatarSVG(DB.kids.daughter.avatar, 120)}) : el('div',{class:'pic'},'🐰'), DB.names.daughter, el('small',{},'Dragon Academy · Sunny Day Club')),
-      el('button',{class:'profile son', onclick:()=>{ beep('tap'); enterKid('son'); }},
-        DB.kids.son.hero ? profileHero('son') : DB.kids.son.avatar.base ? el('div',{html: avatarSVG(DB.kids.son.avatar, 120)}) : el('div',{class:'pic'},'🐲'), DB.names.son, el('small',{},`${CAT} & Pals · Detective ${CAT}`)),
-      DB.devOn && DB.kids.dev ? el('button',{class:'profile wizard', onclick:()=>{ beep('tap'); enterKid('dev'); }},
-        DB.kids.dev.hero ? profileHero('dev') : el('div',{class:'pic'},'🧙'), kidName('dev'), el('small',{},'Master Developer · everything unlocked')) : null
-    ),
+    el('div',{class:'profiles'}, ...playerIds(true).map(id => { const D = DB.kids[id], P = DB.players[id], tr = trackOf(id);
+      return el('button',{class:'profile ' + (P.wizard ? 'wizard' : tr), onclick:()=>{ beep('tap'); pickPlayer(id); }},
+        D.hero ? profileHero(id) : D.avatar.base ? el('div',{html: avatarSVG(D.avatar, 120)}) : el('div',{class:'pic'}, P.wizard ? '🧙' : tr === 'son' ? '🐲' : '🐰'),
+        kidName(id), el('small',{}, P.wizard ? 'Master Developer · everything unlocked' : (P.pin ? '🔒 ' : '') + TRACK_INFO[tr].sub)); }),
+      playerIds(false).length ? null : el('button',{class:'profile add-player', onclick:()=>screenPin(() => screenPlayerEdit(null))}, el('div',{class:'pic'},'➕'), 'Add a player', el('small',{}, 'A grown-up sets up each reader'))),
     cloudStatusNode(),
     el('button',{class:'gear', onclick:()=>screenPin()},'⚙︎ Grown-ups')
   );
@@ -462,12 +697,19 @@ function screenProfiles(){
 // back to the "Who is reading today?" screen
 function homeBtn(){ return el('button',{class:'btn small home-btn', onclick:()=>{ beep('tap'); screenProfiles(); }},'🏠 Home'); }
 
+// tapping a hero: kids with a PIN type it first
+function pickPlayer(id){
+  const P = playerOf(id);
+  if (P && P.wizard) return screenPin(() => enterKid(id));
+  if (P && P.pin) return screenKidPin(id);
+  enterKid(id);
+}
 function enterKid(k){
-  if (k === 'dev'){ DB.devOn = true; DB.kids.dev = DB.kids.dev || freshKid(); DB.kids.dev.avatar = Object.assign({ base:null, owned:[], equipped:{} }, DB.kids.dev.avatar || {}); }
+  if (k === 'dev'){ DB.devOn = true; DB.players.dev = DB.players.dev || { name:DB.devName || 'The Wizard', track:'daughter', style:'boy', wizard:true, order:99 }; DB.kids.dev = DB.kids.dev || freshKid(); DB.kids.dev.avatar = Object.assign({ base:null, owned:[], equipped:{} }, DB.kids.dev.avatar || {}); }
   setKid(k);
   if (k === 'dev') wizardSetup();
   // Gianna reads quietly, so she skips the read-aloud placement check (a grown-up can set her rank)
-  if (!K.placed && k === 'daughter'){ K.placed = true; K.level = K.level || 1; awardTrophiesUpTo(K.level); save(); }
+  if (!K.placed && trackOf(k) === 'daughter'){ K.placed = true; K.level = K.level || 1; awardTrophiesUpTo(K.level); save(); }
   if (!K.placed) screenPlacementIntro(); else if (!K.avatar.base) screenAvatarPick(); else screenHome();
 }
 
@@ -558,16 +800,12 @@ function screenHome(msg){
         isDev() ? el('button',{class:'btn small wizard-btn', onclick:()=>{ beep('tap'); screenWizard(); }},'🧙 Wizard') : null,
         el('button',{class:'btn small town-btn', onclick:()=>{ beep('tap'); screenTownSquare(); }},'🏰 Town Square'),
         el('button',{class:'btn ghost small', onclick:()=>screenWorld()},'🏗️ My World'),
-        el('button',{class:'btn ghost small', onclick:screenQuestMap},'🗺️ Quest Map'),
-        el('button',{class:'btn ghost small', onclick:screenArmory},'🛡️ Armory'),
-        el('button',{class:'btn ghost small', onclick:screenHeroHall},'🏛️ Heroes'),
-        el('button',{class:'btn ghost small', onclick:screenRealBooks},'📚 Real Books'),
-        el('button',{class:'btn ghost small', onclick:()=>{ ensureSkillStart(); screenPath(); }},'🧠 Skills'),
         el('button',{class:'btn ghost small', onclick:screenShop},'🛍️ Shop'),
+        el('button',{class:'btn ghost small', onclick:screenArmory},'🛡️ Armory'),
+        el('button',{class:'btn ghost small', onclick:screenCollection}, TK==='daughter' ? '🐉 My Dragons' : '📖 Pals'),
         el('button',{class:'btn ghost small', onclick:screenTrophies},'🏆 Trophies'),
-        el('button',{class:'btn ghost small', onclick:screenCollection}, TK==='daughter' ? '🐉 Roost' : '📖 Pals'),
-        el('button',{class:'btn ghost small', onclick:screenWords},'🎯 Words'),
-        el('button',{class:'btn ghost small', onclick:()=>{ beep('tap'); TK === 'daughter' ? startSpellCheck() : startSpelling(); }},'✏️ Spelling'))),
+        el('button',{class:'btn ghost small', onclick:screenPractice},'🎯 Practice'),
+        el('button',{class:'btn ghost small', onclick:screenRealBooks},'📚 Real Books'))),
     el('div',{class:'hero'}, avatar,
       el('div',{class:'grow'},
         el('h1',{class:'title'}, `Hi, ${kidName()}!`),
@@ -577,6 +815,7 @@ function screenHome(msg){
         el('div',{class:'stats'},
           el('span',{class:'pill'},'⭐ ' + balance()),
           el('span',{class:'pill cosmic-pill', onclick:()=>cosmicInfo()},'💫 ' + cosmicBal()),
+          el('span',{class:'pill chest-pill' + (chestCount() ? ' has' : ''), onclick:()=>screenChests()},'🎁 ' + (isDev() ? '∞' : chestCount())),
           el('span',{class:'pill'},'🔥 ' + (K.streak.count||0) + ' day streak'),
           el('span',{class:'pill'},'🏆 ' + K.trophies.length + ' · 🎖️ ' + K.badges.length),
           el('span',{class:'pill'},(TK==='daughter'?'🐉 ':'🐾 ') + K.collection.length)),
@@ -1568,6 +1807,8 @@ async function commitResults(stars, quiz){
   if (stars >= 2 && r.opts.mode === 'normal') await giveReward();
   if (stars >= 2 && r.opts.mode === 'normal') await maybeGearDrop();
   if (stars >= 3 && r.opts.mode === 'normal') await maybeStarfallChest(); // super rare mythic drop
+  if (stars >= 2 && r.opts.mode === 'normal') awardChest(stars >= 3 ? 'silver' : 'wood', 'Great reading');
+  if (levelUp) awardChest('cosmic', 'Level up');
   if (levelUp){
     const newTrophies = awardTrophiesUpTo(K.level); save();
     confetti(120); beep('level');
@@ -1639,7 +1880,7 @@ function screenCollection(){
     lv ? el('div',{class:'muted'}, owned.has(n) ? '✨ Legendary' : '✨ Legendary · Level ' + lv) : (type && owned.has(n) ? el('div',{class:'muted'}, type + ' dragon') : null))));
   const s = el('div',{class:'screen'},
     el('div',{class:'topbar'}, el('button',{class:'btn ghost small', onclick:()=>screenHome()},'← Back'),
-      el('h1',{class:'title'}, TK==='daughter' ? '🐉 Dragon Roost' : '📖 Creature Book'), el('div')),
+      el('h1',{class:'title'}, TK==='daughter' ? '🐉 My Dragons' : '📖 Pals'), el('div')),
     TK==='daughter' ? el('div',{class:'card', style:'margin-bottom:16px; display:flex; align-items:center; gap:20px'},
       el('div',{class:'egg'},'🥚'), el('div',{style:'font-size:22px'}, `Egg warmth: ${'🔥'.repeat(K.eggProgress||0)}${'⚪'.repeat(2-(K.eggProgress||0))}`, el('br'), el('span',{class:'muted'},'Great stories (2+ stars) warm your egg. 2 warmth = hatch!'))) : null,
     el('p',{class:'subtitle'}, `${K.collection.length} of ${T.rewards.length} found`),
@@ -1834,12 +2075,22 @@ function addCosmic(n, why){
   document.body.append(t); setTimeout(() => t.remove(), 3200);
 }
 function cosmicInfo(){
-  modal(el('div',{}, el('div',{class:'big-e'},'💫'), el('h2',{}, `Cosmic Power: ${cosmicBal()}`),
-    el('p',{}, 'Cosmic Power unlocks pets and legendary treasures. Collect it by:'),
-    el('div',{class:'cosmic-list'},
-      ...[['⭐⭐⭐','A perfect 3-star reading','+1'],['🧠','Every question right','+1'],['🎯','Mastering a tricky word','+1'],['📅','Reaching your daily reading goal','+1'],
-          ['🚀','Beating your speed record','+1'],['🎖️','Earning a badge','+2'],['🧩','Mastering a lesson','+2'],['📚','Finishing a chapter book','+3'],['⚡','Unlocking a new skill','+3'],['🏆','Leveling up','+5']]
-        .map(([e,t,n]) => el('div',{class:'cosmic-row'}, el('span',{}, e), el('span',{}, t), el('b',{}, n + ' 💫'))))), [['Got it!','',1]]);
+  beep('tap');
+  const ways = [['⭐','Perfect 3-star read',1],['🧠','All questions right',1],['🎯','Master a tricky word',1],['📅','Hit your daily goal',1],
+    ['🚀','Beat your speed record',1],['🎖️','Earn a badge',2],['🧩','Master a lesson',2],['📚','Finish a chapter book',3],['⚡','Unlock a new skill',3],['🏆','Level up',5]];
+  const close = () => { ov.classList.add('out'); setTimeout(() => ov.remove(), 220); };
+  const ov = el('div',{class:'cosmic-ov', onclick:e => { if (e.target === ov) close(); }},
+    el('div',{class:'cosmic-card'},
+      el('div',{class:'cosmic-stars'}),
+      el('button',{class:'cosmic-x', onclick:close, 'aria-label':'Close'},'✕'),
+      el('div',{class:'cosmic-head'},
+        el('div',{class:'cosmic-orb'},'💫'),
+        el('div',{}, el('div',{class:'cosmic-label'},'Cosmic Power'), el('div',{class:'cosmic-num'}, String(cosmicBal())))),
+      el('p',{class:'cosmic-sub'},'Rare power for pets and legendary treasures. Earn it with great reading:'),
+      el('div',{class:'cosmic-grid'}, ...ways.map(([e, t, n]) => el('div',{class:'cosmic-tile' + (n >= 3 ? ' big' : '')},
+        el('span',{class:'ct-ico'}, e), el('span',{class:'ct-txt'}, t), el('span',{class:'ct-amt'}, '+' + n)))),
+      el('button',{class:'btn cosmic-ok', onclick:close},'Got it! ✨')));
+  document.body.append(ov);
 }
 // Pets and legendary shop items cost Cosmic Power instead of stars
 function costOf(slot, price, lvl){
@@ -1853,7 +2104,7 @@ const costLabel = c => (c.cur === 'cosmic' ? '💫 ' : '⭐ ') + c.amt;
 
 /* ---------- avatar pick (first time) ---------- */
 function screenAvatarPick(){
-  const choices = Object.entries(AVATAR_BASES).filter(([,b]) => (isDev() || b.kid === TK));
+  const choices = Object.entries(AVATAR_BASES).filter(([,b]) => b.kid);
   const name = kidName();
   const s = el('div',{class:'screen'},
     el('div',{class:'topbar'}, homeBtn(), el('div')),
@@ -1879,7 +2130,7 @@ function screenShop(){
   const renderGrid = () => {
     grid.innerHTML = '';
     if (shopTab === 'base'){
-      Object.entries(AVATAR_BASES).filter(([,b]) => (isDev() || b.kid === TK)).forEach(([id,b]) => {
+      Object.entries(AVATAR_BASES).filter(([,b]) => b.kid).forEach(([id,b]) => {
         const owned = K.avatar.owned.includes(id) || K.level >= AVATAR_UNLOCK_LEVEL;
         if (owned && !K.avatar.owned.includes(id)) { K.avatar.owned.push(id); save(); }
         const on = K.avatar.base === id;
@@ -1916,7 +2167,7 @@ function screenShop(){
   };
   renderGrid();
   const s = el('div',{class:'screen'},
-    el('div',{class:'topbar'}, el('button',{class:'btn ghost small', onclick:()=>screenHome()},'← Back'), el('h1',{class:'title'},'🛍️ Star Shop'), bal),
+    el('div',{class:'topbar'}, el('button',{class:'btn ghost small', onclick:()=>screenHome()},'← Back'), el('h1',{class:'title'},'🛍️ Star Shop'), el('div',{class:'row'}, el('button',{class:'btn small', onclick:()=>screenChests()},'🎁 Chests'), bal)),
     el('div',{class:'shop-layout'}, preview,
       el('div',{class:'grow'},
         el('div',{class:'tabs shop-tabs'}, ...tabs.map(t => el('button',{class:'tab' + (t===shopTab?' active':''), onclick:()=>{ shopTab = t; screenShop(); }}, SLOT_NAMES[t]))),
@@ -2590,15 +2841,15 @@ function worldOf(k){
   return D.world;
 }
 function friendItems(k){
-  const D = DB.kids[k], all = k === 'dev' ? TRACKS.son.rewards.concat(TRACKS.daughter.rewards) : TRACKS[k].rewards;
+  const D = DB.kids[k], all = k === 'dev' ? TRACKS.son.rewards.concat(TRACKS.daughter.rewards) : TRACKS[trackOf(k)].rewards;
   return (D.collection || []).map(n => { const r = all.find(x => x[1] === n); return r ? ['friends','f_'+n, r[0], n, 0] : null; }).filter(Boolean);
 }
 
-let worldSel = null, worldCat = 'home';
+let worldSel = null, worldCat = 'home', worldZoom = 1;
 function screenWorld(visitKid){
   const owner = visitKid || kid, readOnly = !!visitKid && visitKid !== kid;
   const W = worldOf(owner), theme = WORLD_THEMES[W.theme] || WORLD_THEMES.meadow;
-  const otherKid = kid === 'son' ? 'daughter' : 'son', visitBoth = isDev();
+  const visitIds = playerIds(false).filter(id => id !== kid && id !== owner).slice(0, 4);
   const themeId = WORLD_THEMES[W.theme] ? W.theme : 'meadow';
   const stage = el('div',{class:'world-stage', style:`width:${WORLD_W}px;height:${WORLD_H}px;background:${(SCENE_PAL[themeId] || SCENE_PAL.meadow).sky[1]}`});
   stage.append(el('div',{class:'world-scene', html: sceneSVG(themeId)}), el('div',{class:'world-front', html: frontGrassSVG(themeId)}));
@@ -2622,12 +2873,14 @@ function screenWorld(visitKid){
     const cat = (WORLD_BY_ID[it.k] || ['friends'])[0];
     if (cat === 'animal' || cat === 'friends'){ n.classList.add('wander'); n.style.setProperty('--wd', (6 + (it.id % 5)) + 's'); n.style.setProperty('--wdl', '-' + (it.id % 7) + 's'); }
     if (/^inf_/.test(it.k)){ n.classList.add('inflatable'); n.style.setProperty('--wdl', '-' + (it.id % 4) + 's'); } // blow-ups sway on their air base
+    if (cat === 'treasure' && TREASURE_BY_ID[it.k] && (TREASURE_BY_ID[it.k].r === 'legendary' || TREASURE_BY_ID[it.k].r === 'mythic')){ n.classList.add(TREASURE_BY_ID[it.k].r === 'mythic' ? 'mythic' : 'legend', 'fx-pulse'); n.style.setProperty('--wdl', '-' + (it.id % 9) + 's'); }
     if (cat === 'legendary' || cat === 'mythic'){ n.classList.add(cat === 'mythic' ? 'mythic' : 'legend', 'fx-' + (LEGEND_FX[it.k] || 'pulse')); n.style.setProperty('--wdl', '-' + (it.id % 9) + 's'); }
     if (!readOnly) attachDrag(n, it);
     nodes[it.id] = n; stage.append(n);
   };
   W.items.forEach(place);
-  const scroller = el('div',{class:'world-scroll'}, stage);
+  const scroller = el('div',{class:'world-scroll'});
+  const zw = zoomable({ view: scroller, content: stage, W: WORLD_W, H: WORLD_H, start: worldZoom, max: 2.5, fit: 'width', onZoom: z => { worldZoom = z; } });
 
   // selection toolbar
   const tools = el('div',{class:'world-tools hidden'});
@@ -2661,7 +2914,7 @@ function screenWorld(visitKid){
       ev.preventDefault(); worldSel = it.id; refreshSel();
       const sx = ev.clientX, sy = ev.clientY, ox = it.x, oy = it.y;
       n.setPointerCapture(ev.pointerId); n.classList.add('drag');
-      const move = e => { it.x = Math.max(-20, Math.min(WORLD_W - 40, ox + (e.clientX - sx))); it.y = Math.max(-20, Math.min(WORLD_H - 40, oy + (e.clientY - sy)));
+      const move = e => { it.x = Math.max(-20, Math.min(WORLD_W - 40, ox + (e.clientX - sx) / zw.z)); it.y = Math.max(-20, Math.min(WORLD_H - 40, oy + (e.clientY - sy) / zw.z));
         n.style.left = it.x + 'px'; n.style.top = it.y + 'px'; };
       const up = () => { n.removeEventListener('pointermove', move); n.removeEventListener('pointerup', up); n.removeEventListener('pointercancel', up); n.classList.remove('drag'); save(); };
       n.addEventListener('pointermove', move); n.addEventListener('pointerup', up); n.addEventListener('pointercancel', up);
@@ -2681,7 +2934,7 @@ function screenWorld(visitKid){
     if (worldCat === 'legend'){
       const inWorld = id => W.items.some(i => i.k === id);
       const putOut = (row) => {
-        const sl = scroller.scrollLeft;
+        const sl = scroller.scrollLeft / zw.z;
         const it = { id: W.nextId++, k:row[1], e:row[2], x: Math.round(sl + 300 + Math.random()*300), y: GROUND_Y - 150, s:1.8, f:false, z: W.items.length + 2 };
         W.items.push(it); worldSel = it.id; save(); place(it); refreshSel();
         const n = nodes[it.id]; if (n){ n.classList.add('summon'); setTimeout(() => n.classList.remove('summon'), 1600); }
@@ -2724,6 +2977,20 @@ function screenWorld(visitKid){
       });
       return;
     }
+    if (worldCat === 'treasure'){
+      chestState();
+      const mine = TREASURES.filter(t => K.treasures[t.id]).sort((a, b) => RARITY_ORDER.indexOf(b.r) - RARITY_ORDER.indexOf(a.r));
+      if (!mine.length) palette.append(el('p',{class:'muted', style:'color:#fff'}, 'Open treasure chests to find treasures. Then place them here for free!'));
+      mine.forEach(t => { const used = W.items.filter(i => i.k === t.id).length, left = (K.treasures[t.id] || 0) - used;
+        palette.append(el('button',{class:'world-chip rar-' + t.r + (left > 0 ? '' : ' locked'), onclick:()=>{
+          if (left <= 0){ say(`All your ${t.name}s are already in your world!`); return; }
+          const sl = scroller.scrollLeft / zw.z;
+          const it = { id: W.nextId++, k:t.id, e:t.e, x: Math.round(sl + 300 + Math.random()*300), y: GROUND_Y - 90, s: t.r === 'mythic' ? 1.8 : t.r === 'legendary' ? 1.5 : 1.1, f:false, z: W.items.length + 2 };
+          W.items.push(it); worldSel = it.id; save(); place(it); refreshSel(); beep('star'); drawPalette(); }},
+          el('span',{class:'chip-e'}, t.e), el('span',{class:'chip-name'}, t.name), el('span',{class:'chip-price'}, `Lv ${t.ilvl} · ${left}/${K.treasures[t.id]}`)));
+      });
+      return;
+    }
     const list = worldCat === 'friends' ? friendItems(kid) : WORLD_ITEMS.filter(i => i[0] === worldCat);
     if (!list.length) palette.append(el('p',{class:'muted', style:'color:#fff'}, 'Collect friends by reading great stories. They live here for free!'));
     list.forEach(([cat, id, e, name, price, lvl]) => {
@@ -2732,7 +2999,7 @@ function screenWorld(visitKid){
         if (locked){ say(`Unlocks at level ${lvl}!`); return; }
         if (balance() < price){ say('Keep reading to earn more stars!'); beep('bad'); return; }
         K.spent = (K.spent||0) + price;
-        const sl = scroller.scrollLeft;
+        const sl = scroller.scrollLeft / zw.z;
         const it = { id: W.nextId++, k:id, e, x: Math.round(sl + 300 + Math.random()*300), y: GROUND_Y - 80 - Math.round(Math.random()*60), s: /^inf_/.test(id) ? 1.9 : cat==='home' ? 1.6 : cat==='ride' ? 1.2 : 1, f:false, z: W.items.length + 2 };
         W.items.push(it); worldSel = it.id; save(); place(it); refreshSel(); beep('star'); bal.textContent = '⭐ ' + balance() + '   💫 ' + cosmicBal();
         checkBadges(); }},
@@ -2746,12 +3013,11 @@ function screenWorld(visitKid){
       el('button',{class:'btn ghost small', onclick:()=>{ worldSel = null; screenHome(); }},'← Back'),
       el('h1',{class:'title'}, readOnly ? `${kidName(owner)}'s World` : `${kidName()}'s World`),
       readOnly ? el('button',{class:'btn small', onclick:()=>screenWorld()},'🏠 My World')
-               : el('div',{class:'row'}, bal, el('button',{class:'btn small blue', onclick:()=>{ worldSel = null; screenWorld(otherKid); }}, `👀 Visit ${kidName(otherKid)}`),
-                 visitBoth ? el('button',{class:'btn small blue', onclick:()=>{ worldSel = null; screenWorld('daughter'); }}, `👀 Visit ${kidName('daughter')}`) : null)),
-    readOnly && !DB.kids[owner].world?.items?.length ? el('div',{class:'banner'}, `${kidName(owner)} hasn't built anything here yet. (Visiting shows worlds saved on this iPad, for now.)`) : null,
-    scroller,
+               : el('div',{class:'row'}, bal, ...visitIds.map(id => el('button',{class:'btn small blue', onclick:()=>{ worldSel = null; screenWorld(id); }}, `👀 Visit ${kidName(id)}`)))),
+    readOnly && !DB.kids[owner].world?.items?.length ? el('div',{class:'banner'}, `${kidName(owner)} hasn't built anything here yet. (Worlds update when ${kidName(owner)} plays.)`) : null,
+    zw.frame,
     el('div',{class:'row', style:'margin-top:10px'},
-      el('button',{class:'btn small blue', onclick:()=>scroller.scrollTo({ left: ax - scroller.clientWidth/2 + 60, behavior:'smooth' })},'🔎 Find my buddy'),
+      el('button',{class:'btn small blue', onclick:()=>scroller.scrollTo({ left: (ax + 60) * zw.z - scroller.clientWidth/2, behavior:'smooth' })},'🔎 Find my buddy'),
       el('span',{class:'world-hint', style:'margin:0'}, readOnly ? `Watch ${kidName(owner)}'s buddy play!` : 'Tap your buddy to make them jump!')),
     readOnly ? null : el('div',{class:'world-hint'}, 'Tap something to buy it, then drag it anywhere! Tap a thing in your world to change it. Removing something gives back only half its stars.'),
     readOnly ? null : tools,
@@ -3439,7 +3705,7 @@ async function bossResult(){
     K.stars += 3; save();
     confetti(100); beep('level'); burst('K.O.!'); say(`You beat ${B.name} again!`);
     await modal(el('div',{}, el('div',{class:'big-e'}, B.e), el('h2',{}, `${B.name} defeated again!`), el('p',{}, `"${B.defeat}" +3 ⭐`)), [['🎁 Get my loot!','',1]]);
-    await bossGearDrop(a.level, true);
+    await bossGearDrop(a.level, true); awardChest('gold', 'Boss defeated');
     await checkBadges(); run = null; return screenQuestMap();
   }
   if (won){
@@ -3455,7 +3721,7 @@ async function bossResult(){
         el('div',{class:'boss-face big defeated'}, B.e),
         el('h2',{}, 'BOSS DEFEATED!'), el('p',{class:'boss-taunt'}, `"${B.defeat}"`),
         el('p',{style:'font-size:22px;font-weight:700'}, top ? '👑 You beat the FINAL BOSS! You are a reading legend!' : `${TK === 'daughter' ? 'Rank' : 'Level'} ${K.level} unlocked! +10 ⭐ +5 💫`),
-        el('button',{class:'btn big', onclick:async()=>{ ov.remove(); await bossGearDrop(a.level, false); await checkBadges(); run = null; screenHome(); }},'🏆 Victory! Get my loot ▶')));
+        el('button',{class:'btn big', onclick:async()=>{ ov.remove(); await bossGearDrop(a.level, false); awardChest('gold', 'Boss defeated'); await checkBadges(); run = null; screenHome(); }},'🏆 Victory! Get my loot ▶')));
     document.body.append(ov); confetti(160); beep('level'); burst('K.O.!');
     say(`You defeated ${B.name}! ${B.defeat}`);
   } else {
@@ -3523,7 +3789,7 @@ function retellBook(book){
     if (!approved && words.length < need){ say(`Tell me a little more about ${book.title}!`); return; }
     try { if (rec) rec.stop(); } catch(e){}
     realBooks().push({ title:book.title, cover:book.cover, rating:book.rating, date:todayStr(), retell: out.textContent.slice(0, 400) });
-    K.stars += 5; save(); addCosmic(2, 'Real book: ' + book.title);
+    K.stars += 5; save(); addCosmic(2, 'Real book: ' + book.title); awardChest('wood', 'Real book');
     confetti(90); beep('level'); say(`You added ${book.title} to your shelf! Great reading!`);
     checkBadges().then(screenRealBooks);
   };
@@ -3566,7 +3832,15 @@ const GEAR_SETS = [
 ];
 const ARCHMAGE = { id:'archmage', tier:9, name:'Archmage', title:'Archmage Supreme', motif:'wizard', prim:'#3b0764', sec:'#7c3aed', trim:'#fbbf24', gem:'#67e8f9' };
 const SET_BY_ID = Object.fromEntries(GEAR_SETS.concat([ARCHMAGE]).map(g => [g.id, g]));
-const armorySets = () => isDev() ? GEAR_SETS.concat([ARCHMAGE]) : GEAR_SETS;
+const armorySets = () => (isDev() ? GEAR_SETS.concat([ARCHMAGE]) : GEAR_SETS).map(g => g.id === 'traveler' ? starterSet() : g);
+// starter outfits: a pink-and-lavender Blossom outfit for Gia's track, a blue Explorer outfit with a red scarf for Miles's
+const STARTER = {
+  daughter: { id:'traveler', tier:0, name:'Blossom', title:'Blossom', motif:'petal', prim:'#ec4899', sec:'#fbcfe8', trim:'#a855f7', gem:'#fde68a', boot:'#f9a8d4', belt:'#c084fc', buckle:'#fde68a', pants:'#c4b5fd' },
+  son:      { id:'traveler', tier:0, name:'Explorer', title:'Explorer', motif:'scout', prim:'#2563eb', sec:'#93c5fd', trim:'#1e3a8a', gem:'#facc15', boot:'#374151', belt:'#1f2937', buckle:'#facc15', pants:'#475569' }
+};
+// whose hero is being drawn (K is swapped while drawing the other kid's hero)
+function heroKidKey(){ const k = Object.keys(DB.kids).find(x => DB.kids[x] === K); if (k && k !== 'dev') return styleOf(k) === 'girl' ? 'daughter' : 'son'; return K && K.__style ? (K.__style === 'girl' ? 'daughter' : 'son') : (TK || 'son'); }
+const starterSet = () => STARTER[heroKidKey()];
 const setForLevel = lv => GEAR_SETS.find(g => g.tier === lv);
 const SKIN_TONES = ['#fde3c8','#f5c9a0','#e0a878','#c68a5a','#9a6440','#6b4428'];
 const HAIR_COLORS = ['#1f1b18','#5b3a21','#a0612f','#e7c46a','#b5462a','#f472b6','#60a5fa','#a78bfa','#f1f5f9'];
@@ -3599,10 +3873,10 @@ function gearPiece(slot, S, hero){
   const { prim, sec, trim, gem, motif } = S;
   const glow = S.tier >= 2 ? `filter="url(#hglow)"` : '';
   switch (slot){
-    case 'pants': return `<rect x="72" y="160" width="27" height="52" rx="6" fill="${prim}" stroke="${INK}" stroke-width="3"/><rect x="101" y="160" width="27" height="52" rx="6" fill="${prim}" stroke="${INK}" stroke-width="3"/>
+    case 'pants': return `<rect x="72" y="160" width="27" height="52" rx="6" fill="${S.tier ? prim : (S.pants || prim)}" stroke="${INK}" stroke-width="3"/><rect x="101" y="160" width="27" height="52" rx="6" fill="${S.tier ? prim : (S.pants || prim)}" stroke="${INK}" stroke-width="3"/>
       ${S.tier ? `<rect x="76" y="176" width="19" height="14" rx="4" fill="${sec}" stroke="${trim}" stroke-width="2"/><rect x="105" y="176" width="19" height="14" rx="4" fill="${sec}" stroke="${trim}" stroke-width="2"/>` : ''}
       ${motif === 'flame' ? flameShape(85, 206, .5, sec, gem) + flameShape(114, 206, .5, sec, gem) : ''}${motif === 'star' ? starShape(85, 198, 5, trim) + starShape(114, 198, 5, trim) : ''}`;
-    case 'boots': return `<path d="M70 204 h30 v22 q0 8 -8 8 h-30 q-6 0 -4 -7 l6 -5 z" fill="${S.tier ? sec : '#5b3a21'}" stroke="${INK}" stroke-width="3" stroke-linejoin="round"/><path d="M100 204 h30 v22 q0 8 -8 8 h-18 q-6 0 -4 -7z" fill="${S.tier ? sec : '#5b3a21'}" stroke="${INK}" stroke-width="3" stroke-linejoin="round"/>
+    case 'boots': return `<path d="M70 204 h30 v22 q0 8 -8 8 h-30 q-6 0 -4 -7 l6 -5 z" fill="${S.tier ? sec : (S.boot || '#5b3a21')}" stroke="${INK}" stroke-width="3" stroke-linejoin="round"/><path d="M100 204 h30 v22 q0 8 -8 8 h-18 q-6 0 -4 -7z" fill="${S.tier ? sec : (S.boot || '#5b3a21')}" stroke="${INK}" stroke-width="3" stroke-linejoin="round"/>
       ${S.tier ? `<rect x="70" y="204" width="30" height="7" fill="${trim}" stroke="${INK}" stroke-width="2"/><rect x="100" y="204" width="30" height="7" fill="${trim}" stroke="${INK}" stroke-width="2"/>` : ''}
       ${motif === 'wing' ? `<path d="M70 210 q-14 -6 -16 -16 q10 4 16 6z M130 210 q14 -6 16 -16 q-10 4 -16 6z" fill="#fff" stroke="${trim}" stroke-width="1.5"/>` : ''}
       ${motif === 'crystal' ? spikes(70, 212, 2, 12, 40, 200, '#e0f2fe', '#60a5fa') + spikes(130, 212, 2, 12, 40, 340, '#e0f2fe', '#60a5fa') : ''}${motif === 'flame' ? flameShape(68, 214, .45, '#f97316', '#fde047') + flameShape(132, 214, .45, '#f97316', '#fde047') : ''}`;
@@ -3613,12 +3887,14 @@ function gearPiece(slot, S, hero){
       return `<path d="M68 104 q32 -10 64 0 l4 56 h-72z" fill="${prim}" stroke="${INK}" stroke-width="3" stroke-linejoin="round"/>
       ${S.tier ? `<path d="M80 108 q20 -6 40 0 l-2 34 q-18 10 -36 0z" fill="${sec}" stroke="${trim}" stroke-width="3"/><path d="M100 108 v42" stroke="${trim}" stroke-width="2"/>` : `<path d="M90 104 l10 14 l10 -14" stroke="${S.sec}" stroke-width="3" fill="none"/>`}
       ${S.tier >= 2 ? `<circle cx="100" cy="126" r="7" fill="${gem}" stroke="${trim}" stroke-width="2.5" ${glow}/>` : ''}
+      ${motif === 'scout' ? `<path d="M84 102 q16 12 32 0 l-6 10 q-10 6 -20 0z" fill="#ef4444" stroke="${INK}" stroke-width="2"/><path d="M96 110 l-6 18 l8 -4z" fill="#ef4444" stroke="${INK}" stroke-width="2"/>${starShape(118, 128, 6, gem)}` : ''}
+      ${motif === 'petal' ? `<path d="M86 104 q14 10 28 0" stroke="#fff" stroke-width="4" fill="none"/>${[[90,126],[110,136]].map(([x,y]) => [0,72,144,216,288].map(a => `<circle cx="${x + Math.cos(a*Math.PI/180)*4}" cy="${y + Math.sin(a*Math.PI/180)*4}" r="3" fill="#fff"/>`).join('') + `<circle cx="${x}" cy="${y}" r="2.5" fill="${gem}"/>`).join('')}` : ''}
       ${motif === 'flame' ? flameShape(100, 120, .55, '#f97316', gem) : ''}${motif === 'leaf' && S.tier ? `<path d="M100 132 q-10 -10 0 -20 q10 10 0 20z" fill="${trim}"/>` : ''}
       ${motif === 'storm' ? `<path d="M104 112 l-8 14 h7 l-5 12 l12 -16 h-7 l5 -10z" fill="${gem}" stroke="${INK}" stroke-width="1.2"/>` : ''}
       ${motif === 'star' ? starShape(100, 126, 9, trim) : ''}${motif === 'shadow' ? `<path d="M86 112 q14 26 28 0" stroke="${trim}" stroke-width="2.5" fill="none"/>` : ''}
       ${motif === 'wing' ? `<path d="M100 114 q-14 6 -18 18 q10 -4 18 -4 q8 0 18 4 q-4 -12 -18 -18z" fill="${trim}"/>` : ''}
       ${S.tier ? `<path d="M64 160 h72 l-4 16 h-64z" fill="${sec}" stroke="${INK}" stroke-width="2.5"/><path d="M76 160 v16 M88 160 v16 M100 160 v16 M112 160 v16 M124 160 v16" stroke="${trim}" stroke-width="1.5"/>` : ''}`;
-    case 'belt': return `<rect x="66" y="152" width="68" height="11" rx="3" fill="${S.tier ? trim : '#5b3a21'}" stroke="${INK}" stroke-width="2.5"/><rect x="93" y="149" width="14" height="17" rx="3" fill="${S.tier ? gem : '#c9a27a'}" stroke="${INK}" stroke-width="2.5"/>`;
+    case 'belt': return `<rect x="66" y="152" width="68" height="11" rx="3" fill="${S.tier ? trim : (S.belt || '#5b3a21')}" stroke="${INK}" stroke-width="2.5"/><rect x="93" y="149" width="14" height="17" rx="3" fill="${S.tier ? gem : (S.buckle || '#c9a27a')}" stroke="${INK}" stroke-width="2.5"/>`;
     case 'gloves': return [52, 148].map(x => `<circle cx="${x}" cy="160" r="9" fill="${S.tier ? sec : hero.skin}" stroke="${INK}" stroke-width="3"/>${S.tier ? `<rect x="${x-10}" y="146" width="20" height="9" rx="3" fill="${trim}" stroke="${INK}" stroke-width="2"/>` : ''}${motif === 'crystal' ? spikes(x, 148, 1, 10, 0, x < 100 ? 200 : 340, '#e0f2fe', '#60a5fa') : ''}`).join('');
     case 'shoulders': {
       if (!S.tier) return `<circle cx="66" cy="106" r="10" fill="${prim}" stroke="${INK}" stroke-width="3"/><circle cx="134" cy="106" r="10" fill="${prim}" stroke="${INK}" stroke-width="3"/>`;
@@ -3705,7 +3981,9 @@ function hairFront(h){
 function heroSVG(size=200, override={}){
   const h = Object.assign({ skin:SKIN_TONES[1], hairColor:HAIR_COLORS[1], hairStyle:'short', weapon:'sword' }, K.hero || {}, override.hero || {});
   const G = heroState(), eq = Object.assign({}, G.eq, override.eq || {});
-  const S = slot => SET_BY_ID[eq[slot]] || SET_BY_ID.traveler;
+  const S = slot => (eq[slot] && eq[slot] !== 'traveler' && SET_BY_ID[eq[slot]]) || starterSet();
+  const girl = heroKidKey() === 'daughter';
+  if (!h.outfit) h.outfit = girl ? 'dress' : 'pants';
   const full = override.eq ? null : fullSetOn();
   const helmOn = S('helmet').tier > 0;
   let s = `<svg viewBox="0 0 200 250" width="${size}" height="${size*1.25}" xmlns="http://www.w3.org/2000/svg" class="hero-svg">
@@ -3717,7 +3995,12 @@ function heroSVG(size=200, override={}){
   // arms (skin), then body pieces
   s += `<path d="M68 106 L52 158" stroke="${INK}" stroke-width="15" stroke-linecap="round"/><path d="M68 106 L52 158" stroke="${S('chest').tier ? S('chest').sec : S('chest').prim}" stroke-width="10" stroke-linecap="round"/>
         <path d="M132 106 L148 158" stroke="${INK}" stroke-width="15" stroke-linecap="round"/><path d="M132 106 L148 158" stroke="${S('chest').tier ? S('chest').sec : S('chest').prim}" stroke-width="10" stroke-linecap="round"/>`;
-  s += gearPiece('pants', S('pants'), h) + gearPiece('boots', S('boots'), h) + gearPiece('chest', S('chest'), h) + gearPiece('belt', S('belt'), h);
+  s += gearPiece('pants', S('pants'), h) + gearPiece('boots', S('boots'), h) + gearPiece('chest', S('chest'), h);
+  if (h.outfit === 'dress' && S('chest').motif !== 'wizard'){ const C = S('chest'), fill = C.tier ? C.prim : C.prim, hem = C.tier ? C.trim : C.sec;
+    s += `<path d="M68 148 h64 q14 26 20 50 q-10 6 -18 0 q-8 6 -17 0 q-9 6 -17 0 q-9 6 -17 0 q-8 6 -17 0 q-8 6 -18 0 q6 -24 20 -50z" fill="${fill}" stroke="${INK}" stroke-width="3" stroke-linejoin="round"/>
+      <path d="M52 194 q8 6 18 0 q8 6 17 0 q9 6 17 0 q9 6 17 0 q8 6 17 0 q8 6 18 0" fill="none" stroke="${hem}" stroke-width="4"/><path d="M82 156 l-6 34 M100 156 v36 M118 156 l6 34" stroke="${C.tier ? C.sec : '#fff'}" stroke-width="2" opacity=".5"/>
+      ${C.motif === 'petal' ? [[78,176],[100,182],[122,176]].map(([x,y]) => `<circle cx="${x}" cy="${y}" r="4" fill="#fff"/><circle cx="${x}" cy="${y}" r="1.8" fill="${C.gem}"/>`).join('') : ''}`; }
+  s += gearPiece('belt', S('belt'), h);
   s += `<rect x="92" y="90" width="16" height="16" fill="${h.skin}" stroke="${INK}" stroke-width="3"/>`;
   s += gearPiece('shoulders', S('shoulders'), h);
   // head + face
@@ -3726,7 +4009,8 @@ function heroSVG(size=200, override={}){
     <path d="M92 80 q8 7 16 0" stroke="${INK}" stroke-width="3" fill="none" stroke-linecap="round"/>
     <ellipse cx="80" cy="78" rx="6" ry="3.5" fill="#fb7185" opacity=".45"/><ellipse cx="120" cy="78" rx="6" ry="3.5" fill="#fb7185" opacity=".45"/>`;
   if (h.beard) s += `<path d="M70 70 q4 22 14 34 q8 26 16 34 q8 -8 16 -34 q10 -12 14 -34 q-6 14 -18 16 q-12 -6 -24 0 q-12 -2 -18 -16z" fill="${h.beardColor || '#f1f5f9'}" stroke="${INK}" stroke-width="2.5" stroke-linejoin="round"/><path d="M90 86 q10 -5 20 0" stroke="${INK}" stroke-width="2.5" fill="none" stroke-linecap="round"/>`;
-  s += helmOn ? gearPiece('helmet', S('helmet'), h) : hairFront(h) + (S('helmet').id === 'traveler' && override.showCap ? gearPiece('helmet', S('helmet'), h) : '');
+  const bow = !helmOn && girl && h.bow !== false ? `<g transform="translate(${h.hairStyle === 'buns' ? 100 : 126} ${h.hairStyle === 'buns' ? 28 : 36}) rotate(18)"><path d="M0 0 l-16 -10 q-4 10 0 20z M0 0 l16 -10 q4 10 0 20z" fill="${S('chest').tier ? S('chest').gem : '#f472b6'}" stroke="${INK}" stroke-width="2.5" stroke-linejoin="round"/><circle r="5" fill="${S('chest').tier ? S('chest').trim : '#ec4899'}" stroke="${INK}" stroke-width="2"/></g>` : '';
+  s += helmOn ? gearPiece('helmet', S('helmet'), h) : hairFront(h) + bow + (S('helmet').id === 'traveler' && override.showCap ? gearPiece('helmet', S('helmet'), h) : '');
   s += gearPiece('gloves', S('gloves'), h);
   s += gearPiece('weapon', S('weapon'), h);
   return s + '</svg>';
@@ -3742,7 +4026,7 @@ function heroNode(size=170, withBuddy=true){
 
 /* ---------- hero creator ---------- */
 function screenHeroCreate(after){
-  const h = Object.assign({ skin:SKIN_TONES[1], hairColor:HAIR_COLORS[1], hairStyle: TK === 'daughter' ? 'long' : 'spiky', weapon:'sword' }, K.hero || {});
+  const h = Object.assign({ skin:SKIN_TONES[1], hairColor:HAIR_COLORS[1], hairStyle: styleOf(kid) === 'girl' ? 'long' : 'spiky', weapon:'sword', outfit: styleOf(kid) === 'girl' ? 'dress' : 'pants', bow: styleOf(kid) === 'girl' }, K.hero || {});
   const prev = el('div',{class:'hero-create-prev'});
   const draw = () => { prev.innerHTML = heroSVG(220, { hero:h }); };
   const row = (label, items, render, key) => el('div',{class:'hc-row'}, el('h3',{}, label),
@@ -3757,6 +4041,8 @@ function screenHeroCreate(after){
         row('Hair color', HAIR_COLORS, v => el('span',{class:'swatch', style:`background:${v}`}), 'hairColor'),
         row('Weapon', isDev() ? ['wizard','staff','sword','laser'] : ['sword','staff','laser'], v => ({ sword:'⚔️ Sword', staff:'🪄 Magic Staff', laser:'✨ Laser Sword', wizard:'🌟 Star Staff' })[v], 'weapon'),
         isDev() ? row('Beard', [true,false], v => v ? '🧔 Wizard beard' : '🙂 No beard', 'beard') : null,
+        styleOf(kid) === 'girl' ? row('Outfit', ['dress','pants'], v => v === 'dress' ? '👗 Dress' : '👖 Pants', 'outfit') : null,
+        styleOf(kid) === 'girl' ? row('Hair bow', [true,false], v => v ? '🎀 Bow' : 'No bow', 'bow') : null,
         el('button',{class:'btn big', style:'margin-top:16px', onclick:()=>{ K.hero = h; heroState(); save(); confetti(70); beep('level'); say('Your hero is ready for adventure!'); (after || screenHome)(); }},'✅ This is me!')))));
 }
 
@@ -3837,9 +4123,9 @@ function screenArmory(){
 /* ---------- Hall of Heroes: profile showcase ---------- */
 function screenHeroHall(){
   stopAll();
-  const other = kid === 'son' ? 'daughter' : 'son', O = DB.kids[other];
+  const other = playerIds(false).find(id => id !== kid && DB.kids[id].hero), O = other ? DB.kids[other] : null;
   const tile = (icon, n, label, on=true) => el('div',{class:'hh-tile' + (on ? '' : ' off'), title:label}, el('span',{class:'hh-ic'}, icon), n != null ? el('span',{class:'hh-n'}, n) : null);
-  const buddies = Object.entries(AVATAR_BASES).filter(([,b]) => (isDev() || b.kid === TK)).map(([id,b]) => tile(b.emoji, null, b.name, K.avatar.owned.includes(id) || K.level >= AVATAR_UNLOCK_LEVEL));
+  const buddies = Object.entries(AVATAR_BASES).filter(([,b]) => b.kid).map(([id,b]) => tile(b.emoji, null, b.name, K.avatar.owned.includes(id) || K.level >= AVATAR_UNLOCK_LEVEL));
   const bosses = T.levels.map((_, i) => { const B = bossFor(i+1); if (!B) return null; const r = (K.bossLog||{})[i+1]; return tile((K.bossesBeaten||[]).includes(i+1) ? B.e : '❔', r && r.wins ? r.wins : null, B.name, (K.bossesBeaten||[]).includes(i+1)); }).filter(Boolean);
   const sets = GEAR_SETS.filter(g => g.tier).map(g => el('div',{class:'hh-tile set' + (setCount(g.id) ? '' : ' off'), style:`--gem:${g.gem};--prim:${g.prim}`, title:g.name}, el('span',{class:'hh-gem'}), el('span',{class:'hh-n'}, setCount(g.id) + '/8')));
   const stage = el('div',{class:'hh-stage'},
@@ -3886,6 +4172,312 @@ function screenQuestMap(){
     map));
 }
 
+/* ================= TREASURE CHESTS & RARITY =================
+   Chests drop one treasure plus bonus stars. Treasures have a rarity and an item level, and can be
+   placed in My World › 🎁 Treasures (one copy per treasure found).
+   Earned: great reads (wooden / silver), boss wins (gold), level ups (cosmic), Town Hall quests, real books.
+   Chests can also be bought with stars or 💫. */
+const RARITY = {
+  common:    { n:'Common',    c:'#94a3b8', lv:[1,10]  },
+  uncommon:  { n:'Uncommon',  c:'#22c55e', lv:[11,20] },
+  rare:      { n:'Rare',      c:'#3b82f6', lv:[21,35] },
+  legendary: { n:'Legendary', c:'#f59e0b', lv:[36,50] },
+  mythic:    { n:'Mythic',    c:'#d946ef', lv:[51,60] }
+};
+const RARITY_ORDER = ['common','uncommon','rare','legendary','mythic'];
+const TREASURES = [
+  ['common',   [['pebble','🪨','Shiny Pebble'],['daisy','🌼','Daisy Pot'],['shroom','🍄','Toadstool'],['shell','🐚','Seashell'],['balloon','🎈','Red Balloon'],['basket','🧺','Picnic Basket'],['kite','🪁','Kite'],['acorn','🌰','Lucky Acorn'],['duckie','🦆','Rubber Duck'],['candle','🕯️','Cozy Candle']]],
+  ['uncommon', [['lantern','🏮','Paper Lantern'],['cactus','🌵','Happy Cactus'],['teddy','🧸','Big Teddy'],['bell','🔔','Golden Bell'],['music','🎶','Music Box'],['clover','🍀','Four-Leaf Clover'],['sled','🛷','Snow Sled'],['owl','🦉','Owl Statue']]],
+  ['rare',     [['crystal','🔮','Crystal Ball'],['guardian','🗿','Stone Guardian'],['gate','⛩️','Sun Gate'],['telescope','🔭','Star Telescope'],['harp','🪕','Moon Banjo'],['orb','🧿','Wishing Orb'],['amber','🦋','Amber Butterfly']]],
+  ['legendary',[['throne','👑','Royal Throne'],['volcano','🌋','Mini Volcano'],['unicorn','🦄','Unicorn Statue'],['phoenix','🐦‍🔥','Phoenix Perch'],['trident','🔱','Sea King Trident']]],
+  ['mythic',   [['galaxy','🌌','Galaxy Portal'],['planet','🪐','Ringed Planet'],['fallen','🌠','Fallen Star'],['rainbow','🌈','Rainbow Bridge']]]
+].flatMap(([r, list]) => list.map(([id, e, name], i) => { const [a, b] = RARITY[r].lv; return { id:'tr_' + id, e, name, r, ilvl: Math.round(a + (b - a) * (list.length > 1 ? i / (list.length - 1) : .5)) }; }));
+const TREASURE_BY_ID = Object.fromEntries(TREASURES.map(t => [t.id, t]));
+TREASURES.forEach(t => { const row = ['treasure', t.id, t.e, t.name, 0]; WORLD_ITEMS.push(row); WORLD_BY_ID[t.id] = row; });
+WORLD_CATS.treasure = '🎁 Treasures';
+
+const CHESTS = {
+  wood:   { n:'Wooden Chest', body:'#b7793f', band:'#6b4a2e', glow:'#fde68a', odds:{ common:70, uncommon:25, rare:5 },                               stars:2,  cosmic:0, buy:{ cur:'star', amt:15 } },
+  silver: { n:'Silver Chest', body:'#cbd5e1', band:'#64748b', glow:'#e0f2fe', odds:{ common:35, uncommon:40, rare:22, legendary:3 },             stars:4,  cosmic:0, buy:{ cur:'star', amt:40 } },
+  gold:   { n:'Gold Chest',   body:'#facc15', band:'#b45309', glow:'#fef08a', odds:{ uncommon:30, rare:50, legendary:18, mythic:2 },             stars:8,  cosmic:1, buy:{ cur:'star', amt:100 } },
+  cosmic: { n:'Cosmic Chest', body:'#7c3aed', band:'#312e81', glow:'#f0abfc', odds:{ rare:40, legendary:50, mythic:10 },                         stars:15, cosmic:3, buy:{ cur:'cosmic', amt:12 } }
+};
+const CHEST_ORDER = ['wood','silver','gold','cosmic'];
+function chestSVG(type, size = 90){
+  const C = CHESTS[type], ink = '#1f1235';
+  return `<svg viewBox="0 0 120 100" width="${size}" height="${size*100/120}" xmlns="http://www.w3.org/2000/svg">
+    <ellipse cx="60" cy="94" rx="46" ry="6" fill="#000" opacity=".2"/>
+    <rect x="12" y="44" width="96" height="48" rx="8" fill="${C.body}" stroke="${ink}" stroke-width="4"/>
+    <path d="M12 46 q0 -36 48 -36 q48 0 48 36z" fill="${C.body}" stroke="${ink}" stroke-width="4" stroke-linejoin="round"/>
+    <path d="M18 40 q4 -22 42 -24" stroke="#fff" stroke-width="4" fill="none" opacity=".45" stroke-linecap="round"/>
+    <rect x="12" y="42" width="96" height="9" fill="${C.band}" stroke="${ink}" stroke-width="3"/>
+    <rect x="28" y="12" width="10" height="80" fill="${C.band}" stroke="${ink}" stroke-width="3"/><rect x="82" y="12" width="10" height="80" fill="${C.band}" stroke="${ink}" stroke-width="3"/>
+    <rect x="50" y="40" width="20" height="24" rx="4" fill="${C.glow}" stroke="${ink}" stroke-width="3"/><circle cx="60" cy="50" r="3.5" fill="${ink}"/><path d="M60 52 v6" stroke="${ink}" stroke-width="3"/>
+    ${type === 'cosmic' ? '<circle cx="44" cy="74" r="3" fill="#fff"/><circle cx="76" cy="68" r="2" fill="#fff"/><circle cx="96" cy="80" r="2.5" fill="#f0abfc"/><circle cx="22" cy="62" r="2" fill="#67e8f9"/>' : ''}
+    ${type === 'gold' ? '<path d="M100 20 l3 7 l7 1 l-5 5 l1 7 l-6 -3 l-6 3 l1 -7 l-5 -5 l7 -1z" fill="#fff" opacity=".9"/>' : ''}</svg>`;
+}
+function chestState(){ K.chests = Object.assign({ wood:0, silver:0, gold:0, cosmic:0 }, K.chests || {}); K.treasures = K.treasures || {}; return K.chests; }
+const chestCount = () => { const c = chestState(); return CHEST_ORDER.reduce((t, k) => t + (c[k] || 0), 0); };
+function awardChest(type, why){
+  chestState()[type]++; save();
+  const t = el('div',{class:'chest-toast', onclick:()=>{ t.remove(); screenChests(); }}, el('div',{class:'ct-chest', html: chestSVG(type, 54)}),
+    el('div',{}, el('b',{}, `You got a ${CHESTS[type].n}!`), el('small',{}, (why ? why + ' · ' : '') + 'Tap to open')));
+  t.style.top = (16 + document.querySelectorAll('.chest-toast, .cosmic-toast').length * 78) + 'px';
+  document.body.append(t); setTimeout(() => t.classList.add('out'), 3600); setTimeout(() => t.remove(), 4200);
+  beep('ok');
+}
+function rollRarity(type){
+  const odds = CHESTS[type].odds; let n = Math.random() * 100;
+  for (const r of RARITY_ORDER){ if (!odds[r]) continue; n -= odds[r]; if (n < 0) return r; }
+  return Object.keys(odds).pop();
+}
+function rollTreasure(type){
+  const r = rollRarity(type), pool = TREASURES.filter(t => t.r === r);
+  const owned = chestState() && K.treasures, fresh = pool.filter(t => !owned[t.id]);
+  return pick(fresh.length && Math.random() < .7 ? fresh : pool); // new things are more likely
+}
+function openChest(type, again){
+  const C = chestState();
+  if (!isDev()){ if (!C[type]) return; C[type]--; }
+  const t = rollTreasure(type), R = RARITY[t.r], first = !K.treasures[t.id];
+  K.treasures[t.id] = (K.treasures[t.id] || 0) + 1;
+  K.stars += CHESTS[type].stars; save();
+  if (CHESTS[type].cosmic) addCosmic(CHESTS[type].cosmic, CHESTS[type].n);
+  const big = t.r === 'legendary' || t.r === 'mythic';
+  const chest = el('div',{class:'oc-chest', html: chestSVG(type, 180)});
+  const reveal = el('div',{class:'oc-reveal hidden', style:`--rc:${R.c}`},
+    el('div',{class:'oc-rar'}, R.n.toUpperCase()),
+    el('div',{class:'oc-item'}, t.e),
+    el('h2',{class:'oc-name'}, t.name),
+    el('div',{class:'oc-meta'}, el('span',{class:'oc-ilvl'}, 'Item Lv ' + t.ilvl), first ? el('span',{class:'oc-new'}, 'NEW!') : el('span',{class:'oc-dup'}, '×' + K.treasures[t.id])),
+    el('p',{class:'oc-bonus'}, `+${CHESTS[type].stars} ⭐` + (CHESTS[type].cosmic ? `  +${CHESTS[type].cosmic} 💫` : '')),
+    el('p',{class:'oc-hint'}, 'Place it in My World › 🎁 Treasures'),
+    el('div',{class:'row center'},
+      (isDev() || C[type] > 0) ? el('button',{class:'btn', onclick:()=>{ ov.remove(); openChest(type, true); }}, `Open another (${isDev() ? '∞' : C[type]})`) : null,
+      el('button',{class:'btn blue', onclick:()=>{ ov.remove(); screenChests(); }}, 'Done ✨')));
+  const ov = el('div',{class:'oc-overlay' + (big ? ' big' : '') + ' r-' + t.r, style:`--rc:${R.c}`}, el('div',{class:'oc-rays'}), chest, reveal);
+  document.body.append(ov);
+  beep('tap');
+  setTimeout(() => { chest.classList.add('pop'); beep('star'); }, 900);
+  setTimeout(() => { chest.remove(); reveal.classList.remove('hidden'); confetti(big ? 140 : t.r === 'rare' ? 60 : 25); if (big){ beep('level'); burst(t.r === 'mythic' ? 'MYTHIC!' : 'LEGENDARY!'); } say(`${R.n}! ${t.name}!`); }, 1300);
+}
+function screenChests(){
+  stopAll();
+  const C = chestState();
+  const bal = el('span',{class:'pill cosmic-mix'}, '⭐ ' + balance() + '   💫 ' + cosmicBal());
+  const chestCard = type => { const X = CHESTS[type], n = isDev() ? '∞' : C[type];
+    return el('div',{class:'chest-card ch-' + type},
+      el('div',{class:'chest-pic' + (C[type] || isDev() ? ' ready' : ''), html: chestSVG(type, 110)}),
+      el('h3',{}, X.n), el('div',{class:'chest-n'}, `You have ${n}`),
+      el('div',{class:'chest-odds'}, ...RARITY_ORDER.filter(r => X.odds[r]).map(r => el('span',{style:`--rc:${RARITY[r].c}`}, `${RARITY[r].n} ${X.odds[r]}%`))),
+      el('button',{class:'btn' + (C[type] || isDev() ? '' : ' gray'), onclick:()=>{ if (!C[type] && !isDev()){ say('Read great stories and do Town Hall quests to earn chests!'); return; } openChest(type); }}, '🔓 Open'),
+      el('button',{class:'btn small ghost chest-buy', onclick:()=>{ if (!canPay(X.buy)){ say(X.buy.cur === 'cosmic' ? 'You need more Cosmic Power!' : 'Keep reading to earn more stars!'); beep('bad'); return; } pay(X.buy); C[type]++; save(); beep('star'); screenChests(); }}, 'Buy ' + costLabel(X.buy))); };
+  const found = TREASURES.filter(t => K.treasures[t.id]).length;
+  const coll = RARITY_ORDER.map(r => { const list = TREASURES.filter(t => t.r === r);
+    return el('div',{class:'tr-group', style:`--rc:${RARITY[r].c}`},
+      el('h3',{}, el('span',{class:'tr-dot'}), `${RARITY[r].n}`, el('small',{}, ` · Item Lv ${RARITY[r].lv[0]}–${RARITY[r].lv[1]} · ${list.filter(t => K.treasures[t.id]).length}/${list.length}`)),
+      el('div',{class:'tr-grid'}, ...list.map(t => { const have = K.treasures[t.id] || 0;
+        return el('div',{class:'tr-tile' + (have ? '' : ' off') + ' r-' + r, title: t.name},
+          el('div',{class:'tr-e'}, have ? t.e : '❔'), el('div',{class:'tr-name'}, have ? t.name : '???'),
+          el('div',{class:'tr-lv'}, have ? `Lv ${t.ilvl}` + (have > 1 ? ` · ×${have}` : '') : RARITY[r].n)); }))); });
+  show(el('div',{class:'screen chest-screen'},
+    el('div',{class:'topbar'}, el('button',{class:'btn ghost small', onclick:()=>screenHome()},'← Back'), el('h1',{class:'title'},'🎁 Treasure Chests'), bal),
+    el('p',{class:'subtitle'}, 'Earn chests by reading great stories, beating bosses, leveling up and doing Town Hall quests.'),
+    el('div',{class:'chest-row'}, ...CHEST_ORDER.map(chestCard)),
+    el('div',{class:'card tr-card'}, el('h2',{style:'margin-top:0'}, `🏆 My Treasures · ${found}/${TREASURES.length}`), ...coll)));
+}
+
+/* ================= TOWN HALL QUESTS =================
+   Four quest-givers inside the Town Hall. Each quest takes a minute or two and pays a chest once a day;
+   finishing all four in one day pays a Gold Chest. They can be replayed any time for practice. */
+const QUEST_NPCS = [
+  { id:'spell',    e:'🦊', name:'Scribe Pip',       title:'Spelling Sprint',  desc:'Spell 3 words with letter tiles.',     chest:'silver' },
+  { id:'detect',   e:'🐢', name:'Professor Shell',  title:'Word Detective',   desc:'Hear a word, find it fast!',             chest:'wood' },
+  { id:'sentence', e:'🐻', name:'Captain Bruno',    title:'Sentence Builder', desc:'Put the words in the right order.',      chest:'silver' },
+  { id:'aloud',    e:'🧚', name:'Storyteller Wren', title:'Read Aloud',       desc:'Read a sentence out loud to Wren.',      chest:'wood' }
+];
+const QUEST_FALLBACK = {
+  son: ['The cat sat on the mat.','I can see a big red bus.','The dog ran to the park.','We like to play in the sun.','My hat is on the bed.','Look at the fish in the pond.'],
+  daughter: ['The dragon spread its wings and flew over the castle.','Maya found a secret map inside an old book.','The friends worked together to solve the mystery.','A bright star glowed above the quiet village.','She whispered the magic word and the door opened.']
+};
+function questState(){ const t = todayStr(); if (!K.quests || K.quests.date !== t) K.quests = { date:t, done:[], grand:false }; return K.quests; }
+function questSentences(n){
+  const [lo, hi] = TK === 'son' ? [3, 8] : [5, 12];
+  let pool = [];
+  for (const lv of [K.level, K.level - 1, K.level + 1]){
+    const L = T.levels[lv - 1]; if (!L || !L.stories) continue;
+    L.stories.forEach(s => (s.text || '').replace(/[“”"]/g, '').replace(/([.!?])\s+/g, '$1\n').split('\n').forEach(x => { x = x.trim(); const w = x.split(/\s+/).length; if (w >= lo && w <= hi && /^[A-Z][A-Za-z ,'’]+[.!?]$/.test(x)) pool.push(x); }));
+    if (pool.length >= 8) break;
+  }
+  if (pool.length < n) pool = pool.concat(QUEST_FALLBACK[TK]);
+  return shuffle([...new Set(pool)]).slice(0, n);
+}
+function questWords(n){
+  let w = spellWords(n + 4, 3);
+  if (w.length < n) w = w.concat(shuffle(TK === 'son' ? ['cat','dog','sun','hat','big','run','fish','frog','jump','play'] : ['dragon','castle','friend','secret','bright','quiet','magic','forest','river','wonder']));
+  return [...new Set(w)];
+}
+function screenTownHall(){
+  stopAll();
+  const Q = questState();
+  const hero = el('div',{class:'th-hero'}, heroNode(120));
+  let heroX = 8;
+  hero.style.left = heroX + '%';
+  const go = (npc, x) => { beep('tap'); hero.classList.toggle('flip', x < heroX); hero.classList.add('walking'); hero.style.left = x + '%'; const d = Math.abs(x - heroX); heroX = x; setTimeout(() => { hero.classList.remove('walking'); startQuest(npc); }, 300 + d * 18); };
+  const npcs = QUEST_NPCS.map((q, i) => { const x = 20 + i * 19, done = Q.done.includes(q.id);
+    const n = el('button',{class:'th-npc' + (done ? ' done' : ''), style:`left:${x}%`, onclick:()=>go(q, x - 6)},
+      el('div',{class:'th-bubble'}, done ? '✅' : '❗'),
+      el('div',{class:'th-e'}, q.e), el('div',{class:'th-name'}, q.name),
+      el('div',{class:'th-quest'}, q.title), el('div',{class:'th-reward', html: chestSVG(q.chest, 30)}));
+    return n; });
+  const doneN = Q.done.length;
+  show(el('div',{class:'screen th-screen'},
+    el('div',{class:'topbar'}, el('button',{class:'btn ghost small', onclick:()=>screenTownSquare()},'← Town'), el('h1',{class:'title'},'🏛️ Town Hall'),
+      el('button',{class:'btn small blue', onclick:screenQuestMap},'🗺️ Quest Map')),
+    el('div',{class:'th-hall'},
+      el('div',{class:'th-wall'}, ...[0,1,2,3,4].map(i => el('div',{class:'th-arch'})), el('div',{class:'th-banner b1'}), el('div',{class:'th-banner b2'}),
+        el('div',{class:'th-board'}, el('b',{}, '📜 Today\'s Quests'), el('div',{class:'th-prog'}, ...QUEST_NPCS.map(q => el('span',{class: Q.done.includes(q.id) ? 'on' : ''}, Q.done.includes(q.id) ? '✓' : q.e))),
+          el('small',{}, Q.grand ? '🏆 Grand Quest done! Gold Chest won.' : `Finish all 4 today for a Gold Chest! (${doneN}/4)`))),
+      el('div',{class:'th-floor'}), ...npcs, hero),
+    el('p',{class:'subtitle', style:'text-align:center'}, 'Tap someone to start a quest. Each quest gives a chest once a day, and you can practice again any time.')));
+  if (!K.thHello){ K.thHello = 1; save(); say('Welcome to the Town Hall! Tap a friend to start a quest.'); }
+}
+function questFrame(q, body, sub){
+  return el('div',{class:'screen quest-screen'},
+    el('div',{class:'topbar'}, el('button',{class:'btn ghost small', onclick:()=>{ stopAll(); screenTownHall(); }},'← Town Hall'), el('h1',{class:'title'}, q.e + ' ' + q.title), el('div')),
+    el('div',{class:'card quest-card'}, el('div',{class:'quest-npc'}, el('span',{class:'qn-e'}, q.e), el('div',{}, el('b',{}, q.name), sub ? el('div',{class:'qn-say'}, sub) : null)), body));
+}
+async function questComplete(q){
+  const Q = questState(), first = !Q.done.includes(q.id);
+  confetti(80); beep('level'); burst('QUEST DONE!');
+  if (first){ Q.done.push(q.id); K.stars += 2; save(); }
+  say(first ? `Quest complete! You earned a ${CHESTS[q.chest].n}!` : 'Great practice!');
+  await modal(el('div',{}, el('div',{class:'big-e'}, q.e), el('h2',{}, 'Quest complete!'),
+    first ? el('div',{html: chestSVG(q.chest, 120)}) : null,
+    el('p',{}, first ? `${q.name} gives you a ${CHESTS[q.chest].n} and +2 ⭐!` : 'You already got today\'s chest from this quest. Come back tomorrow for another!')), [['Yay! ▶','',1]]);
+  if (first) awardChest(q.chest, q.title);
+  if (first && Q.done.length >= QUEST_NPCS.length && !Q.grand){
+    Q.grand = true; save();
+    confetti(140); say('You finished every quest today! Here is a Gold Chest!');
+    await modal(el('div',{}, el('div',{class:'big-e'},'🏆'), el('h2',{},'Grand Quest complete!'), el('div',{html: chestSVG('gold', 130)}), el('p',{},'All 4 quests done today. A Gold Chest for you!')), [['Amazing! ▶','',1]]);
+    awardChest('gold', 'Grand Quest');
+  }
+  screenTownHall();
+}
+function startQuest(q){
+  ({ spell:questSpell, detect:questDetect, sentence:questSentence, aloud:questAloud })[q.id](q);
+}
+// 🦊 Spelling Sprint: hear the word, tap letter tiles in order (wrong taps just wiggle)
+function questSpell(q){
+  const words = questWords(3).slice(0, 3); let i = 0;
+  const area = el('div',{class:'qs-area'});
+  const round = () => {
+    const w = words[i], got = [];
+    const slots = el('div',{class:'qs-slots'}, ...[...w].map(() => el('span',{class:'qs-slot'})));
+    const decoys = shuffle('abcdefghijklmnoprstuw'.split('').filter(c => !w.includes(c))).slice(0, 2);
+    const tiles = el('div',{class:'qs-tiles'}, ...shuffle([...w, ...decoys]).map(ch => { const b = el('button',{class:'qs-tile', onclick:()=>{
+      if (ch === w[got.length]){ slots.children[got.length].textContent = ch; slots.children[got.length].classList.add('on'); got.push(ch); b.disabled = true; b.classList.add('used'); beep('tap');
+        if (got.length === w.length){ beep('star'); say(w + '! Great spelling!'); setTimeout(() => { i++; i < words.length ? round() : questComplete(q); }, 1100); } }
+      else { b.classList.remove('shake'); void b.offsetWidth; b.classList.add('shake'); beep('bad'); } }}, ch); return b; }));
+    area.replaceChildren(el('div',{class:'q-step'}, `Word ${i + 1} of ${words.length}`), el('button',{class:'btn blue', onclick:()=>say(w)}, '🔊 Hear the word'), slots, tiles);
+    say(`Spell: ${w}`);
+  };
+  show(questFrame(q, area, 'Listen to the word, then tap the letters in order!')); round();
+}
+// 🐢 Word Detective: hear a word, pick it from three
+function questDetect(q){
+  const pool = questWords(8), targets = pool.slice(0, 5); let i = 0, right = 0;
+  const area = el('div',{class:'qs-area'});
+  const round = () => {
+    const w = targets[i], others = shuffle(pool.filter(x => x !== w)).sort((a, b) => (b[0] === w[0]) - (a[0] === w[0]) || Math.abs(a.length - w.length) - Math.abs(b.length - w.length)).slice(0, 2);
+    let miss = false;
+    const opts = el('div',{class:'qd-opts'}, ...shuffle([w, ...others]).map(o => el('button',{class:'qd-opt', onclick:e => {
+      if (o === w){ e.target.classList.add('right'); beep('star'); if (!miss) right++; setTimeout(() => { i++; i < targets.length ? round() : questComplete(q); }, 700); }
+      else { miss = true; e.target.classList.add('wrong'); e.target.disabled = true; beep('bad'); say(o + '. Try again!'); } }}, o)));
+    area.replaceChildren(el('div',{class:'q-step'}, `Clue ${i + 1} of ${targets.length}`), el('button',{class:'btn blue', onclick:()=>say(w)}, '🔊 Hear it again'), opts);
+    say(`Find the word: ${w}`);
+  };
+  show(questFrame(q, area, 'I will say a word. Can you find it?')); round();
+}
+// 🐻 Sentence Builder: tap words in order to build the sentence
+function questSentence(q){
+  const sents = questSentences(2); let i = 0;
+  const area = el('div',{class:'qs-area'});
+  const round = () => {
+    const s = sents[i], words = s.split(/\s+/), built = [];
+    const line = el('div',{class:'qb-line'});
+    const bank = el('div',{class:'qb-bank'}, ...shuffle(words.map((w, k) => [w, k])).map(([w]) => { const b = el('button',{class:'qb-word', onclick:()=>{
+      if (w === words[built.length]){ built.push(w); line.append(el('span',{class:'qb-placed'}, w)); b.remove(); beep('tap');
+        if (built.length === words.length){ beep('star'); say(s); setTimeout(() => { i++; i < sents.length ? round() : questComplete(q); }, 1800); } }
+      else { b.classList.remove('shake'); void b.offsetWidth; b.classList.add('shake'); beep('bad'); } }}, w); return b; }));
+    area.replaceChildren(el('div',{class:'q-step'}, `Sentence ${i + 1} of ${sents.length}`), el('button',{class:'btn blue', onclick:()=>say(s)}, '🔊 Hear the sentence'), line, bank);
+    say(i === 0 ? 'Put the words in order to make a sentence!' : 'One more!');
+  };
+  show(questFrame(q, area, TK === 'son' ? 'Tap the words in order. Start with the big letter!' : 'Tap the words in the right order to build the sentence.')); round();
+}
+// 🧚 Read Aloud: read a sentence; the microphone checks the words (or a grown-up taps ✓)
+function questAloud(q){
+  const sents = questSentences(2); let i = 0, rec = null;
+  const area = el('div',{class:'qs-area'});
+  const round = () => {
+    const s = sents[i], words = s.split(/\s+/), keys = words.map(norm), hit = keys.map(() => false);
+    const line = el('div',{class:'qa-line'}, ...words.map(w => el('span',{class:'qa-w'}, w)));
+    const status = el('div',{class:'qa-status'}, useManual() ? 'Read it to a grown-up!' : 'Tap 🎤 and read the sentence.');
+    const done = () => { try { rec && rec.stop(); } catch(e){} beep('star'); say('Beautiful reading!'); setTimeout(() => { i++; i < sents.length ? round() : questComplete(q); }, 1100); };
+    const mark = heard => { const toks = tokenizeHeard(heard).map(t => t.n || t.w || t); let p = 0;
+      toks.forEach(h => { for (let k = p; k < keys.length && k < p + 3; k++) if (!hit[k] && wordMatch(keys[k], norm(String(h)))){ hit[k] = true; line.children[k].classList.add('ok'); p = k + 1; break; } });
+      const n = hit.filter(Boolean).length; status.textContent = `${n} of ${keys.length} words`; if (n >= Math.ceil(keys.length * .8)) done(); };
+    const mic = el('button',{class:'mic', onclick:()=>{
+      if (mic.classList.contains('on')){ try { rec.stop(); } catch(e){} return; }
+      try { rec = new SR(); rec.lang = 'en-US'; rec.continuous = true; rec.interimResults = true; } catch(e){ status.textContent = 'The microphone is not working. A grown-up can tap ✓.'; return; }
+      rec.onresult = ev => { let t = ''; for (let k = 0; k < ev.results.length; k++) t += ' ' + ev.results[k][0].transcript; mark(t); };
+      rec.onend = () => { mic.classList.remove('on'); mic.textContent = '🎤'; };
+      rec.onerror = () => { status.textContent = 'I could not hear you. Try again, or a grown-up can tap ✓.'; };
+      rec.start(); mic.classList.add('on'); mic.textContent = '⏹'; status.textContent = 'Listening…'; }}, '🎤');
+    area.replaceChildren(el('div',{class:'q-step'}, `Sentence ${i + 1} of ${sents.length}`), line,
+      el('div',{class:'row center'}, useManual() ? null : mic, el('button',{class:'btn blue', onclick:()=>say(s)}, '🔊 Hear it'), el('button',{class:'btn small gray', onclick:done}, '✓ Grown-up heard it')), status);
+  };
+  show(questFrame(q, area, 'Read this sentence out loud to me!')); round();
+}
+
+/* ---------- zoom: ＋/－ buttons, "see all", full screen, pinch and ctrl+wheel ----------
+   The content keeps its own pixel size; a sizer div takes the scaled size so the view scrolls normally. */
+function zoomable({ view, content, W, H, start = 1, max = 2.5, fit = 'contain', onZoom }){
+  const sizer = el('div',{class:'zoom-sizer'}, content);
+  view.append(sizer);
+  content.style.transformOrigin = '0 0';
+  let z = 1, frame = null;
+  const fitZ = () => fit === 'width' ? view.clientWidth / W : Math.min(view.clientWidth / W, view.clientHeight / H);
+  const apply = () => { content.style.transform = `scale(${z})`; sizer.style.width = W*z + 'px'; sizer.style.height = H*z + 'px'; view.style.maxHeight = frame && frame.classList.contains('zoom-full') ? '' : Math.ceil(H*z) + 10 + 'px'; };
+  const set = (nz, fx, fy) => {
+    const lo = Math.min(.35, fitZ() || .35);
+    nz = Math.max(lo, Math.min(max, nz));
+    if (fx == null){ fx = view.clientWidth / 2; fy = view.clientHeight / 2; }
+    const wx = (view.scrollLeft + fx) / z, wy = (view.scrollTop + fy) / z;
+    z = nz; apply();
+    view.scrollLeft = wx*z - fx; view.scrollTop = wy*z - fy;
+    onZoom && onZoom(z);
+  };
+  z = start; apply();
+  // pinch with two fingers
+  let pinch = null;
+  const dist = t => Math.hypot(t[0].clientX - t[1].clientX, t[0].clientY - t[1].clientY);
+  view.addEventListener('touchstart', e => { if (e.touches.length === 2){ const r = view.getBoundingClientRect(); pinch = { d:dist(e.touches), z, x:(e.touches[0].clientX + e.touches[1].clientX)/2 - r.left, y:(e.touches[0].clientY + e.touches[1].clientY)/2 - r.top }; } }, { passive:true });
+  view.addEventListener('touchmove', e => { if (pinch && e.touches.length === 2){ e.preventDefault(); set(pinch.z * dist(e.touches) / pinch.d, pinch.x, pinch.y); } }, { passive:false });
+  view.addEventListener('touchend', e => { if (e.touches.length < 2) pinch = null; });
+  view.addEventListener('gesturestart', e => e.preventDefault());
+  view.addEventListener('wheel', e => { if (!e.ctrlKey && !e.metaKey) return; e.preventDefault(); const r = view.getBoundingClientRect(); set(z * Math.exp(-e.deltaY / 250), e.clientX - r.left, e.clientY - r.top); }, { passive:false });
+  frame = el('div',{class:'zoom-frame'});
+  const fullBtn = el('button',{class:'zoom-btn', title:'Big screen', onclick:()=>{ beep('tap'); const on = !frame.classList.contains('zoom-full'); frame.classList.toggle('zoom-full', on); document.body.classList.toggle('zoom-lock', on); fullBtn.textContent = on ? '✕' : '⛶'; setTimeout(() => set(on ? Math.max(z, view.clientWidth / W, view.clientHeight / H) : z), 30); }}, '⛶');
+  const controls = el('div',{class:'zoom-ctl'},
+    el('button',{class:'zoom-btn', title:'Zoom in', onclick:()=>{ beep('tap'); set(z * 1.3); }}, '＋'),
+    el('button',{class:'zoom-btn', title:'Zoom out', onclick:()=>{ beep('tap'); set(z / 1.3); }}, '－'),
+    el('button',{class:'zoom-btn wide', title:'See everything', onclick:()=>{ beep('tap'); set(fitZ(), 0, 0); view.scrollTo(0, 0); }}, '🔭 All'),
+    fullBtn);
+  frame.append(controls, view);
+  return { frame, get z(){ return z; }, set, fit:() => set(fitZ(), 0, 0), exitFull:() => { frame.classList.remove('zoom-full'); document.body.classList.remove('zoom-lock'); } };
+}
+
 /* ================= TOWN SQUARE (shared plaza) =================
    Both heroes live here. Tap the ground to walk, tap a building to go in, tap your brother or sister
    to wave or high-five. With cloud save on (the Claude link), each kid's spot and waves are shared
@@ -3894,7 +4486,7 @@ function screenQuestMap(){
 const PZ_W = 1600, PZ_H = 1120, PZ_C = { x:800, y:620 };
 const PZ_EMOTES = [['👋','Wave'],['✋','High five'],['💃','Dance'],['🎉','Cheer'],['❤️','Hug'],['😂','Silly']];
 const PZ_BUILDINGS = [
-  { id:'townhall', x:800, y:330, w:320, h:200, wall:'#f6ead3', roof:'#c2410c', trim:'#d9b26a', kind:'dome', icon:'🗺️', name:'Town Hall', sub:'Quest Map', go:() => screenQuestMap() },
+  { id:'townhall', x:800, y:330, w:320, h:200, wall:'#f6ead3', roof:'#c2410c', trim:'#d9b26a', kind:'dome', icon:'🏛️', name:'Town Hall', sub:'Quests & Quest Map', go:() => screenTownHall() },
   { id:'library',  x:330, y:400, w:230, h:160, wall:'#f3e3c7', roof:'#2f5fc4', trim:'#c9a46a', kind:'gable', icon:'📖', name:'Library', sub:'Read a story', go:() => screenHome() },
   { id:'shop',     x:1270, y:400, w:230, h:160, wall:'#f6e1e8', roof:'#9333ea', trim:'#d6a6c9', kind:'gable', icon:'🛍️', name:'Shop', sub:'Gear & treats', go:() => screenShop() },
   { id:'armory',   x:210, y:770, w:210, h:155, wall:'#e7ddd0', roof:'#7f1d1d', trim:'#a8a29e', kind:'gable', icon:'🛡️', name:'Armory', sub:'Your armor', go:() => screenArmory() },
@@ -3906,6 +4498,7 @@ const PZ_BUILDINGS = [
 const PZ_NPCS = [
   { id:'owl',   e:'🦉', name:'Mayor Hoot',    x:1000, y:470 },
   { id:'baker', e:'🐰', name:'Baker Bun',     x:560,  y:560 },
+  { id:'keeper', e:'🧞', name:'Treasure Keeper', x:1170, y:600 },
   { id:'well',  e:'⛲', name:'Wishing Fountain', x:PZ_C.x, y:PZ_C.y, hidden:true }
 ];
 const PZ_WORDS = {
@@ -3924,14 +4517,17 @@ const PZ_RIDDLES = {
 };
 const PZ = { pos:null, sub:false, beat:null, mine:null, timers:[] };
 // everyone else who can show up in town: the other kid, plus the Wizard once he has visited
-const pzOthers = () => ['daughter','son','dev'].filter(k => k !== kid && (k !== 'dev' || (DB.plaza && DB.plaza.dev)) && (k !== 'dev' || DB.kids.dev || DB.plaza.dev));
+const pzOthers = () => { const pl = DB.plaza || {};
+  const ids = Object.keys(DB.players || {}).filter(id => { const P = DB.players[id]; return id !== kid && !P.removed && (!P.wizard || pl[id]); });
+  Object.keys(pl).forEach(id => { if (id !== kid && !ids.includes(id) && !(DB.players[id] && DB.players[id].removed)) ids.push(id); });
+  return ids.slice(0, 8); };
 const pzDayIdx = () => Math.floor(Date.now() / 86400000);
 function pzRec(k){ DB.plaza = DB.plaza || {}; return DB.plaza[k] || null; }
 function pzOnline(r){ return !!(r && r.here && Date.now() - r.ts < 75000); }
 function pzPush(extra = {}){
   DB.plaza = DB.plaza || {};
   const prev = DB.plaza[kid] || { sent:[] };
-  const rec = Object.assign({}, prev, { x:PZ.pos.x, y:PZ.pos.y, here:true, name:kidName() }, extra, { ts:Date.now() });
+  const rec = Object.assign({}, prev, { x:PZ.pos.x, y:PZ.pos.y, here:true, name:kidName(), look:{ hero:K.hero, eq:(K.gear || {}).eq, avatar:K.avatar, style:styleOf(kid) } }, extra, { ts:Date.now() });
   rec.sent = (rec.sent || []).slice(-8);
   DB.plaza[kid] = rec; K.plazaPos = { x:PZ.pos.x, y:PZ.pos.y }; save();
   if (CLOUD.on && CLOUD.db){ try { CLOUD.db.doc('rq/plaza_' + kid).set({ json:JSON.stringify(rec), ts:rec.ts }).catch(()=>{}); } catch(e){} }
@@ -3939,7 +4535,7 @@ function pzPush(extra = {}){
 function pzSubscribe(){
   if (PZ.sub || !CLOUD.on || !CLOUD.db) return;
   PZ.sub = true;
-  ['son','daughter','dev'].forEach(k => {
+  [...new Set(['son','daughter','dev'].concat(Object.keys(DB.players || {})))].forEach(k => {
     try {
       CLOUD.db.doc('rq/plaza_' + k).onSnapshot(snap => {
         const d = snap.exists ? snap.data() : null; if (!d || typeof d.json !== 'string') return;
@@ -3956,9 +4552,13 @@ function pzToast(text){
   setTimeout(() => t.classList.add('out'), 3200); setTimeout(() => t.remove(), 3800);
 }
 function pzHeroFor(k, size){
-  const D = DB.kids[k];
+  // someone who plays on another device (the Wizard) is drawn from the look they share in town
+  let D = DB.kids[k];
+  if (!D){ const look = (pzRec(k) || {}).look;
+    if (!look || !look.hero) return el('div',{class:'hero-wrap', html:`<div style="font-size:${size*.7}px">🧙</div>`});
+    D = Object.assign(freshKid(), { __style:look.style, hero:look.hero, gear:{ owned:{}, eq:look.eq || {} }, avatar:Object.assign({ base:null, owned:[], equipped:{} }, look.avatar || {}) }); }
   if (D.hero){ const keep = K; K = D; try { return heroNode(size); } finally { K = keep; } }
-  return el('div',{class:'hero-wrap', html: D.avatar && D.avatar.base ? avatarSVG(D.avatar, size) : `<div style="font-size:${size*.7}px">${k === 'son' ? '🐲' : '🐰'}</div>`});
+  return el('div',{class:'hero-wrap', html: D.avatar && D.avatar.base ? avatarSVG(D.avatar, size) : `<div style="font-size:${size*.7}px">${trackOf(k) === 'son' ? '🐲' : '🐰'}</div>`});
 }
 
 /* ----- the drawn town ----- */
@@ -4040,18 +4640,21 @@ function screenTownSquare(){
   pzSubscribe();
   PZ.pos = Object.assign({ x:760, y:760 }, K.plazaPos || {});
   const world = el('div',{class:'plaza-world', html: pzSceneSVG()});
-  const view = el('div',{class:'plaza-view'}, world), frame = el('div',{class:'plaza-frame'}, view);
+  const view = el('div',{class:'plaza-view'});
+  const zz = zoomable({ view, content: world, W: PZ_W, H: PZ_H, start: PZ.z || (innerWidth < 600 ? .7 : 1), max: 2.2, onZoom: z => { PZ.z = z; } });
+  const frame = zz.frame; frame.classList.add('plaza-frame');
   const actor = (node, name, cls) => el('div',{class:'plaza-actor ' + (cls || '')}, el('div',{class:'pz-tag'}, name), node);
   const me = actor(pzHeroFor(kid, 96), kidName(), 'me' + (isDev() ? ' wizard' : ''));
   world.append(me);
   const put = (n, x, y, w = 96) => { n.style.left = (x - w/2) + 'px'; n.style.top = (y - w*1.25 - 30) + 'px'; n.style.zIndex = Math.round(y); };
   const bubble = (n, text, big) => { n.querySelectorAll('.pz-bubble').forEach(b => b.remove()); const b = el('div',{class:'pz-bubble' + (big ? ' big' : '')}, text); n.append(b); setTimeout(() => b.remove(), 2600); };
-  const camera = (x, y, smooth = true) => view.scrollTo({ left: x - view.clientWidth/2, top: y - view.clientHeight/2, behavior: smooth ? 'smooth' : 'auto' });
+  const camera = (x, y, smooth = true) => view.scrollTo({ left: x*zz.z - view.clientWidth/2, top: y*zz.z - view.clientHeight/2, behavior: smooth ? 'smooth' : 'auto' });
   K.plazaSeenBy = K.plazaSeenBy || {};
 
   // everyone else in town: live if they're here now, otherwise napping at their last spot
   const others = pzOthers();
   const homeSpot = { son:{ x:900, y:720 }, daughter:{ x:680, y:720 }, dev:{ x:1000, y:520 } };
+  others.forEach((id, i) => { if (!homeSpot[id]) homeSpot[id] = { x: 560 + (i % 4) * 160, y: 860 + Math.floor(i / 4) * 90 }; });
   const P = {};
   others.forEach(k => {
     const n = actor(pzHeroFor(k, 96), kidName(k), 'sib' + (k === 'dev' ? ' wizard' : ''));
@@ -4094,21 +4697,29 @@ function screenTownSquare(){
     me.classList.add('walking'); put(me, x, y); camera(x, y);
     frame.querySelectorAll('.pz-pop').forEach(p => p.remove());
     clearTimeout(walkT);
-    walkT = setTimeout(() => { if (id !== walkId) return; me.classList.remove('walking'); PZ.pos = { x, y }; pzPush(); then && then(); }, dur * 1000);
+    walkT = setTimeout(() => { if (id !== walkId) return; me.classList.remove('walking'); PZ.pos = { x, y }; pzPush(); }, dur * 1000);
+    then && then(); // answer the tap right away; the hero keeps walking over
   };
   // pop-up cards dock at the bottom of the town view so they're never cut off
   const pop = (...kids) => { frame.querySelectorAll('.pz-pop').forEach(p => p.remove()); const p = el('div',{class:'pz-pop'}, ...kids, el('button',{class:'pz-x', onclick:e => { e.stopPropagation(); p.remove(); }},'✕')); p.onclick = e => e.stopPropagation(); frame.append(p); return p; };
   const closePop = () => frame.querySelectorAll('.pz-pop').forEach(p => p.remove());
-  const leave = fn => { pzPush({ here:false }); fn(); };
+  const leave = fn => { zz.exitFull(); pzPush({ here:false }); fn(); };
 
   // buildings and the fountain
-  world.addEventListener('click', e => {
+  // iPad Safari won't send "click" for taps on plain shapes, so taps are read from pointer events
+  // (a finger that moves more than a little is a scroll, not a tap)
+  let tapStart = null;
+  world.addEventListener('pointerdown', e => { tapStart = e.isPrimary ? { x:e.clientX, y:e.clientY, t:Date.now() } : null; });
+  world.addEventListener('pointercancel', () => { tapStart = null; });
+  world.addEventListener('pointerup', e => {
+    const st = tapStart; tapStart = null;
+    if (!st || Math.hypot(e.clientX - st.x, e.clientY - st.y) > 12 || Date.now() - st.t > 800) return;
     if (e.target.closest('.plaza-actor, .pz-npc')) return;
     const g = e.target.closest('[data-b]');
     if (g && g.dataset.b === 'well') return walkTo(PZ_C.x, PZ_C.y + 96, wish);
     if (g){ const b = PZ_BUILDINGS.find(x => x.id === g.dataset.b); beep('tap');
       return walkTo(b.x, b.y + 30, () => { say(b.name + '. ' + b.sub); pop(el('div',{class:'pz-pop-e'}, b.icon), el('b',{}, b.name), el('small',{}, b.sub), el('button',{class:'btn small', onclick:() => leave(b.go)}, 'Go in ▶')); }); }
-    const r = world.getBoundingClientRect(); walkTo(e.clientX - r.left, e.clientY - r.top + 10);
+    const r = world.getBoundingClientRect(); walkTo((e.clientX - r.left) / zz.z, (e.clientY - r.top) / zz.z + 10);
   });
   function wish(){
     const today = todayStr();
@@ -4123,7 +4734,7 @@ function screenTownSquare(){
   PZ_NPCS.filter(n => !n.hidden).forEach(n => {
     const node = el('div',{class:'pz-npc', style:`left:${n.x-36}px;top:${n.y-90}px;z-index:${n.y}`}, el('div',{class:'pz-tag'}, n.name), el('div',{class:'pz-npc-e'}, n.e));
     if (n.id === 'baker') node.append(el('div',{class:'pz-stall'},'🥐🧁🍪'));
-    node.onclick = e => { e.stopPropagation(); beep('tap'); walkTo(n.x + 70, n.y + 10, () => n.id === 'owl' ? owl() : baker()); };
+    node.onclick = e => { e.stopPropagation(); beep('tap'); walkTo(n.x + 70, n.y + 10, () => n.id === 'owl' ? owl() : n.id === 'keeper' ? keeper() : baker()); };
     world.append(node);
   });
   function owl(){
@@ -4132,6 +4743,12 @@ function screenTownSquare(){
     pop(el('div',{class:'pz-pop-e'},'🦉'), el('small',{},'Word of the day'), el('div',{class:'pz-word'}, w),
       el('button',{class:'btn small ghost', onclick:() => say(w)}, '🔊 Hear it'),
       done ? el('small',{},'✅ You got today\'s word star!') : el('button',{class:'btn small', onclick:e => { K.pzWord = todayStr(); K.stars += 1; save(); beep('star'); bubble(me,'+1⭐',true); say('Hoot! Great reading!'); e.target.replaceWith(el('small',{},'✅ +1 ⭐')); }}, '🗣️ I read it!'));
+  }
+  function keeper(){
+    const n = chestCount();
+    say(n ? `You have ${n} treasure chest${n === 1 ? '' : 's'}! Let's open them!` : 'Earn chests by reading great stories and doing quests in the Town Hall!');
+    pop(el('div',{class:'pz-pop-e', html: chestSVG(n ? 'gold' : 'wood', 70)}), el('b',{},'Treasure Keeper'), el('small',{}, n ? `You have ${isDev() ? '∞' : n} chest${n === 1 ? '' : 's'} to open!` : 'Read great stories and finish Town Hall quests to earn chests.'),
+      el('button',{class:'btn small', onclick:() => leave(screenChests)}, '🎁 Treasure Chests'));
   }
   function baker(){
     const list = PZ_RIDDLES[TK], [q, opts] = list[(pzDayIdx() + (isDev() ? Math.floor(Math.random()*list.length) : 0)) % list.length];
@@ -4176,7 +4793,8 @@ function screenTownSquare(){
   const status = el('div',{class:'pz-status'}, CLOUD.on ? `☁️ Town is live. When ${kidsNames} opens Town Square, you'll see each other here.` : `📱 On this link, ${kidsNames} can only visit from this device. Use the Claude link to play together on different iPads.`);
   show(el('div',{class:'screen plaza-screen'},
     el('div',{class:'topbar'}, el('button',{class:'btn small', onclick:() => leave(() => screenHome())}, '← Back'), el('h1',{class:'title'}, '🏰 Storybrook Square'), el('div')),
-    frame, bar, status));
+    frame, status));
+  frame.append(bar);
   put(me, PZ.pos.x, PZ.pos.y); me.style.transitionDuration = '0s';
   others.forEach(k => draw(k, pzRec(k)));
   requestAnimationFrame(() => camera(PZ.pos.x, PZ.pos.y, false));
@@ -4208,6 +4826,7 @@ function wizardUnlockAll(){
   W.avatar.owned = [...new Set((W.avatar.owned || []).concat(Object.keys(AVATAR_BASES).filter(id => AVATAR_BASES[id].kid), SHOP.map(x => x[1])))];
   W.legendOwned = LEGENDS.map(l => l.id); W.legendSeen = LEGENDS.map(l => l.id);
   W.mythics = MYTHICS.map(m => m.id);
+  W.treasures = Object.fromEntries(TREASURES.map(t => [t.id, 3]));
   W.collection = [...new Set(['son','daughter'].flatMap(t => TRACKS[t].rewards.map(r => r[1])))];
   const Wd = (function(){ const keep = K; K = W; try { return worldOf('dev'); } finally { K = keep; } })();
   Wd.themes = Object.keys(WORLD_THEMES);
@@ -4237,10 +4856,11 @@ function screenWizard(){
             el('button',{class:'btn small blue', onclick:()=>{ beep('tap'); TK === 'daughter' ? startSpellCheck() : startSpelling(); }}, '✏️ Spelling'),
             el('button',{class:'btn small blue', onclick:()=>{ lootReveal((setForLevel(W.level) || SET_BY_ID.ember).id, pick(GEAR_SLOTS), false); }}, '🎁 Gear drop'),
             el('button',{class:'btn small blue', onclick:()=>{ W.chestPity = 999; W.mythics = []; maybeStarfallChest().then(() => wizardUnlockAll()); }}, '🌠 Starfall chest')),
-        row(el('button',{class:'btn small', onclick:()=>{ ['pzWish','pzRiddle','pzWord','pzHigh5'].forEach(k => delete W[k]); W.today = { date:null, ms:0 }; save(); done('Daily rewards reset'); }}, '🔄 Reset daily stuff'),
+        row(el('button',{class:'btn small blue', onclick:screenChests}, '🎁 Chests'), el('button',{class:'btn small blue', onclick:screenTownHall}, '🏛️ Town Hall quests')),
+        row(el('button',{class:'btn small', onclick:()=>{ ['pzWish','pzRiddle','pzWord','pzHigh5','quests'].forEach(k => delete W[k]); W.today = { date:null, ms:0 }; save(); done('Daily rewards reset'); }}, '🔄 Reset daily stuff'),
             el('button',{class:'btn small', onclick:()=>{ wizardUnlockAll(); done('Everything unlocked'); }}, '🔓 Unlock everything again'))),
       sec('🪄 Your wizard',
-        row(name, el('button',{class:'btn small', onclick:()=>{ DB.devName = name.value.trim() || 'The Wizard'; save(); done('Name saved'); }}, 'Save name')),
+        row(name, el('button',{class:'btn small', onclick:()=>{ DB.devName = name.value.trim() || 'The Wizard'; if (DB.players.dev) DB.players.dev.name = DB.devName; save(); done('Name saved'); }}, 'Save name')),
         el('p',{class:'muted'}, 'This is the name the kids see on you in Town Square.'),
         row(el('button',{class:'btn small blue', onclick:()=>screenHeroCreate(screenWizard)}, '✏️ Change look'), el('button',{class:'btn small blue', onclick:screenArmory}, '🛡️ Armory'),
             el('button',{class:'btn small blue', onclick:()=>screenWorld()}, '🏗️ My World'), el('button',{class:'btn small blue', onclick:screenTownSquare}, '🏰 Town Square'))),
@@ -4248,6 +4868,20 @@ function screenWizard(){
         row(el('button',{class:'btn small gray', onclick:async ()=>{ const ok = await modal(el('div',{}, el('h2',{},'Start the Wizard over?'), el('p',{},'Clears the Wizard\'s reading history and world. The kids\' progress is not touched.')), [['Cancel','gray',false],['Start over','',true]]); if (ok){ DB.kids.dev = freshKid(); DB.kids.dev.avatar = { base:null, owned:[], equipped:{} }; save(); enterKid('dev'); } }}, 'Start over'),
             el('button',{class:'btn small gray', onclick:()=>{ DB.devOn = false; save(); screenProfiles(); }}, 'Hide Wizard on this device')),
         el('p',{class:'muted'}, 'To bring the Wizard back: Grown-ups › Wizard Mode, or open the app link with #wizard at the end.')))));
+}
+
+/* ---------- Practice: skills, tricky words and spelling in one place ---------- */
+function screenPractice(){
+  stopAll();
+  const tricky = Object.values(K.words || {}).filter(w => !w.mastered && w.miss).length;
+  const card = (e, title, text, label, go, cls) => el('div',{class:'card next-card ' + (cls || '')},
+    el('div',{style:'font-size:56px;line-height:1'}, e), el('h2',{}, title), el('p',{}, text), el('button',{class:'btn big blue', onclick:()=>{ beep('tap'); go(); }}, label));
+  show(el('div',{class:'screen'},
+    el('div',{class:'topbar'}, el('button',{class:'btn ghost small', onclick:()=>screenHome()},'← Back'), el('h1',{class:'title'},'🎯 Practice'), el('div')),
+    el('div',{class:'cards'},
+      card('🧠', 'Skills', 'Sound and word lessons, one step at a time.', '🧠 Skills', () => { ensureSkillStart(); screenPath(); }),
+      card('🎯', 'Tricky Words', tricky ? `${tricky} word${tricky === 1 ? '' : 's'} to practice from your reading.` : 'Words you miss while reading show up here.', '🎯 Words', screenWords),
+      card('✏️', 'Spelling', TK === 'daughter' ? 'Hear a word, then type it.' : 'Hear a word, then build it with letter tiles.', '✏️ Spell', () => TK === 'daughter' ? startSpellCheck() : startSpelling()))));
 }
 
 /* ================= PARENT AREA ================= */
@@ -4261,7 +4895,7 @@ function screenPin(after){
     if (d === '⌫') entered = entered.slice(0,-1); else if (entered.length < 4) entered += d;
     dots.textContent = '●'.repeat(entered.length) + '○'.repeat(4-entered.length);
     if (entered.length === 4){
-      if (entered === DB.pin) setTimeout(()=> after ? after() : screenParent(kid && kid !== 'dev' ? kid : 'daughter'), 150);
+      if (entered === DB.pin) setTimeout(()=> after ? after() : screenPlayers(), 150);
       else { msg.textContent = 'Not quite. Try again.'; entered = ''; setTimeout(()=>dots.textContent='○○○○', 300); }
     }
   };
@@ -4277,7 +4911,7 @@ function screenPin(after){
 /* Weekly summary for grown-ups: minutes and activities per day, this week vs last week, tricky words,
    and one plain-language suggestion. Minutes come from each session's `ms` (recorded from Nov 2026 on). */
 function weeklySummary(which){
-  const k = DB.kids[which], name = DB.names[which];
+  const k = DB.kids[which], name = kidName(which);
   const dayKey = d => todayStr(d);
   const days = Array.from({ length:7 }, (_, i) => { const d = new Date(); d.setDate(d.getDate() - (6 - i)); return d; });
   const inRange = (s, from, to) => { const t = new Date(s.date); return t >= from && t < to; };
@@ -4297,7 +4931,7 @@ function weeklySummary(which){
   let tip;
   if (!thisWeek.length) tip = `No reading yet this week. A short story at a set time each day (after school or before bed) builds the habit.`;
   else if (qNow != null && qNow < 70) tip = `Questions are the hard part right now. Before answering, ask ${name} to tell you what happened in the story, and encourage highlighting clues.`;
-  else if (which === 'son' && aNow != null && aNow < 90) tip = `Some words are tricky. Have ${name} tap 👂 Hear it first, then read the same story again. A second read builds speed and confidence.`;
+  else if (trackOf(which) === 'son' && aNow != null && aNow < 90) tip = `Some words are tricky. Have ${name} tap 👂 Hear it first, then read the same story again. A second read builds speed and confidence.`;
   else if (goalDays < 4) tip = `${name} met the ${goalMin(which)}-minute goal on ${goalDays} of 7 days. A regular reading time helps the streak grow.`;
   else if (tricky.length >= 3) tip = `Great week! Practice these words together: ${tricky.slice(0, 3).join(', ')}.`;
   else tip = `Great week! ${name} is ready for a challenge. Try a longer story or the next chapter book.`;
@@ -4310,21 +4944,23 @@ function weeklySummary(which){
       el('div',{class:'stat'}, el('b',{}, minutes(thisWeek) + ' min'), el('span',{}, `read this week (goal met ${goalDays}/7 days)`)),
       el('div',{class:'stat'}, el('b',{}, stories(thisWeek)), el('span',{}, `stories & chapters finished (last week ${stories(lastWeek)})`)),
       el('div',{class:'stat'}, el('b',{}, qNow == null ? '–' : qNow + '%'), el('span',{}, 'questions right' + arrow(qNow, qBefore))),
-      which === 'son' ? el('div',{class:'stat'}, el('b',{}, aNow == null ? '–' : aNow + '%'), el('span',{}, 'words read right' + arrow(aNow, accAvg(lastWeek)))) : null),
+      trackOf(which) === 'son' ? el('div',{class:'stat'}, el('b',{}, aNow == null ? '–' : aNow + '%'), el('span',{}, 'words read right' + arrow(aNow, accAvg(lastWeek)))) : null),
     el('p',{}, el('b',{},'Tricky words: '), tricky.length ? tricky.join(', ') : 'none right now 🎉'),
     el('p',{class:'week-tip'}, '💡 ' + tip));
 }
 
 function screenParent(which){
   document.body.className = 'parent';
-  const k = DB.kids[which], track = TRACKS[which];
-  const label = DB.names[which] + (which === 'daughter' ? ' (Dragon Academy · Sunny Day Club)' : ` (${CAT} & Pals · Detective ${CAT})`);
+  if (!which || !DB.kids[which] || !playerOf(which) || playerOf(which).wizard) which = playerIds(false)[0];
+  if (!which) return screenPlayers();
+  const k = DB.kids[which], track = TRACKS[trackOf(which)];
+  const label = kidName(which) + ' (' + TRACK_INFO[trackOf(which)].sub + ')';
   const wizRow = el('div',{class:'card', style:'margin-bottom:14px;display:flex;align-items:center;gap:12px;flex-wrap:wrap'}, el('b',{},'🧙 Wizard Mode'),
     el('span',{class:'muted', style:'flex:1'}, 'A secret grown-up player on this device only: everything free, any track or level, for testing.'),
     el('button',{class:'btn small', onclick:()=>{ DB.devOn = true; save(); enterKid('dev'); }}, DB.devOn ? 'Open Wizard' : 'Turn on'));
   const tabs = el('div',{class:'tabs'},
-    el('button',{class:'tab' + (which==='daughter'?' active':''), onclick:()=>screenParent('daughter')},'🐉 ' + DB.names.daughter),
-    el('button',{class:'tab' + (which==='son'?' active':''), onclick:()=>screenParent('son')},'🐲 ' + DB.names.son));
+    el('button',{class:'tab players-tab', onclick:()=>screenPlayers()},'👨‍👩‍👧 All players'),
+    ...playerIds(false).map(id => el('button',{class:'tab' + (which===id?' active':''), onclick:()=>screenParent(id)}, TRACK_INFO[trackOf(id)].icon + ' ' + kidName(id))));
 
   const recent = k.sessions.filter(s => s.mode === 'normal').slice(0,10);
   const avg = f => recent.length ? Math.round(recent.reduce((t,s)=>t+(f(s)||0),0)/recent.length) : '–';
@@ -4359,7 +4995,7 @@ function screenParent(which){
       el('div',{class:'result-grid'},
         el('div',{class:'stat'}, el('b',{}, k.placed ? k.level + '/' + track.levels.length : 'Not placed'), el('span',{},'current level')),
         el('div',{class:'stat'}, el('b',{}, avg(s=>s.accuracy) + (recent.length?'%':'')), el('span',{},'avg accuracy (last 10)')),
-        el('div',{class:'stat'}, el('b',{}, which==='daughter' || k.level>=4 ? avg(s=>s.wcpm) : '–'), el('span',{},'avg words/min')),
+        el('div',{class:'stat'}, el('b',{}, trackOf(which)==='daughter' || k.level>=4 ? avg(s=>s.wcpm) : '–'), el('span',{},'avg words/min')),
         el('div',{class:'stat'}, el('b',{}, quizPct.length ? Math.round(quizPct.reduce((a,b)=>a+b,0)/quizPct.length*100)+'%' : '–'), el('span',{},'avg quiz score')),
         el('div',{class:'stat'}, el('b',{}, k.passStreak + ' / ' + k.failStreak), el('span',{},'pass / struggle streak')),
         el('div',{class:'stat'}, el('b',{}, k.streak.count||0), el('span',{},'day streak'))),
@@ -4406,17 +5042,16 @@ function screenParent(which){
           sel.value = DB.voiceName || ''; sel.onchange = () => { DB.voiceName = sel.value || null; save(); pickVoice(); say('Hi! This is how I will sound when I read to you.'); }; return sel; })(),
         el('button',{class:'btn small blue', onclick:()=>{ pickVoice(); say('Hi! This is how I will sound when I read to you.'); }},'🔊 Test voice')),
       el('p',{class:'muted'}, 'Now using: ' + (voice ? voice.name : 'device default') + '. For the most natural voice on iPad: Settings › Accessibility › Spoken Content › Voices › English, download an "Enhanced" or "Premium" voice (like Ava or Zoe), then pick it here.'),
-      el('div',{class:'row'}, (()=>{ const i = el('input',{type:'text', value: DB.names[which]}); i.onchange = () => { if (i.value.trim()){ DB.names[which] = i.value.trim(); save(); } }; return i; })(), el('span',{class:'muted'},'Name shown in the app')),
+      el('div',{class:'row'}, (()=>{ const i = el('input',{type:'text', value: kidName(which)}); i.onchange = () => { if (i.value.trim()){ playerOf(which).name = i.value.trim(); if (DB.names[which]) DB.names[which] = i.value.trim(); save(); savePlayerMeta && savePlayerMeta(which); } }; return i; })(), el('span',{class:'muted'},'Name shown in the app')),
       el('div',{class:'row', style:'margin-top:8px'}, (()=>{ const i = el('input',{type:'number', min:'5', max:'60', step:'5', value: goalMin(which), style:'width:110px'});
           i.onchange = () => { const v = Math.max(5, Math.min(60, parseInt(i.value, 10) || 10)); DB.goalMin = Object.assign({}, DB.goalMin, { [which]: v }); i.value = v; save(); }; return i; })(),
-        el('span',{class:'muted'}, `Daily reading goal in minutes for ${DB.names[which]} (the day streak grows when it's reached)`)),
+        el('span',{class:'muted'}, `Daily reading goal in minutes for ${kidName(which)} (the day streak grows when it's reached)`)),
       el('div',{class:'row', style:'margin-top:8px'}, (()=>{ const i = el('input',{type:'text', value: CAT}); return i; })(),
         el('button',{class:'btn small blue', onclick:ev=>{ const v = ev.currentTarget.previousSibling.value.trim().replace(/[^A-Za-z' -]/g,''); if (v){ DB.catName = v[0].toUpperCase() + v.slice(1); save(); location.reload(); } }},'Rename the cat'),
         el('span',{class:'muted'},`Miles's story cat (now "${CAT}") — renames him in every story`)),
       el('div',{class:'row', style:'margin-top:8px'}, (()=>{ const sel = el('select',{},
-          el('option',{value:''},'Ask who\'s reading (show both kids)'),
-          el('option',{value:'daughter'},'Always open ' + DB.names.daughter),
-          el('option',{value:'son'},'Always open ' + DB.names.son));
+          el('option',{value:''},'Ask who\'s reading (show everyone)'),
+          ...playerIds(false).map(id => el('option',{value:id},'Always open ' + kidName(id))));
           sel.value = DB.pinKid || ''; sel.onchange = () => { DB.pinKid = sel.value || null; save(); }; return sel; })(),
         el('span',{class:'muted'},'When this iPad opens the app')),
       el('div',{class:'row', style:'margin:8px 0'}, (()=>{ const i = el('input',{type:'number', placeholder:'Bonus stars', style:'width:150px'}); return i; })(),
@@ -4440,7 +5075,7 @@ function screenParent(which){
       (status2 = el('p',{class:'muted'}))));
   show(s);
   function doImport(txt){
-    try { const d = JSON.parse(txt); if (!d.kids) throw 0; DB = Object.assign(load(), d); for (const kk of ['son','daughter']) DB.kids[kk] = Object.assign(freshKid(), d.kids[kk]||{}); save(); status2.textContent = 'Imported ✅'; setTimeout(()=>screenParent(which), 600); }
+    try { const d = JSON.parse(txt); if (!d.kids) throw 0; DB = Object.assign(load(), d); for (const kk of Object.keys(DB.players)) if (d.kids[kk]) DB.kids[kk] = Object.assign(freshKid(), d.kids[kk]); save(); status2.textContent = 'Imported ✅'; setTimeout(()=>screenParent(which), 600); }
     catch(e){ status2.textContent = 'That doesn\'t look like a Reading Quest export.'; }
   }
 }
@@ -4459,13 +5094,22 @@ async function playRec(id, btn){
   next();
 }
 
+/* If something breaks, show a small note with the error so a grown-up can report it (instead of a dead button). */
+function showErr(msg){
+  if (document.querySelector('.err-note')) return;
+  const n = el('div',{class:'err-note', onclick:()=>n.remove()}, '⚠️ Oops, something went wrong. Tap to close. Details for Dad: ' + String(msg).slice(0, 160));
+  document.body.append(n); setTimeout(() => n.remove(), 15000);
+}
+window.addEventListener('error', e => showErr((e.message || 'error') + (e.lineno ? ' @' + e.lineno : '')));
+window.addEventListener('unhandledrejection', e => showErr(e.reason && (e.reason.message || e.reason)));
 /* ---------------- boot ---------------- */
 window.addEventListener('pagehide', stopAll);
 document.addEventListener('visibilitychange', () => { if (document.hidden && recogOn) stopRecog(); });
-if (/wizard/i.test(location.hash)) DB.devOn && DB.kids.dev ? enterKid('dev') : screenPin(() => enterKid('dev'));
-else if (DB.pinKid && DB.kids[DB.pinKid]) enterKid(DB.pinKid);
-else screenProfiles();
-cloudStart();
+if (familyMode()){
+  // show the cached profiles right away when this device already belongs to a family; sign-in is checked in the background
+  if (DB.family) bootLocal(); else { const s = el('div',{class:'screen center'}, el('h1',{class:'title center'}, '📚 Reading Quest'), el('p',{class:'subtitle center'}, 'Loading…')); show(s); }
+  familyStart();
+} else { bootLocal(); cloudStart(); }
 watchForUpdates();
 
 // test hooks
