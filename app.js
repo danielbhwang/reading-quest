@@ -66,7 +66,13 @@ function load(fresh){
   d.devName = d.devName || 'The Wizard';
   return d;
 }
-function save(){ try { localStorage.setItem(STORE_KEY, JSON.stringify(DB)); } catch(e){} try { cloudQueue(); } catch(e){ /* cloud code not set up yet during startup */ } }
+function save(){
+  try { localStorage.setItem(STORE_KEY, JSON.stringify(DB)); } catch(e){}
+  // only the player being played (or edited by a grown-up) on THIS device may be sent to the cloud,
+  // so an old copy of a sibling stored on this iPad can never overwrite their real progress
+  try { if (kid && DB.kids[kid]) CLOUD.dirty[kid] = true; if (CLOUD.editing && DB.kids[CLOUD.editing]) CLOUD.dirty[CLOUD.editing] = true; } catch(e){}
+  try { cloudQueue(); } catch(e){ /* cloud code not set up yet during startup */ }
+}
 DB = load();
 
 // One-time gifts from a grown-up. Each id is granted once per device and announced on the kid's home screen.
@@ -315,7 +321,7 @@ function show(node){
 const APP_VERSION = (function(){ const s = document.querySelector('script[src*="app.js"]'), m = s && /[?&]v=([^&]+)/.exec(s.getAttribute('src')); return m ? m[1] : 'dev'; })();
 // what gets saved to the cloud: shared settings (incl. the player list) + one doc per player
 const cloudKeys = () => ['settings'].concat(Object.keys(DB.players || {}).filter(id => DB.kids[id]));
-const CLOUD = { db:null, on:false, status:'local', last:{}, timers:{}, busy:{}, again:{}, mine:{} };
+const CLOUD = { db:null, on:false, status:'local', last:{}, timers:{}, busy:{}, again:{}, mine:{}, dirty:{}, seen:{}, waiting:{}, editing:null };
 let onCloudUpdate = null;
 const CLOUD_TEXT = {
   local: /github\.io$/.test(location.hostname) ? '📱 Saved on this iPad only. For cloud save on every device, use the Claude link.' : '📱 Saved on this device only',
@@ -331,16 +337,27 @@ const settingsOf = d => ({ pin:d.pin, names:d.names, catName:d.catName || null, 
 const cloudBody = key => key === 'settings' ? settingsOf(DB) : DB.kids[key];
 // real progress only (never stars: a fresh device's one-time gift must not outrank the cloud copy)
 const kidScore = k => (k.sessions||[]).length + ((k.world && k.world.items) || []).length + (k.collection||[]).length + (k.placed ? k.level || 1 : 0);
+const newestPlay = k => (k.sessions || []).slice(0, 5).reduce((m, x) => Math.max(m, Date.parse(x.date) || 0), 0);
+// a cloud copy that is behind this device (lower level and no newer reading) is stale, unless a grown-up reset the player
+function isRegression(remote, local){
+  if (!remote || !local || !local.placed) return false;
+  if ((remote.resetAt || 0) > (local.resetAt || 0)) return false;
+  return (remote.level || 1) < (local.level || 1) && newestPlay(remote) <= newestPlay(local);
+}
 function setCloudTs(key, ts){ DB.cloudTs = DB.cloudTs || {}; DB.cloudTs[key] = ts; }
 function cloudQueue(){
   if (!CLOUD.on) return;
   cloudKeys().forEach(key => {
+    if (key !== 'settings' && !CLOUD.dirty[key]) return;
     if (JSON.stringify(cloudBody(key)) === CLOUD.last[key]) return;
     clearTimeout(CLOUD.timers[key]); CLOUD.timers[key] = setTimeout(() => cloudPush(key), 1200);
   });
 }
-async function cloudPush(key, retried){
+async function cloudPush(key, retried, force){
   if (!CLOUD.on) return;
+  // never write a player before this device has seen the cloud's copy (it could be newer)
+  if (key !== 'settings' && !CLOUD.seen[key]){ CLOUD.waiting[key] = true; return; }
+  if (key !== 'settings' && !force && !CLOUD.dirty[key]) return;
   if (CLOUD.busy[key]){ CLOUD.again[key] = true; return; }
   let body = cloudBody(key), j = JSON.stringify(body);
   if (j === CLOUD.last[key]) return;
@@ -355,29 +372,35 @@ async function cloudPush(key, retried){
         await CLOUD.db.doc('rq/' + key).set({ json:j, ts });
       } else throw e;
     }
-    CLOUD.last[key] = JSON.stringify(body); setCloudTs(key, ts);
+    CLOUD.last[key] = JSON.stringify(body); setCloudTs(key, ts); delete CLOUD.dirty[key];
     try { localStorage.setItem(STORE_KEY, JSON.stringify(DB)); } catch(e){}
-    if (CLOUD.status !== 'cloud') setCloudStatus('cloud');
+    if (CLOUD.status !== CLOUD.okStatus && CLOUD.okStatus) setCloudStatus(CLOUD.okStatus);
   } catch(e){
     setCloudStatus('offline');
     if (!retried && (!e || e.code === 'unavailable' || e.code === 'resource_exhausted')) setTimeout(() => cloudPush(key, true), 3000 + Math.random()*3000);
   }
   CLOUD.busy[key] = false;
-  if (CLOUD.again[key]){ CLOUD.again[key] = false; cloudPush(key); }
+  if (CLOUD.again[key]){ CLOUD.again[key] = false; cloudPush(key, false, force); }
 }
 function cloudApply(key, snap){
   if (snap.metadata.hasPendingWrites) return;
   const d = snap.exists ? snap.data() : null;
-  if (!d || typeof d.json !== 'string'){ if (!snap.metadata.fromCache) cloudPush(key); return; } // cloud empty: seed it from this device
+  const fromServer = !snap.metadata.fromCache;
+  const wasWaiting = CLOUD.waiting[key];
+  if (fromServer){ CLOUD.seen[key] = true; delete CLOUD.waiting[key]; }
+  if (!d || typeof d.json !== 'string'){ // cloud empty: seed it from this device (never from a blank placeholder)
+    if (fromServer && (key === 'settings' || CLOUD.dirty[key] || kidScore(DB.kids[key] || {}) > 0)) cloudPush(key, false, true); return; }
   const mine = JSON.stringify(cloudBody(key));
   if (d.json === mine){ CLOUD.last[key] = mine; setCloudTs(key, d.ts); return; }
   // our own save coming back (or something older than it): nothing new to take
-  if (CLOUD.mine[key] && d.ts <= CLOUD.mine[key]){ if (!snap.metadata.fromCache) cloudQueue(); return; }
+  if (CLOUD.mine[key] && d.ts <= CLOUD.mine[key]){ if (fromServer) cloudQueue(); return; }
   let remote; try { remote = JSON.parse(d.json); } catch(e){ return; }
   const base = (DB.cloudTs || {})[key];
-  // after the first sync, a newer cloud save wins; on a device's very first sync, keep whichever copy has more progress
-  const takeRemote = base ? d.ts > base : (key === 'settings' || kidScore(remote) >= kidScore(DB.kids[key]));
-  if (!takeRemote){ if (!snap.metadata.fromCache) cloudPush(key); return; }
+  // after the first sync, a newer cloud save wins; on a device's very first sync, keep whichever copy has more progress.
+  // Either way, a cloud copy that is BEHIND this device's real progress is replaced, never taken.
+  let takeRemote = base ? d.ts > base : (key === 'settings' || kidScore(remote) >= kidScore(DB.kids[key]));
+  if (key !== 'settings' && takeRemote && isRegression(remote, DB.kids[key])) takeRemote = false;
+  if (!takeRemote){ if (fromServer){ if (key !== 'settings' && (isRegression(remote, DB.kids[key]) || !base)) cloudPush(key, false, true); else if (wasWaiting) cloudQueue(); } return; }
   let addLocal = false;
   if (key === 'settings' && !base){ // first sync on this device: keep players that only this device knows (e.g. Gianna & Miles on an old iPad)
     const mine = DB.players || {}, theirs = remote.players || {};
@@ -385,7 +408,11 @@ function cloudApply(key, snap){
     if (extra.length){ remote.players = Object.assign({}, theirs); extra.forEach(id => remote.players[id] = mine[id]); addLocal = true; }
   }
   if (key === 'settings'){ Object.assign(DB, settingsOf(Object.assign(settingsOf(DB), remote))); ensurePlayerData(); cloudSubscribeAll(); if (addLocal) setTimeout(() => cloudPush('settings'), 50); }
-  else { DB.kids[key] = Object.assign(freshKid(), remote); if (kid === key) K = DB.kids[key]; }
+  else {
+    const old = DB.kids[key];
+    if (old && kidScore(old) > kidScore(remote)){ DB.backup = DB.backup || {}; DB.backup[key] = { at: Date.now(), level: old.level, json: JSON.stringify(old) }; }
+    DB.kids[key] = Object.assign(freshKid(), remote); if (kid === key) K = DB.kids[key];
+  }
   CLOUD.last[key] = addLocal ? null : JSON.stringify(cloudBody(key)); setCloudTs(key, d.ts);
   try { localStorage.setItem(STORE_KEY, JSON.stringify(DB)); } catch(e){}
   if (onCloudUpdate) onCloudUpdate();
@@ -600,7 +627,7 @@ function screenPlayerEdit(id){
   stopAll(); document.body.className = 'parent';
   const P = id ? DB.players[id] : { name:'', track:'son', style:'boy' };
   const name = el('input',{type:'text', placeholder:'First name', value:P.name, maxlength:'20'});
-  let track = P.track, style = P.style;
+  let track = P.track, style = P.style, quiz = P.quiz || (P.track === 'daughter' ? 'challenge' : 'standard');
   const pick = (opts, cur, set) => { const wrap = el('div',{class:'pe-opts'}); opts.forEach(([v, big, small]) => { const b = el('button',{class:'pe-opt' + (cur === v ? ' on' : ''), onclick:()=>{ set(v); [...wrap.children].forEach(x => x.classList.toggle('on', x === b)); beep('tap'); }}, el('b',{}, big), el('small',{}, small)); wrap.append(b); }); return wrap; };
   const pin = el('input',{type:'password', inputmode:'numeric', maxlength:'4', placeholder: id && P.pin ? 'New PIN (leave blank to keep)' : '4-digit PIN (optional)'});
   const msg = el('p',{class:'muted'});
@@ -610,9 +637,9 @@ function screenPlayerEdit(id){
     if (pin.value && !/^\d{4}$/.test(pin.value)){ msg.textContent = 'The PIN must be exactly 4 numbers.'; return; }
     let pid = id;
     if (!pid){ pid = 'p_' + Date.now().toString(36) + Math.random().toString(36).slice(2, 6); DB.players[pid] = { order: 10 + Object.keys(DB.players).length, created: todayStr() }; }
-    Object.assign(DB.players[pid], { name:n, track, style });
+    Object.assign(DB.players[pid], { name:n, track, style, quiz });
     if (pin.value) DB.players[pid].pin = await pinHash(pid, pin.value);
-    ensurePlayerData(); save(); cloudSubscribeAll(); beep('star');
+    ensurePlayerData(); CLOUD.dirty[pid] = true; save(); cloudSubscribeAll(); beep('star');
     if (!id) await modal(el('div',{}, el('div',{class:'big-e'},'🎉'), el('h2',{}, `${n} joined Reading Quest!`), el('p',{}, `${n} can now tap their hero on the "Who is reading?" screen` + (pin.value ? ' and type their PIN.' : '.'))), [['Great ▶','',1]]);
     screenPlayers();
   };
@@ -623,6 +650,7 @@ function screenPlayerEdit(id){
       el('h3',{}, 'Reading track'), pick([['son', '🐲 ' + TRACK_INFO.son.name, TRACK_INFO.son.ages], ['daughter', '🐉 ' + TRACK_INFO.daughter.name, TRACK_INFO.daughter.ages]], track, v => track = v),
       id && track !== P.track ? null : null,
       el('h3',{}, 'Starter outfit'), pick([['girl','👗 Blossom','Pink dress & hair bow'], ['boy','🧢 Explorer','Blue jacket & red scarf']], style, v => style = v),
+      el('h3',{}, 'Story questions'), pick([['standard','🙂 Standard','Questions as written'], ['challenge','🧠 Challenge','Tricky choices, order of events, spot the fake']], quiz, v => quiz = v),
       el('h3',{}, 'Kid PIN'), pin, el('p',{class:'muted'}, 'Kids type this after tapping their hero, so siblings don\'t play as each other. Forgot it? Set a new one here.'),
       id && P.pin ? el('button',{class:'btn small gray', onclick:()=>{ delete DB.players[id].pin; save(); msg.textContent = 'PIN removed.'; }}, 'Remove PIN') : null,
       el('div',{class:'row', style:'margin-top:14px'}, el('button',{class:'btn big', onclick:saveIt}, id ? '💾 Save' : '✨ Add player'),
@@ -678,6 +706,7 @@ function mascotNode(){
 /* ================= SCREENS ================= */
 
 function screenProfiles(){
+  CLOUD.editing = null;
   document.body.className = '';
   stopAll();
   const s = el('div',{class:'screen'},
@@ -1453,8 +1482,69 @@ function finishReading(){
 }
 
 /* ---------- quiz ---------- */
+/* Challenge questions (Gia's track by default; a grown-up can switch per player):
+   - wrong answers come from the same kind of question in other stories (names for "who", places for "where", reasons for "why"),
+     so every choice sounds possible and she has to remember what really happened;
+   - "why" and "how" questions are kept first;
+   - two new kinds of question are made from the story itself: what happened FIRST, and which event was NOT in this story. */
+let QUIZ_POOL = null;
+function allTrackStories(tk){
+  const T2 = TRACKS[tk], out = [];
+  (T2.levels || []).forEach(L => (L.stories || []).forEach(st => out.push(st)));
+  if (tk === 'daughter'){ try { Object.values(DAUGHTER_EXTRA).flat().forEach(st => out.push(st)); } catch(e){} try { BOOKS.forEach(b => (b.chapters || []).forEach(c => out.push(c))); } catch(e){} }
+  return out.filter(st => st && st.qs && st.text);
+}
+const qKind = q => { const w = q.toLowerCase().replace(/[^a-z ]/g, '').split(' ').filter(Boolean); return w[0] === 'what' || w[0] === 'which' ? w.slice(0, 2).join(' ') : w[0]; };
+function quizPool(tk){
+  QUIZ_POOL = QUIZ_POOL || {};
+  if (QUIZ_POOL[tk]) return QUIZ_POOL[tk];
+  const byKind = {}, sentences = [];
+  allTrackStories(tk).forEach(st => {
+    st.qs.forEach(([q, o, a]) => { (byKind[qKind(q)] = byKind[qKind(q)] || []).push({ ans:o[a], story:st }); });
+    storySentences(st.text).forEach(t => sentences.push({ t, story:st }));
+  });
+  return (QUIZ_POOL[tk] = { byKind, sentences });
+}
+function storySentences(text){
+  return (text || '').replace(/\s+/g, ' ').replace(/([.!?]["”’]?)\s+/g, '$1\n').split('\n').map(x => x.trim())
+    .filter(x => { const n = x.split(' ').length; return n >= 5 && n <= 18 && /^["“]?[A-Z]/.test(x); });
+}
+const tidy = t => t.replace(/^["“]|["”]$/g, '').trim();
+function hardDistractors(q, opts, ans, story, pool){
+  const right = opts[ans], len = right.length, have = new Set(opts.map(o => o.toLowerCase()));
+  const same = x => !story.series || !x.story.series || x.story.series === story.series; // stay in the same world of stories
+  const cands = shuffle((pool.byKind[qKind(q)] || []).filter(x => x.story !== story && same(x)).map(x => x.ans))
+    .filter(t => { const l = t.toLowerCase(); if (have.has(l)) return false; have.add(l); return t.length >= len * .6 && t.length <= len * 1.7; });
+  if (cands.length < 2) return opts; // not enough look-alikes: keep the story's own choices
+  const keep = opts.filter((o, i) => i !== ans);
+  // mix: up to 2 look-alikes from other stories + the story's own best wrong choice
+  return [right, ...cands.slice(0, 2), keep[0]].slice(0, 4);
+}
+function challengeQuiz(story){
+  const pool = quizPool(TK), base = story.qs.slice();
+  const rank = q => /^(why|how)/i.test(q[0]) ? 0 : /^(which|what (does|do|did|made|happened))/i.test(q[0]) ? 1 : 2;
+  const keep = base.map((q, i) => [q, i]).sort((a, b) => rank(a[0]) - rank(b[0]) || a[1] - b[1]).slice(0, 3).sort((a, b) => a[1] - b[1]).map(x => x[0]);
+  const out = keep.map(([q, o, a]) => { const opts = hardDistractors(q, o, a, story, pool); return { q, opts: shuffle(opts.map((t, i) => ({ t, right: i === 0 && opts !== o ? true : opts === o ? i === a : false }))) }; });
+  const sents = storySentences(story.text), plain = sents.filter(x => !/["“”]/.test(x));
+  if (plain.length >= 4){ const sents = plain; // what happened first? three moments spread across the story
+    const n = sents.length, picks = [sents[Math.floor(n * .1)], sents[Math.floor(n * .5)], sents[Math.min(n - 1, Math.floor(n * .85))]];
+    if (new Set(picks).size === 3){ const last = Math.random() < .5;
+      out.push({ q: last ? 'Which of these happened LAST in the story?' : 'Which of these happened FIRST in the story?', opts: shuffle(picks.map((t, i) => ({ t: tidy(t), right: last ? i === 2 : i === 0 }))) }); }
+  }
+  const others = shuffle(pool.sentences.filter(x => x.story !== story && !/["“”]/.test(x.t) && (!story.series || x.story.series === story.series)));
+  const real = shuffle(plain).slice(0, 3);
+  if (real.length === 3 && others.length){ // which did NOT happen in this story?
+    out.push({ q: 'Which of these did NOT happen in this story?', opts: shuffle([...real.map(t => ({ t: tidy(t), right:false })), { t: tidy(others[0].t), right:true }]) });
+  }
+  while (out.length < 5 && base.length > out.length){ const q = base.find(b => !keep.includes(b) && !out.some(o => o.q === b[0])); if (!q) break; out.push({ q:q[0], opts: shuffle(q[1].map((t, i) => ({ t, right: i === q[2] }))) }); }
+  return out.slice(0, 5);
+}
+const quizLevelOf = id => { const P = playerOf(id); return P && P.quiz ? P.quiz : trackOf(id) === 'daughter' ? 'challenge' : 'standard'; };
 function screenQuiz(){
-  const qs = run.act.story.qs.slice(0, 5).map(([q, opts, ans]) => ({ q, opts: shuffle(opts.map((o,i)=>({ t:o, right:i===ans }))) }));
+  const st = run.act.story;
+  let qs = null;
+  if (quizLevelOf(kid) === 'challenge' && !run.opts.boss){ try { qs = challengeQuiz(st); } catch(e){ qs = null; } }
+  if (!qs || qs.length < 3) qs = st.qs.slice(0, 5).map(([q, opts, ans]) => ({ q, opts: shuffle(opts.map((o,i)=>({ t:o, right:i===ans }))) }));
   run.quiz = { qs, i:0, correct:0 };
   renderQuestion();
 }
@@ -1470,6 +1560,8 @@ function renderQuestion(){
       el('span',{class:'say', onclick:ev=>{ ev.stopPropagation(); say(o.t); }}, '🔊'));
     b.addEventListener('click', () => {
       if (answered) return; answered = true;
+      if (memory && !item.looked && o.right){ run.proofStars = (run.proofStars || 0) + 1; setTimeout(() => { fb.textContent += '  🧠 Memory bonus +1 ⭐'; }, 30); }
+      if (memory) reveal(false);
       if (o.right){ b.classList.add('right'); Q.correct++; beep('ok'); burst(); if (run.opts.boss) bossHud(true); fb.textContent = pick(['Yes! 🎉','You got it! ⭐','Awesome! 🙌','Correct! 🌟']); fb.style.color = 'var(--ok)'; startProof(o.t); }
       else {
         b.classList.add('wrong'); beep('bad'); fb.textContent = 'Good try! The answer is highlighted in green.'; fb.style.color = 'var(--bad)';
@@ -1509,6 +1601,12 @@ function renderQuestion(){
       ? `${run.act.book.emoji} ${run.act.book.title} · Chapter ${run.act.chapterIndex + 1} of ${run.act.book.chapters.length}: ${st.title}`
       : (st.emoji ? st.emoji + ' ' : '') + st.title,
     st.text, run.marks || (run.marks = {}));
+  // Challenge mode: the story starts hidden. Answer from memory for a bonus star, or tap to look back.
+  const memory = quizLevelOf(kid) === 'challenge' && !run.opts.boss;
+  const reveal = looked => { card.classList.remove('peek-hidden'); const c = card.querySelector('.peek-cover'); if (c) c.remove(); if (looked) item.looked = true; };
+  if (memory){ card.classList.add('peek-hidden'); card.append(el('div',{class:'peek-cover'},
+    el('div',{class:'peek-e'},'🧠'), el('b',{}, 'Answer from memory for +1 ⭐'),
+    el('button',{class:'btn small', onclick:()=>{ beep('tap'); reveal(true); }}, '📖 Look back in the story'))); }
   const s = el('div',{class:'screen'},
     el('div',{class:'topbar'},
       el('button',{class:'btn ghost small', onclick:()=>{ stopAll(); const book = run && run.act.book; run = null; book ? screenBookshelf() : screenHome(); }},'← Back'),
@@ -1701,7 +1799,7 @@ function screenResults(){
     if (!a.quiet) statsBox.append(el('div',{class:'stat'}, el('b',{}, Math.round(R.accuracy*100)+'%'), el('span',{},'words read right')));
     if (R.wcpm != null) statsBox.append(el('div',{class:'stat'}, el('b',{}, R.wcpm), el('span',{},'words per minute')));
     if (quiz) statsBox.append(el('div',{class:'stat'}, el('b',{}, quiz.c + '/' + quiz.t), el('span',{},'questions right')));
-    if (r.proofStars) statsBox.append(el('div',{class:'stat'}, el('b',{}, '🔎 ' + r.proofStars), el('span',{},'proofs found (+1 ⭐ each)')));
+    if (r.proofStars) statsBox.append(el('div',{class:'stat'}, el('b',{}, '🔎 ' + r.proofStars), el('span',{},'bonus stars (proof & memory)')));
     if (R.helped) statsBox.append(el('div',{class:'stat'}, el('b',{}, R.helped), el('span',{},'words helped')));
   };
   // grown-up fix: list every word; tap toggles ok/miss
@@ -3867,7 +3965,9 @@ function spikes(cx, cy, n, len, spread, base, col, stroke){
 }
 const flameShape = (x, y, k, c1, c2) => `<g transform="translate(${x} ${y}) scale(${k})"><path d="M0 0 C-10 -8 -6 -20 0 -30 C2 -22 8 -20 6 -12 C10 -16 12 -22 10 -28 C18 -18 16 -4 0 0Z" fill="${c1}"/><path d="M2 -2 C-2 -8 0 -14 3 -18 C5 -12 8 -10 6 -4Z" fill="${c2}"/></g>`;
 const starShape = (x, y, r, c) => `<path d="M${x} ${y-r} l${r*.3} ${r*.62} l${r*.68} ${r*.1} l-${r*.5} ${r*.48} l${r*.12} ${r*.68} l-${r*.6} -${r*.32} l-${r*.6} ${r*.32} l${r*.12} -${r*.68} l-${r*.5} -${r*.48} l${r*.68} -${r*.1}z" fill="${c}"/>`;
-const INK = '#1f2937';
+const INK = '#3b2a35'; // warm dark outline (softer than black)
+let heroSeq = 0;
+const EYE_COLORS = ['#6b3f1f','#2f6fd6','#2f9e5b','#8b5cf6','#2a2230'];
 
 function gearPiece(slot, S, hero){
   const { prim, sec, trim, gem, motif } = S;
@@ -3986,10 +4086,15 @@ function heroSVG(size=200, override={}){
   if (!h.outfit) h.outfit = girl ? 'dress' : 'pants';
   const full = override.eq ? null : fullSetOn();
   const helmOn = S('helmet').tier > 0;
+  const u = 'h' + (++heroSeq), eye = h.eyes || EYE_COLORS[0];
   let s = `<svg viewBox="0 0 200 250" width="${size}" height="${size*1.25}" xmlns="http://www.w3.org/2000/svg" class="hero-svg">
   <defs><filter id="hglow" x="-50%" y="-50%" width="200%" height="200%"><feGaussianBlur stdDeviation="3" result="b"/><feMerge><feMergeNode in="b"/><feMergeNode in="SourceGraphic"/></feMerge></filter>
-  <radialGradient id="haura"><stop offset="0" stop-color="${full ? full.gem : '#fff'}" stop-opacity=".75"/><stop offset="1" stop-color="${full ? full.gem : '#fff'}" stop-opacity="0"/></radialGradient></defs>`;
-  if (full) s += `<ellipse class="hero-aura" cx="100" cy="130" rx="96" ry="118" fill="url(#haura)"/>${[[30,60],[170,80],[24,170],[176,190],[60,20],[150,24]].map(([x,y],i) => `<g class="hero-spark" style="animation-delay:-${i*.4}s">${starShape(x, y, 6, full.gem)}</g>`).join('')}`;
+  <radialGradient id="${u}a"><stop offset="0" stop-color="${full ? full.gem : '#fff'}" stop-opacity=".75"/><stop offset="1" stop-color="${full ? full.gem : '#fff'}" stop-opacity="0"/></radialGradient>
+  <radialGradient id="${u}s" cx="42%" cy="38%" r="70%"><stop offset="0" stop-color="#fff" stop-opacity=".35"/><stop offset=".55" stop-color="${h.skin}" stop-opacity="0"/><stop offset="1" stop-color="#7a3b2e" stop-opacity=".22"/></radialGradient>
+  <linearGradient id="${u}i" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="${eye}"/><stop offset=".55" stop-color="${eye}"/><stop offset="1" stop-color="#fff" stop-opacity=".85"/></linearGradient>
+  <radialGradient id="${u}b"><stop offset="0" stop-color="#ff7a93" stop-opacity=".75"/><stop offset="1" stop-color="#ff7a93" stop-opacity="0"/></radialGradient>
+  <linearGradient id="${u}v" x1="0" y1="0" x2="1" y2="0"><stop offset="0" stop-color="#fff" stop-opacity=".18"/><stop offset=".45" stop-color="#fff" stop-opacity="0"/><stop offset="1" stop-color="#1c0f1c" stop-opacity=".22"/></linearGradient></defs>`;
+  if (full) s += `<ellipse class="hero-aura" cx="100" cy="130" rx="96" ry="118" fill="url(#${u}a)"/>${[[30,60],[170,80],[24,170],[176,190],[60,20],[150,24]].map(([x,y],i) => `<g class="hero-spark" style="animation-delay:-${i*.4}s">${starShape(x, y, 6, full.gem)}</g>`).join('')}`;
   s += `<ellipse cx="100" cy="238" rx="56" ry="8" fill="#000" opacity=".18"/>`;
   if (!helmOn || h.hairStyle === 'long' || h.hairStyle === 'ponytail') s += hairBack(h);
   // arms (skin), then body pieces
@@ -4001,16 +4106,30 @@ function heroSVG(size=200, override={}){
       <path d="M52 194 q8 6 18 0 q8 6 17 0 q9 6 17 0 q9 6 17 0 q8 6 17 0 q8 6 18 0" fill="none" stroke="${hem}" stroke-width="4"/><path d="M82 156 l-6 34 M100 156 v36 M118 156 l6 34" stroke="${C.tier ? C.sec : '#fff'}" stroke-width="2" opacity=".5"/>
       ${C.motif === 'petal' ? [[78,176],[100,182],[122,176]].map(([x,y]) => `<circle cx="${x}" cy="${y}" r="4" fill="#fff"/><circle cx="${x}" cy="${y}" r="1.8" fill="${C.gem}"/>`).join('') : ''}`; }
   s += gearPiece('belt', S('belt'), h);
-  s += `<rect x="92" y="90" width="16" height="16" fill="${h.skin}" stroke="${INK}" stroke-width="3"/>`;
+  s += `<path d="M54 104 L146 104 L150 232 L50 232z" fill="url(#${u}v)" style="mix-blend-mode:multiply" opacity=".9"/>`;
+  s += `<rect x="92" y="90" width="16" height="16" fill="${h.skin}" stroke="${INK}" stroke-width="3"/><path d="M92 92 h16 v6 q-8 4 -16 0z" fill="#7a3b2e" opacity=".2"/>`;
   s += gearPiece('shoulders', S('shoulders'), h);
   // head + face
-  s += `<circle cx="100" cy="64" r="34" fill="${h.skin}" stroke="${INK}" stroke-width="3"/>
-    <ellipse cx="88" cy="68" rx="4.5" ry="6" fill="${INK}"/><ellipse cx="112" cy="68" rx="4.5" ry="6" fill="${INK}"/><circle cx="89.5" cy="66" r="1.7" fill="#fff"/><circle cx="113.5" cy="66" r="1.7" fill="#fff"/>
-    <path d="M92 80 q8 7 16 0" stroke="${INK}" stroke-width="3" fill="none" stroke-linecap="round"/>
-    <ellipse cx="80" cy="78" rx="6" ry="3.5" fill="#fb7185" opacity=".45"/><ellipse cx="120" cy="78" rx="6" ry="3.5" fill="#fb7185" opacity=".45"/>`;
+  // big round game-style eyes: soft lash on the outer side, two shines, no frown
+  const eyeAt = (x, flip) => { const o = flip ? 1 : -1; // o = direction of the outer corner
+    return `<g>
+      <ellipse cx="${x}" cy="70.5" rx="7.2" ry="9.2" fill="#fff"/>
+      <ellipse cx="${x}" cy="71.5" rx="6" ry="8" fill="url(#${u}i)"/>
+      <ellipse cx="${x}" cy="72.4" rx="2.7" ry="3.6" fill="#140c18"/>
+      <ellipse cx="${x - o*2}" cy="67.4" rx="2.8" ry="3.2" fill="#fff"/><circle cx="${x + o*2.2}" cy="76" r="1.4" fill="#fff" opacity=".9"/>
+      <path d="M${x - o*5.5} 62.6 Q${x} 59.6 ${x + o*7.6} 64.4" stroke="${INK}" stroke-width="2.6" fill="none" stroke-linecap="round"/>
+      ${girl ? `<path d="M${x + o*7.2} 64 l${o*3} -2.6 M${x + o*5.4} 62.2 l${o*2.2} -2.8" stroke="${INK}" stroke-width="1.8" stroke-linecap="round"/>` : `<path d="M${x + o*7.4} 64.2 l${o*1.8} -1.2" stroke="${INK}" stroke-width="2" stroke-linecap="round"/>`}
+    </g>`; };
+  s += `<circle cx="100" cy="64" r="34" fill="${h.skin}" stroke="${INK}" stroke-width="3"/><circle cx="100" cy="64" r="33" fill="url(#${u}s)"/>
+    ${eyeAt(86, false)}${eyeAt(114, true)}
+    <ellipse cx="78" cy="80" rx="8" ry="5" fill="url(#${u}b)"/><ellipse cx="122" cy="80" rx="8" ry="5" fill="url(#${u}b)"/>
+    <path d="M75 79 l2 -2.4 M79 79 l2 -2.4 M119 79 l2 -2.4 M123 79 l2 -2.4" stroke="#fff" stroke-width="1.1" opacity=".7" stroke-linecap="round"/>
+    <path d="M99 77.5 q1.2 1 2.4 0" stroke="#b9775f" stroke-width="1.4" fill="none" stroke-linecap="round"/>
+    <path d="M93.5 82 q6.5 7 13 0 q-6.5 2 -13 0z" fill="#8a3443" stroke="${INK}" stroke-width="1.6" stroke-linejoin="round"/><path d="M97 85.2 q3 1.8 6 0" fill="#ff9aa8"/>`;
   if (h.beard) s += `<path d="M70 70 q4 22 14 34 q8 26 16 34 q8 -8 16 -34 q10 -12 14 -34 q-6 14 -18 16 q-12 -6 -24 0 q-12 -2 -18 -16z" fill="${h.beardColor || '#f1f5f9'}" stroke="${INK}" stroke-width="2.5" stroke-linejoin="round"/><path d="M90 86 q10 -5 20 0" stroke="${INK}" stroke-width="2.5" fill="none" stroke-linecap="round"/>`;
   const bow = !helmOn && girl && h.bow !== false ? `<g transform="translate(${h.hairStyle === 'buns' ? 100 : 126} ${h.hairStyle === 'buns' ? 28 : 36}) rotate(18)"><path d="M0 0 l-16 -10 q-4 10 0 20z M0 0 l16 -10 q4 10 0 20z" fill="${S('chest').tier ? S('chest').gem : '#f472b6'}" stroke="${INK}" stroke-width="2.5" stroke-linejoin="round"/><circle r="5" fill="${S('chest').tier ? S('chest').trim : '#ec4899'}" stroke="${INK}" stroke-width="2"/></g>` : '';
-  s += helmOn ? gearPiece('helmet', S('helmet'), h) : hairFront(h) + bow + (S('helmet').id === 'traveler' && override.showCap ? gearPiece('helmet', S('helmet'), h) : '');
+  const shine = `<path d="M74 47 q9 -13 25 -15" stroke="#fff" stroke-width="4.5" opacity=".32" fill="none" stroke-linecap="round"/><path d="M104 32 q6 0 11 2" stroke="#fff" stroke-width="3" opacity=".25" fill="none" stroke-linecap="round"/>`;
+  s += helmOn ? gearPiece('helmet', S('helmet'), h) : hairFront(h) + shine + bow + (S('helmet').id === 'traveler' && override.showCap ? gearPiece('helmet', S('helmet'), h) : '');
   s += gearPiece('gloves', S('gloves'), h);
   s += gearPiece('weapon', S('weapon'), h);
   return s + '</svg>';
@@ -4040,6 +4159,7 @@ function screenHeroCreate(after){
         row('Hair style', Object.keys(HAIR_STYLES), v => HAIR_STYLES[v], 'hairStyle'),
         row('Hair color', HAIR_COLORS, v => el('span',{class:'swatch', style:`background:${v}`}), 'hairColor'),
         row('Weapon', isDev() ? ['wizard','staff','sword','laser'] : ['sword','staff','laser'], v => ({ sword:'⚔️ Sword', staff:'🪄 Magic Staff', laser:'✨ Laser Sword', wizard:'🌟 Star Staff' })[v], 'weapon'),
+        row('Eyes', EYE_COLORS, v => el('span',{class:'hc-swatch', style:`background:radial-gradient(circle at 35% 30%, #fff 0 18%, ${v} 22%)`}), 'eyes'),
         isDev() ? row('Beard', [true,false], v => v ? '🧔 Wizard beard' : '🙂 No beard', 'beard') : null,
         styleOf(kid) === 'girl' ? row('Outfit', ['dress','pants'], v => v === 'dress' ? '👗 Dress' : '👖 Pants', 'outfit') : null,
         styleOf(kid) === 'girl' ? row('Hair bow', [true,false], v => v ? '🎀 Bow' : 'No bow', 'bow') : null,
@@ -4563,10 +4683,16 @@ function pzHeroFor(k, size){
 
 /* ----- the drawn town ----- */
 function pzTree(x, y, s, gold, R){
-  const cols = gold ? ['#f2b705','#f5c542','#e09c00','#fcd34d'] : ['#4caf50','#66bb6a','#2e7d32','#81c784'];
-  let g = `<g transform="translate(${x} ${y}) scale(${s})"><ellipse cx="0" cy="4" rx="34" ry="9" fill="#000" opacity=".12"/><path d="M-6 0 q2 -40 -4 -60 h20 q-6 20 -4 60z" fill="#8b5a2b" stroke="#5b3a1a" stroke-width="2"/>`;
-  for (let i = 0; i < 7; i++){ const a = i / 7 * Math.PI * 2; g += `<circle cx="${Math.cos(a)*24}" cy="${-82 + Math.sin(a)*20}" r="${22 + R()*8}" fill="${cols[i % 4]}"/>`; }
-  return g + `<circle cx="0" cy="-86" r="26" fill="${cols[3]}"/><circle cx="-8" cy="-96" r="9" fill="#fff" opacity=".25"/></g>`;
+  // painted tree: dark under-canopy, mid clusters with a soft gradient, sunlit highlights on top-left
+  const g0 = gold ? 'pzGoldTree' : 'pzGreenTree', dark = gold ? '#c27c0e' : '#2f7d3a', lite = gold ? '#fff1a8' : '#c8f59a';
+  let g = `<g transform="translate(${x} ${y}) scale(${s})"><ellipse cx="0" cy="4" rx="40" ry="10" fill="#1d3b12" opacity=".2"/>
+    <path d="M-7 2 q3 -42 -5 -62 q8 4 12 0 q6 4 12 0 q-9 22 -4 62z" fill="#8b5a2b" stroke="${INK}" stroke-width="2"/><path d="M-1 0 q1 -30 -3 -52" stroke="#b07a44" stroke-width="3" fill="none" opacity=".6"/>
+    <ellipse cx="0" cy="-70" rx="46" ry="30" fill="${dark}"/>`;
+  for (let i = 0; i < 8; i++){ const a = i / 8 * Math.PI * 2; g += `<circle cx="${Math.cos(a)*26}" cy="${-86 + Math.sin(a)*20}" r="${21 + R()*8}" fill="url(#${g0})" stroke="${dark}" stroke-width="1.5"/>`; }
+  g += `<circle cx="0" cy="-92" r="27" fill="url(#${g0})" stroke="${dark}" stroke-width="1.5"/>`;
+  for (let i = 0; i < 5; i++) g += `<ellipse cx="${-22 + R()*26}" cy="${-110 + R()*26}" rx="${7 + R()*5}" ry="${4 + R()*3}" fill="${lite}" opacity=".55"/>`;
+  if (gold) for (let i = 0; i < 4; i++) g += `<path d="M${-30 + R()*60} ${-60 + R()*30} q4 -4 8 0 q-4 4 -8 0z" fill="#e98a16" opacity=".8"/>`;
+  return g + `</g>`;
 }
 function pzCottage(x, y, roof){
   return `<g><rect x="${x-50}" y="${y-70}" width="100" height="70" fill="#f1e6d2" stroke="#5b4636" stroke-width="3"/><path d="M${x-62} ${y-66} L${x} ${y-120} L${x+62} ${y-66}z" fill="${roof}" stroke="#1e293b" stroke-width="3" stroke-linejoin="round"/>
@@ -4591,7 +4717,7 @@ function pzBuildingSVG(b){
   let wins = '';
   for (let i = 0; i < nWin; i++){ const wx = L + gap*i + gap/2 - 12; wins += `<path d="M${wx} ${T+60} v-26 a12 12 0 0 1 24 0 v26z" fill="#fde68a" stroke="${ink}" stroke-width="2.5"/><path d="M${wx+12} ${T+22} v38" stroke="${ink}" stroke-width="1.5" opacity=".5"/>`; }
   return `<g data-b="${b.id}" class="pz-b"><ellipse cx="${b.x}" cy="${b.y+4}" rx="${b.w*.62}" ry="18" fill="#000" opacity=".14"/>
-    <rect x="${L}" y="${T}" width="${b.w}" height="${b.h}" rx="4" fill="${b.wall}" stroke="${ink}" stroke-width="3"/>${roof}${wins}
+    <rect x="${L}" y="${T}" width="${b.w}" height="${b.h}" rx="4" fill="${b.wall}" stroke="${ink}" stroke-width="3"/><rect x="${L+2}" y="${T+2}" width="${b.w-4}" height="${b.h-4}" rx="3" fill="url(#pzWallShade)"/>${roof}<path d="M${L} ${T} h${b.w}" stroke="url(#pzRoofShine)" stroke-width="0"/>${wins}
     <rect x="${L-6}" y="${b.y-12}" width="${b.w+12}" height="12" fill="${b.trim}" stroke="${ink}" stroke-width="2.5"/>
     <path d="M${b.x-22} ${b.y-12} v-40 a22 22 0 0 1 44 0 v40z" fill="#7c4a24" stroke="${ink}" stroke-width="3"/><circle cx="${b.x+12}" cy="${b.y-34}" r="3" fill="#facc15"/>
     ${[b.x-36, b.x+36].map(x => `<circle cx="${x}" cy="${b.y-56}" r="12" fill="#fde68a" opacity=".45" class="sc-firefly"/><circle cx="${x}" cy="${b.y-56}" r="5" fill="#fff7c2" stroke="${ink}" stroke-width="1.5"/>`).join('')}
@@ -4602,9 +4728,16 @@ function pzSceneSVG(){
   let s = `<svg viewBox="0 0 ${PZ_W} ${PZ_H}" width="${PZ_W}" height="${PZ_H}" xmlns="http://www.w3.org/2000/svg">
     <defs><radialGradient id="pzGrass" cx="50%" cy="55%" r="70%"><stop offset="0" stop-color="#8fd16a"/><stop offset="1" stop-color="#4f9e3c"/></radialGradient>
     <radialGradient id="pzPortal" cx="50%" cy="60%" r="60%"><stop offset="0" stop-color="#fff"/><stop offset=".4" stop-color="#c4b5fd"/><stop offset="1" stop-color="#6d28d9"/></radialGradient>
+    <radialGradient id="pzGoldTree" cx="35%" cy="30%" r="75%"><stop offset="0" stop-color="#ffe27a"/><stop offset=".55" stop-color="#f6b81c"/><stop offset="1" stop-color="#d98a08"/></radialGradient>
+    <radialGradient id="pzGreenTree" cx="35%" cy="30%" r="75%"><stop offset="0" stop-color="#a6e36f"/><stop offset=".55" stop-color="#5cb547"/><stop offset="1" stop-color="#2f8a3a"/></radialGradient>
+    <linearGradient id="pzWallShade" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#fff" stop-opacity=".45"/><stop offset=".5" stop-color="#fff" stop-opacity="0"/><stop offset="1" stop-color="#5a3a20" stop-opacity=".28"/></linearGradient>
+    <linearGradient id="pzRoofShine" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#fff" stop-opacity=".4"/><stop offset=".6" stop-color="#fff" stop-opacity="0"/></linearGradient>
+    <radialGradient id="pzSun" cx="12%" cy="0%" r="90%"><stop offset="0" stop-color="#fff6c8" stop-opacity=".55"/><stop offset=".5" stop-color="#fff6c8" stop-opacity="0"/></radialGradient>
     <pattern id="pzCobble" width="28" height="22" patternUnits="userSpaceOnUse"><rect width="28" height="22" fill="#efe4cf"/><path d="M0 11 h28 M14 0 v11 M0 0 v0 M7 11 v11 M21 11 v11" stroke="#d6c6a6" stroke-width="2"/></pattern></defs>
     <rect width="${PZ_W}" height="${PZ_H}" fill="url(#pzGrass)"/>`;
+  for (let i = 0; i < 26; i++) s += `<ellipse cx="${R()*PZ_W}" cy="${R()*PZ_H}" rx="${60 + R()*90}" ry="${26 + R()*30}" fill="#c8f59a" opacity="${.12 + R()*.12}"/>`;
   for (let i = 0; i < 260; i++) s += `<path d="M${R()*PZ_W} ${R()*PZ_H} l3 -9 l3 9" stroke="#3f8a33" stroke-width="2" fill="none" opacity=".5"/>`;
+  for (let i = 0; i < 70; i++){ const x = R()*PZ_W, y = R()*PZ_H, c = ['#fff','#ffd6e7','#fff3a3'][i % 3]; s += `<circle cx="${x}" cy="${y}" r="2.6" fill="${c}"/><circle cx="${x+5}" cy="${y+2}" r="2.2" fill="${c}"/><circle cx="${x+2}" cy="${y-4}" r="2" fill="${c}"/>`; }
   // winding cobblestone paths from the plaza to every door
   PZ_BUILDINGS.forEach((b, i) => {
     const dx = b.x - C.x, dy = (b.y + 10) - C.y, len = Math.hypot(dx, dy) || 1, bend = (i % 2 ? 1 : -1) * Math.min(120, len * .25);
@@ -4631,6 +4764,8 @@ function pzSceneSVG(){
   const trees = [[40,120],[200,100],[420,90],[680,70],[930,70],[1180,90],[1400,100],[1560,140],[40,520],[1560,520],[60,900],[1540,900],[380,620],[1220,620],[700,980],[900,980],[300,960],[1300,960],[620,280],[980,280]];
   trees.sort((a, b) => a[1] - b[1]).forEach(([x, y], i) => s += pzTree(x, y, .9 + R()*.35, i % 3 !== 2, R));
   PZ_BUILDINGS.forEach(b => s += pzBuildingSVG(b));
+  // painted light: warm sunlight from the top-left, soft shadow at the far edges
+  s += `<rect width="${PZ_W}" height="${PZ_H}" fill="url(#pzSun)" pointer-events="none"/>`;
   return s + '</svg>';
 }
 
@@ -4795,6 +4930,9 @@ function screenTownSquare(){
     el('div',{class:'topbar'}, el('button',{class:'btn small', onclick:() => leave(() => screenHome())}, '← Back'), el('h1',{class:'title'}, '🏰 Storybrook Square'), el('div')),
     frame, status));
   frame.append(bar);
+  const fx = el('div',{class:'pz-fx'});
+  for (let i = 0; i < 16; i++){ const leaf = el('span',{class:'pz-leaf ' + (i % 3 === 0 ? 'petal' : 'maple')}); leaf.style.left = (Math.random()*100) + '%'; leaf.style.animationDelay = (-Math.random()*14) + 's'; leaf.style.animationDuration = (9 + Math.random()*8) + 's'; leaf.style.setProperty('--sway', (20 + Math.random()*60) + 'px'); fx.append(leaf); }
+  view.after(fx);
   put(me, PZ.pos.x, PZ.pos.y); me.style.transitionDuration = '0s';
   others.forEach(k => draw(k, pzRec(k)));
   requestAnimationFrame(() => camera(PZ.pos.x, PZ.pos.y, false));
@@ -4951,6 +5089,7 @@ function weeklySummary(which){
 
 function screenParent(which){
   document.body.className = 'parent';
+  CLOUD.editing = which && which !== 'dev' ? which : null;
   if (!which || !DB.kids[which] || !playerOf(which) || playerOf(which).wizard) which = playerIds(false)[0];
   if (!which) return screenPlayers();
   const k = DB.kids[which], track = TRACKS[trackOf(which)];
@@ -5000,14 +5139,17 @@ function screenParent(which){
         el('div',{class:'stat'}, el('b',{}, k.passStreak + ' / ' + k.failStreak), el('span',{},'pass / struggle streak')),
         el('div',{class:'stat'}, el('b',{}, k.streak.count||0), el('span',{},'day streak'))),
       el('p',{class:'muted'}, `Stars earned ${k.stars} · spent ${k.spent||0} · 💫 Cosmic ${(k.cosmic||0)-(k.cosmicSpent||0)} (earned ${k.cosmic||0}) · trophies ${k.trophies.length}/${track.levels.length} · badges ${k.badges.length}/${BADGES.length} · collection ${k.collection.length}/${track.rewards.length}`),
+      (DB.backup || {})[which] ? el('div',{class:'banner', style:'margin:8px 0'}, `💾 A copy of ${kidName(which)}'s earlier progress (level ${DB.backup[which].level}, saved ${new Date(DB.backup[which].at).toLocaleDateString()}) is on this iPad. `,
+        el('button',{class:'btn small', onclick:async ()=>{ const ok = await modal(el('div',{}, el('h2',{}, 'Restore earlier progress?'), el('p',{}, `Puts ${kidName(which)} back to level ${DB.backup[which].level} with that copy's stars, world and history.`)), [['Cancel','gray',false],['Restore','',true]]);
+          if (!ok) return; DB.kids[which] = Object.assign(freshKid(), JSON.parse(DB.backup[which].json)); delete DB.backup[which]; CLOUD.editing = which; CLOUD.dirty[which] = true; save(); screenParent(which); }}, '↩️ Restore')) : null,
       el('h3',{},'Level controls'),
       el('div',{class:'row'}, levelSel,
-        el('button',{class:'btn small blue', onclick:()=>{ k.level = +levelSel.value; k.placed = true; k.passStreak = 0; k.failStreak = 0; save(); status.textContent = 'Level set to ' + k.level + '.'; screenParent(which); }},'Set level'),
+        el('button',{class:'btn small blue', onclick:()=>{ if (+levelSel.value < k.level) k.resetAt = Date.now(); k.level = +levelSel.value; k.placed = true; k.passStreak = 0; k.failStreak = 0; CLOUD.editing = which; save(); status.textContent = 'Level set to ' + k.level + '.'; screenParent(which); }},'Set level'),
         el('button',{class:'btn small gray', onclick:()=>{ k.placed = false; save(); status.textContent = 'Placement check will run next time.'; }},'Redo placement check'),
         el('button',{class:'btn small gray', onclick:()=>{ k.avatar.base = null; save(); status.textContent = 'They\'ll pick a new buddy next time they open the app. Shop items stay.'; }},'Let them re-pick buddy'),
         el('button',{class:'btn small red', onclick:async()=>{
           const ok = await modal(el('div',{}, el('h2',{},'Reset all progress?'), el('p',{},`This erases ${label}'s levels, stars, collection and history on this iPad.`)), [['Cancel','gray',false],['Reset','red',true]]);
-          if (ok){ DB.kids[which] = freshKid(); save(); idb.clear(which + '_'); screenParent(which); }
+          if (ok){ DB.kids[which] = Object.assign(freshKid(), { resetAt: Date.now() }); CLOUD.editing = which; save(); idb.clear(which + '_'); screenParent(which); }
         }},'Reset progress')),
       status),
     el('div',{class:'card'},
