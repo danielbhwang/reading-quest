@@ -1237,11 +1237,11 @@ Pebble was tapping a rock with his claw. Each time he tapped, the rock began to 
       n: 3, title: 'Junior Rider', kind: 'story',
       stories: [
         { title: 'The Floating Island', emoji: '🏝️',
-          text: `High above the academy, there was an island that floated in the clouds. Nobody had visited it in a hundred years. "It is too dangerous," the teachers always said.
+          text: `High above the school, an island floated in the clouds. No one had been there in a hundred years. "It is not safe," the teachers always said.
 
-One morning, Master Oona gathered the students. "The island is sinking," she announced. "Its magic crystals are fading. We need dragons who can fly up and bring the crystals back to life."
+One morning, Master Oona called the students together. "The island is sinking," she said. "Its magic crystals are fading. We need dragons who can fly up there. They must bring the crystals back to life."
 
-Blaze and Ripple flew up with Tobin and Mira. Pebble watched them disappear into the clouds. His small wings drooped. Wren rubbed his scaly head. "Your magic makes stones glow," she whispered. "Crystals are stones. Maybe the island needs you most of all."`,
+Blaze and Ripple flew up with Tobin and Mira. Pebble watched them fly into the clouds. His small wings drooped. Wren rubbed his scaly head. "Your magic makes stones glow," she said softly. "Crystals are stones. Maybe the island needs you most of all."`,
           qs: [
             ['Where was the island?', ['Floating in the clouds', 'Under the sea', 'Inside a mountain', 'Behind the barn'], 0],
             ['Why was the island sinking?', ['Its magic crystals were fading', 'It was too heavy', 'A storm hit it', 'Dragons were sitting on it'], 0],
@@ -1250,11 +1250,11 @@ Blaze and Ripple flew up with Tobin and Mira. Pebble watched them disappear into
             ['Why does Wren think Pebble could help?', ['Crystals are stones, and he makes stones glow', 'He flies the fastest', 'He is the biggest dragon', 'He knows the way'], 0]
           ] },
         { title: 'A Mysterious Visitor', emoji: '🧥',
-          text: `The next day, a stranger arrived at the academy gate. He wore a long purple cloak, and his boots were covered in black dust. He called himself a traveling merchant.
+          text: `The next day, a stranger came to the academy gate. He wore a long purple cloak. His boots were covered in black dust. He said he was a traveling merchant.
 
-"I am looking for something golden," he said, smiling a thin smile. "Something shaped like an egg." Master Oona's face went pale. "We have nothing like that here," she said firmly, and she closed the gate.
+"I am looking for something golden," he said with a thin smile. "Something shaped like an egg." Master Oona's face went pale. "We have nothing like that here," she said firmly. Then she closed the gate.
 
-Pebble sniffed the air after the stranger left. "His cloak smelled like smoke and thunder," he told Wren. "I do not trust him." Wren did not trust him either. She had noticed something strange: the merchant had no wagon and no goods to sell.`,
+Pebble sniffed the air after the stranger left. "His cloak smelled like smoke and thunder," he told Wren. "I do not trust him." Wren did not trust him either. She had noticed something odd. The merchant had no wagon and no goods to sell.`,
           qs: [
             ['What color was the stranger\'s cloak?', ['Purple', 'Green', 'Gray', 'White'], 0],
             ['What was the stranger looking for?', ['Something golden shaped like an egg', 'A lost dragon', 'A place to sleep', 'A map of the island'], 0],
@@ -1263,11 +1263,11 @@ Pebble sniffed the air after the stranger left. "His cloak smelled like smoke an
             ['Why did Wren think the merchant was not really a merchant?', ['He had no wagon and nothing to sell', 'He was too tall', 'He spoke too fast', 'He had a dragon'], 0]
           ] },
         { title: 'The Golden Star Egg', emoji: '🥚',
-          text: `That evening, Master Oona led Wren, Tobin, and Mira down a winding staircase beneath the academy. At the bottom was a room lit by candles. On a velvet pillow sat a golden egg, sparkling like a thousand tiny stars.
+          text: `That night, Master Oona led Wren, Tobin, and Mira down a twisty staircase. It went deep under the school. At the bottom was a room lit by candles. On a soft red pillow sat a golden egg. It sparkled like a thousand tiny stars.
 
-"This is the Star Egg," Master Oona explained. "Inside is a storm dragon, the rarest dragon of all. It has been waiting to hatch for five hundred years. Whoever is with it when it hatches will share its bond."
+"This is the Star Egg," Master Oona said. "Inside is a storm dragon. It is the rarest dragon of all. It has been waiting to hatch for five hundred years. Whoever is with it when it hatches will share its bond."
 
-"Is that what the stranger wanted?" asked Mira. Master Oona nodded slowly. "If someone with a cruel heart bonds with a storm dragon, they could control the wind, the rain, and the lightning." Wren shivered. Pebble pressed closer to her side.`,
+"Is that what the stranger wanted?" asked Mira. Master Oona nodded slowly. "A cruel person could bond with a storm dragon. Then they could control the wind, the rain, and the lightning." Wren shivered. Pebble pressed close to her side to keep her calm.`,
           qs: [
             ['Where was the Star Egg kept?', ['In a room beneath the academy', 'On the floating island', 'In Wren\'s bedroom', 'In a tree'], 0],
             ['What kind of dragon is inside the egg?', ['A storm dragon', 'A fire dragon', 'An earth dragon', 'A water dragon'], 0],
@@ -1302,19 +1302,19 @@ Master Oona stood up. "The egg will hatch at the next full moon. That is in thre
             ['Why did Mira hold Ripple\'s tail tightly?', ['She was worried and scared', 'Ripple was running away', 'She was playing a game', 'Her hands were cold'], 0]
           ] },
         { title: 'Following the Footprints', emoji: '👣',
-          text: `Outside the academy walls, Wren spotted something in the mud. "Footprints!" she called. "And they are covered in black dust."
+          text: `Outside the school walls, Wren saw something in the mud. "Footprints!" she called. "And they have black dust on them."
 
-The footprints led toward the Whispering Woods, a dark forest where the trees were so tall they blocked out the sun.
+The footprints led to the Whispering Woods. It was a dark forest. The trees were so tall they blocked out the sun.
 
 "Students are not allowed in the Whispering Woods," Tobin said nervously.
 
-"Students are not allowed to let a storm dragon fall into the wrong hands, either," Mira replied.
+"Students are not allowed to let a storm dragon fall into the wrong hands, either," Mira said.
 
-Wren looked at Pebble. Pebble looked back at her. Through their bond, she felt his heart beating fast, but she also felt something else: courage.
+Wren looked at Pebble. Pebble looked back at her. Through their bond, she felt his heart beating fast with fear. But she felt something else, too. It was courage.
 
-"We will go together," Wren said. "Master Oona is guarding the academy. We will follow the trail and send a message if we find anything."
+"We will go together," Wren said. "Master Oona is guarding the school. We will follow the trail. If we find something, we will send her a message."
 
-Blaze puffed a little ring of smoke, which meant yes. Ripple flicked her tail. The three riders and their dragons stepped into the shadows of the trees.`,
+Blaze puffed a little ring of smoke, which meant yes. Ripple flicked her tail. The three riders and their dragons stepped into the dark trees.`,
           qs: [
             ['What did Wren find in the mud?', ['Footprints with black dust', 'A golden feather', 'A broken egg shell', 'A map'], 0],
             ['Where did the footprints lead?', ['The Whispering Woods', 'The floating island', 'The farm', 'The pond'], 0],
@@ -1323,19 +1323,19 @@ Blaze puffed a little ring of smoke, which meant yes. Ripple flicked her tail. T
             ['What two feelings did Wren sense from Pebble?', ['Fear and courage', 'Anger and boredom', 'Hunger and sleepiness', 'Silliness and joy'], 0]
           ] },
         { title: "Pebble's Big Jump", emoji: '🪽',
-          text: `Deep in the woods, the path ended at a wide river. The water rushed and foamed over sharp rocks. On the other side, the black footprints continued.
+          text: `Deep in the woods, the path ended at a wide river. The water rushed and foamed over sharp rocks, and on the other side, the black footprints continued into the trees.
 
-Ripple dove right in and swam across with Mira on her back. Blaze carried Tobin, flapping hard over the water.
+Ripple dove right in and swam across with Mira on her back. Blaze carried Tobin, flapping hard over the churning water.
 
-Wren and Pebble stood alone on the bank. "I can't fly that far," Pebble said. "My wings are too small."
+Wren and Pebble stood alone on the muddy bank. "I can't fly that far," Pebble said quietly. "My wings are too small."
 
-Wren knelt beside him. "Remember the race? You were slow and steady. You didn't give up."
+Wren knelt beside him. "Remember the race? You were slow and steady, and you never gave up."
 
 Pebble took a deep breath. He backed up, ran as fast as he could, and leaped. His little wings beat once, twice, three times. For one amazing moment, Pebble was flying!
 
-He landed on the other side with a thump, skidding in the mud. Wren tumbled off, laughing. "You did it, Pebble! You flew!"
+He landed on the other side with a thump, skidding through the slippery mud. Wren tumbled off, laughing. "You did it, Pebble! You flew!"
 
-Pebble puffed out his chest. "Only a little," he said. But his eyes were shining.`,
+Pebble puffed out his chest proudly. "Only a little," he said. But his eyes were shining.`,
           qs: [
             ['What blocked the path?', ['A wide river', 'A tall wall', 'A sleeping giant', 'A deep hole'], 0],
             ['How did Ripple cross?', ['She swam', 'She flew', 'She jumped on rocks', 'She walked on a bridge'], 0],
@@ -1377,23 +1377,23 @@ The eyes blinked once. Then they began to move closer.`,
           ['What did they see at the end of the chapter?', ['Two glowing yellow eyes', 'The Star Egg', 'Master Oona', 'A castle'], 0]
         ] },
       { title: 'The Eyes in the Dark', emoji: '👀',
-        text: `Blaze growled, and Tobin raised his arms to protect his friends. But the creature that stepped out of the shadows was not a monster. It was a small silver fox with a fluffy tail that sparkled like frost.
+        text: `Blaze growled, and Tobin raised his arms to protect his friends. But the creature that crept out of the shadows was not a monster at all. It was a small silver fox with yellow eyes and a fluffy tail that glittered like frost on a winter morning.
 
-"Please don't hurt me," the fox squeaked. "My name is Nim. I am a moon sprite."
+"Please don't hurt me," the fox squeaked nervously. "My name is Nim. I am a moon sprite."
 
-Wren slowly knelt down. "We won't hurt you, Nim. We're looking for a man in a purple cloak. He stole a golden egg."
+Wren slowly knelt down so she would not frighten her. "We won't hurt you, Nim. We're searching for a man in a purple cloak who stole a golden egg."
 
-Nim's ears flattened. "Lord Vex," she whispered. "He came through here two nights ago. He trapped my family in a jar of shadows so we could not warn anyone."
+Nim's ears flattened against her head. "Lord Vex," she whispered. "He traveled through here two nights ago. He trapped my whole family in a jar of shadows so we could not warn anyone."
 
 Mira gasped. "That's terrible!"
 
-"He's taking the egg to his tower," Nim continued. "It's on the other side of the Fog Bridge. If you help me free my family, I will show you the secret path."
+"He's carrying the egg to his tower, which stands on the other side of the Fog Bridge," Nim continued. "If you help me rescue my family, I will show you the secret path."
 
-Wren looked at her friends. They all nodded.
+Wren looked at her friends, and they all nodded.
 
-"Deal," Wren said, holding out her hand. Nim placed her tiny paw in Wren's palm.
+"Deal," Wren said, holding out her hand. Nim placed her tiny paw gently in Wren's palm.
 
-At that moment, a low rumble shook the ground. Far away, beyond the trees, a single bolt of purple lightning split the sky.`,
+At that moment, a low rumble shook the ground beneath them. Far away, beyond the trees, a single bolt of purple lightning split the darkening sky.`,
         qs: [
           ['What was the creature with yellow eyes?', ['A silver fox moon sprite named Nim', 'A wolf', 'Lord Vex', 'A baby dragon'], 0],
           ['What did Lord Vex do to Nim\'s family?', ['Trapped them in a jar of shadows', 'Took them to the academy', 'Turned them into stones', 'Sent them to the island'], 0],
@@ -1402,17 +1402,17 @@ At that moment, a low rumble shook the ground. Far away, beyond the trees, a sin
           ['What do you think the purple lightning means?', ['Lord Vex is using dark storm magic', 'A happy party', 'It is morning', 'Master Oona is coming'], 0]
         ] },
       { title: 'The Bridge of Fog', emoji: '🌫️',
-        text: `Nim led them along a narrow path that twisted between giant mushrooms. At last, they reached the edge of a deep canyon. Stretching across it was a bridge made entirely of thick white fog.
+        text: `Nim led them along a narrow path that twisted between enormous mushrooms. At last, they reached the edge of a deep canyon. Stretching across it was a bridge made entirely of thick white fog.
 
-"Is that safe?" Tobin asked, poking it with a stick. The stick passed right through.
+"Is that actually safe?" Tobin asked, poking it with a stick. The stick passed right through.
 
-"The bridge only holds those who are brave," Nim explained. "If you feel afraid, the fog gets thinner."
+"The bridge only carries travelers who are brave," Nim explained. "If you feel afraid, the fog grows thinner."
 
-Mira went first. She took a deep breath, and Ripple walked beside her. The fog held them up like a soft, cool cloud. Tobin and Blaze went next, and they made it across too.
+Mira went first. She took a deep breath, and Ripple walked faithfully beside her. The fog held them up like a soft, cool cloud. Tobin and Blaze followed, and they made it across safely too.
 
-Then it was Wren's turn. She stepped onto the fog with Pebble at her side. Halfway across, she made the mistake of looking down. The canyon was so deep she couldn't see the bottom.
+Then it was Wren's turn. She stepped onto the fog with Pebble at her side. Halfway across, she made the terrible mistake of looking down. The canyon was so deep that she couldn't see the bottom.
 
-Her heart pounded. Her knees trembled. Beneath her boots, the fog began to thin.
+Her heart pounded and her knees trembled. Beneath her boots, the fog began to disappear.
 
 "Wren!" Mira shouted from the other side. "Don't look down!"
 
@@ -1432,23 +1432,23 @@ But it was too late. With a soft hiss, the fog beneath them started to vanish, a
       { title: 'Pebble Holds the Bridge', emoji: '🪨',
         text: `Wren squeezed her eyes shut, waiting for the fall. Instead, she felt something solid beneath her feet.
 
-She opened her eyes. Pebble had slammed his claws down onto the disappearing fog, and his earth magic was spreading outward in a brilliant green glow. Where the fog had been, smooth gray stones were appearing, one after another, locking together like puzzle pieces.
+She opened her eyes. Pebble had slammed his claws down onto the vanishing fog. His earth magic was spreading outward in a bright green glow. Where the fog had been, smooth gray stones were appearing one after another, locking together like puzzle pieces.
 
-"I've got you!" Pebble grunted, his whole body trembling with effort. "Walk, Wren! Walk forward!"
+"I've got you!" Pebble grunted, his whole body trembling. "Walk, Wren! Walk forward!"
 
 Wren took one shaky step, then another. The stones held firm. Pebble crept along beside her, building the stone bridge just ahead of each footstep. Sweat glistened on his scales, but he refused to stop.
 
 When they finally reached the other side, Pebble collapsed in a heap, completely exhausted. Mira and Tobin rushed over, cheering.
 
-"Pebble, that was incredible!" Tobin exclaimed. "I didn't know earth dragons could build things out of nothing!"
+"Pebble, that was incredible!" Tobin shouted. "I didn't know earth dragons could build things out of nothing!"
 
-"Neither did I," Pebble admitted, panting. He looked up at Wren. "When you were afraid, I couldn't feel anything except that I needed to save you. The magic just happened."
+"Neither did I," Pebble admitted, panting. He looked up at Wren. "When you were afraid, all I could feel was that I needed to save you. The magic just happened."
 
 Wren wrapped her arms around his neck. "Master Oona says a dragon's power grows with the strength of its bond," she said softly. "I think our bond just got a lot stronger."
 
-Nim's tail swished excitedly. "Come on," she urged. "Lord Vex's tower is just over that hill. The full moon rises tomorrow night."
+Nim's tail swished. "Come on," she said. "Lord Vex's tower is just over that hill. The full moon rises tomorrow night."
 
-Behind them, the stone bridge glowed faintly in the darkness, a sturdy path that would still be there for anyone who needed to cross.`,
+Behind them, the stone bridge glowed faintly in the dark. It was a sturdy path that would still be there for anyone who needed to cross.`,
         qs: [
           ['What did Pebble create to save Wren?', ['A bridge of stones', 'A rope', 'A fire', 'A cloud'], 0],
           ['How did the stones fit together?', ['Like puzzle pieces', 'Like a pile of sand', 'Like falling leaves', 'Like water drops'], 0],
@@ -1457,9 +1457,9 @@ Behind them, the stone bridge glowed faintly in the darkness, a sturdy path that
           ['Why might it matter that the bridge was still there at the end?', ['Others can cross safely, and it shows Pebble\'s magic lasts', 'It will fall down soon', 'Lord Vex built it', 'It is a trap'], 0]
         ] },
       { title: 'The Tower of Vex', emoji: '🏰',
-        text: `Lord Vex's tower rose from the top of a rocky hill like a crooked black finger pointing at the sky. Storm clouds swirled around its peak, and purple lightning flickered inside them.
+        text: `Lord Vex's tower stood on top of a rocky hill. It looked like a crooked black finger pointing at the sky. Storm clouds swirled around its peak. Purple lightning flickered inside them.
 
-The friends crouched behind a boulder. "There's only one door," Tobin whispered, "and it's guarded by those things." Two enormous stone gargoyles sat on either side of the entrance, their eyes glowing red.
+The friends crouched behind a boulder. "There's only one door," Tobin whispered, "and it's guarded by those things." Two huge stone gargoyles sat on either side of the door. Their eyes glowed red.
 
 "There's another way in," Nim said. "My family is trapped near the top, in a room with a round window. I can climb the vines, but I'm not strong enough to open the jar."
 
@@ -1467,9 +1467,9 @@ Mira studied the tower carefully. "Ripple can make it rain on the gargoyles. Wat
 
 "And Blaze can make smoke to hide us," Tobin added.
 
-The plan worked perfectly. Ripple sprayed a sudden shower over the gargoyles, who turned their heads, grumbling. Blaze puffed out a thick gray cloud. Hidden by the smoke, Wren and Pebble scrambled up the vines behind Nim.
+The plan worked perfectly. Ripple sprayed a sudden shower over the gargoyles. They turned their heads, grumbling. Blaze puffed out a thick gray cloud. Hidden by the smoke, Wren and Pebble climbed up the vines behind Nim.
 
-Through the round window, Wren saw a cluttered room filled with dusty books and strange glass bottles. On a table sat a dark jar, swirling with shadows, and next to it was the Star Egg, glowing brighter than ever.
+Through the round window, Wren saw a cluttered room full of dusty books and strange glass bottles. On a table sat a dark jar swirling with shadows. Next to it was the Star Egg, glowing brighter than ever.
 
 But something else made Wren's breath catch. Pinned to the wall was an old drawing of a young boy riding a dragon. Beneath it, someone had written in shaky letters: "Vex and Thunder, Skyfire Academy."
 
@@ -1514,11 +1514,11 @@ Nim and her family had vanished out the window. Wren hoped they had gone for hel
     n: 7, title: 'Dragon Captain', kind: 'story',
     stories: [
       { title: 'Escape from the Thorn Cage', emoji: '🗝️',
-        text: `Lord Vex swept out of the room, taking the Star Egg with him. The door slammed, and the lock clicked. Wren and Pebble were alone in the thorny cage as the last gray light faded from the round window.
+        text: `Lord Vex swept out of the room, taking the Star Egg with him. The door slammed, and the lock clicked. Wren and Pebble were left alone in the thorny cage, watching helplessly as the last gray light faded from the round window.
 
 "The thorns tighten whenever we move," Pebble said, wincing. A sharp point had snagged one of his scales.
 
-Wren forced herself to stay still and think. She remembered something Master Oona had taught them during their very first week: "Every kind of magic has an opposite. Fire fears water. Shadow fears light. Thorns fear..."
+Wren forced herself to stay perfectly still and concentrate. She remembered something Master Oona had taught them during their very first week: "Every kind of magic has an opposite. Fire fears water. Shadow fears light. Thorns fear..."
 
 "Stone," Wren breathed. "Thorns grow in soil, but they can't grow through solid rock!"
 
@@ -1528,13 +1528,13 @@ Pebble's eyes lit up. He pressed his claws against the floor beneath the cage. S
 
 Pebble pushed harder. The stone crept up the bars of the cage, and one by one, the thorny vines cracked and crumbled into dust. With a final snap, the cage collapsed around them.
 
-They were free, but the door was still locked. Wren rattled the handle, but it wouldn't budge.
+They were free, but the heavy door was still locked, and although Wren rattled the handle with all her strength, it wouldn't budge.
 
 Then they heard scratching at the window. Nim's small silver face appeared, grinning. Behind her, clinging to the vines, were Tobin and Mira.
 
-"Nim told us everything," Mira said, climbing inside. "Are you hurt?"
+"Nim explained everything that happened," Mira said, climbing carefully through the window. "Are you injured?"
 
-"We're okay," Wren said, brushing thorn dust off her sleeves. "But Lord Vex took the egg to the top of the tower. The moon rises in a few hours."
+"We're okay," Wren answered, brushing the crumbled thorn dust off her sleeves. "But Lord Vex took the egg to the top of the tower. The moon rises in a few hours."
 
 Tobin peered out the window and pointed upward. The storm clouds around the tower's peak had grown enormous, crackling with purple light. Thunder rumbled so deeply that the walls trembled.
 
@@ -1547,27 +1547,27 @@ Tobin peered out the window and pointed upward. The storm clouds around the towe
           ['What does the growing storm tell us?', ['The egg may hatch soon and Vex\'s plan is starting', 'It\'s a sunny day', 'Master Oona has arrived', 'The adventure is over'], 0]
         ] },
       { title: 'Storm over the Tower', emoji: '⛈️',
-        text: `Mira knelt by the locked door and placed her hand on Ripple's head. "Ripple, can you fill the keyhole?" Ripple sent a thin stream of water into the lock. Then Blaze breathed a short, hot puff of fire. The water inside the lock turned to steam with a loud hiss, and the old metal popped open.
+        text: `Mira knelt by the locked door and placed her hand on Ripple's head. "Ripple, can you fill the keyhole?" Ripple carefully directed a thin stream of water into the lock, and immediately afterward Blaze breathed a short, scorching puff of fire. The water inside the lock turned to steam with a loud hiss, and the old metal popped open.
 
-"Teamwork," Tobin said with a grin.
+"Now that is teamwork," Tobin announced with a satisfied grin.
 
 They raced up a spiral staircase that seemed to go on forever. The higher they climbed, the louder the thunder became. Rain lashed against the narrow windows, and the wind howled through cracks in the walls like an angry animal.
 
-At the top, a wooden door hung open, banging back and forth in the wind. Beyond it was the roof of the tower, a flat circle of stone surrounded by a low wall. In the center stood Lord Vex, his cloak whipping wildly around him. He held the Star Egg high above his head.
+At the top, a wooden door hung open, banging back and forth in the wind. Beyond it was the roof of the tower, a flat circle of stone surrounded by a low wall. In the center stood Lord Vex, his cloak whipping wildly around him. He was holding the glittering Star Egg high above his head.
 
 The full moon had just appeared between the storm clouds, and its silver light poured down onto the egg. The golden shell was glowing so brightly that Wren had to shield her eyes. A long crack zigzagged across its surface.
 
-"It's hatching!" Mira cried.
+"It's hatching already!" Mira cried in alarm.
 
 Lord Vex turned and saw them. "You're too late!" he shouted over the roaring wind. "In a moment, the storm dragon will open its eyes, and the first face it sees will be mine!"
 
-Another crack split the shell. A bolt of lightning struck the tower wall, sending chunks of stone flying. Blaze spread his wings to shield Tobin. Ripple wrapped herself around Mira.
+Another crack split the shell. A bolt of lightning struck the tower wall, sending chunks of stone flying. Blaze spread his enormous wings to shield Tobin, while Ripple wrapped herself protectively around Mira.
 
 Wren grabbed Pebble's side. Through their bond, she could feel that he was terrified, but he was not backing away.
 
 "Pebble," she whispered, "the storm dragon is just a baby. It will be scared and confused. It doesn't need someone to control it. It needs someone to calm it down."
 
-Pebble looked at her. "Then go," he said. "I'll keep the tower standing."
+Pebble looked at her. "Then go," he said steadily. "I'll keep this crumbling tower standing."
 
 The egg burst open in a flash of blinding white light.`,
         qs: [
@@ -1580,27 +1580,27 @@ The egg burst open in a flash of blinding white light.`,
       { title: 'The Storm Dragon Hatches', emoji: '🐲',
         text: `When the light faded, a baby dragon sat among the broken pieces of golden shell. It was no bigger than a large dog, with silver-blue scales that crackled with tiny sparks. Its wings were folded tight against its body, and its huge eyes darted wildly around the stormy rooftop.
 
-The baby dragon let out a frightened shriek. Instantly, the wind doubled in strength. Lightning struck the tower again and again.
+The baby dragon let out a frightened shriek, and instantly the wind doubled in strength while lightning struck the tower again and again.
 
 "Look at me!" Lord Vex commanded, stepping toward it. "I am your master!"
 
-The baby dragon flinched away from his voice. Its sparks grew brighter and more dangerous. The storm swirled faster.
+The baby dragon flinched away from his harsh voice. Its sparks grew brighter and more dangerous, and the storm swirled even faster.
 
-Behind Wren, the tower walls began to crack. Pebble planted his feet and pressed his claws against the stones. Green light rushed through the cracks, sealing them shut as quickly as they appeared. His legs shook, but he held on.
+Behind Wren, the tower walls began to crack. Pebble planted his feet and pressed his claws against the stones. Green light rushed through the cracks, sealing them shut as quickly as they appeared. His legs trembled with exhaustion, but he held on.
 
-Wren took a slow step toward the baby dragon. Then another. She didn't shout. She didn't command. She knelt down on the wet stone, so she wasn't any taller than the baby.
+Wren took a slow, careful step toward the baby dragon, and then another. She didn't shout, and she didn't give orders. She knelt down on the wet stone, so she wasn't any taller than the baby.
 
 "Hey there," she said gently. "I know it's loud and scary. You've been asleep for a really long time. It's okay to be afraid."
 
-The baby dragon's eyes found hers. Its sparks flickered.
+The baby dragon's enormous eyes found hers, and its sparks flickered uncertainly.
 
 Wren closed her eyes, the way Master Oona had taught her on the very first day. She didn't try to bond with the dragon. She simply let it feel what she was feeling: calm, and safe, and kind.
 
-Slowly, the wind softened. The rain turned to a gentle drizzle. The lightning stopped.
+Gradually, the wind softened, the rain became a gentle drizzle, and the lightning disappeared.
 
 When Wren opened her eyes, the baby dragon had crept forward and rested its head on her knee. Its sparks had faded to a soft blue glow.
 
-"Impossible," Lord Vex whispered. His arms fell to his sides. "It chose you."
+"Impossible," Lord Vex whispered in disbelief. His arms fell to his sides. "It chose you."
 
 "No," Wren said quietly. "It didn't choose anyone yet. It just needed to feel safe first."
 
@@ -1618,37 +1618,37 @@ Above them, the storm clouds parted, and the full moon shone down on the rooftop
     n: 8, title: 'Dragon Guardian', kind: 'story',
     stories: [
       { title: "Lord Vex's Choice", emoji: '💜',
-        text: `For a long moment, no one moved. Rainwater dripped from the edges of the tower. The baby storm dragon yawned, revealing tiny pointed teeth, and snuggled closer to Wren's knee.
+        text: `For a long moment, no one moved, and rainwater dripped steadily from the crumbling edges of the tower. The baby storm dragon yawned, revealing tiny pointed teeth, and snuggled closer to Wren's knee.
 
-Lord Vex sank down onto the low stone wall. Without the storm swirling around him, he didn't look powerful anymore. He looked tired, and older than Wren had expected.
+Lord Vex sank down heavily onto the low stone wall. Without the storm swirling dramatically around him, he no longer looked powerful; instead, he looked exhausted, and considerably older than Wren had expected.
 
 "I saw the drawing on your wall," Wren said carefully. "Vex and Thunder, Skyfire Academy. Was Thunder your dragon?"
 
-Lord Vex was silent for so long that Wren thought he wouldn't answer. Then he spoke in a low voice. "Thunder was a wind dragon. We were bonded when I was about your age. I was the best student in my class. I could make Thunder fly faster and higher than any other dragon."
+Lord Vex remained silent for so long that Wren assumed he wouldn't answer, but eventually he spoke in a low, unsteady voice. "Thunder was a wind dragon. We were bonded when I was approximately your age, and I was the most talented student in my class. I could make Thunder fly faster and higher than any other dragon."
 
 "What happened?" Mira asked softly.
 
-"I pushed him too hard," Vex admitted. "I never asked whether he was tired, or scared, or hurt. I only cared about winning. One day, during a race through the mountains, he simply... flew away. He never came back." Vex stared down at his hands. "I told myself that dragons couldn't be trusted. That if I found a dragon powerful enough, I could make it obey, and it would never leave."
+"I pushed him much too hard," Vex admitted miserably. "I never asked whether he was tired, or scared, or hurt. I only cared about winning. One day, during a race through the mountains, he simply... flew away. He never returned." Vex stared silently down at his empty hands. "I told myself that dragons couldn't be trusted. That if I found a dragon powerful enough, I could make it obey, and it would never leave."
 
-Wren felt Pebble's thoughts brush against hers, warm and sad. He's lonely, Pebble said through their bond. He's been lonely for a very long time.
+Wren felt Pebble's thoughts brush gently against hers, warm and full of sympathy. He's lonely, Pebble said through their bond. He's been lonely for a very long time.
 
-Wren stood up, and the baby dragon stayed close to her feet. "Master Oona taught us that a bond isn't something you take," she said. "It's something you build, one day at a time. Pebble couldn't fly when I met him. He thought he wasn't special. But I didn't love him because he was powerful. I loved him because he was Pebble."
+Wren stood up slowly, and the baby dragon remained close beside her feet. "Master Oona taught us that a bond isn't something you take," she said. "It's something you build, one day at a time. When I first met Pebble, he couldn't fly, and he believed he wasn't special. But I didn't love him because he was powerful. I loved him because he was Pebble."
 
 Pebble pressed his head against her side, and Wren felt the familiar warm hum in her hand.
 
-Lord Vex looked up at them. His eyes were wet. "I don't know how to do that," he said. "I've forgotten how."
+Lord Vex looked up at them with tears glistening in his eyes. "I don't know how to do that," he said. "I've forgotten how."
 
 "Then come back to the academy," Wren said. "You can learn again. That's what schools are for."
 
-Tobin's mouth fell open. Mira nudged him with her elbow.
+Tobin's mouth fell open in astonishment, so Mira nudged him firmly with her elbow.
 
-The baby storm dragon padded across the wet stones toward Lord Vex. It sniffed his boot curiously. Vex didn't reach for it. He didn't command it. He simply held very still, the way Wren had.
+The baby storm dragon padded across the wet stones toward Lord Vex. It sniffed his muddy boot curiously. Vex didn't reach for it or command it; he simply held perfectly still, exactly the way Wren had.
 
-The baby dragon looked at him for a long moment. Then it turned around and trotted back to Wren.
+The baby dragon studied him for a long moment, and then it turned around and trotted contentedly back to Wren.
 
 Vex let out a breath that was almost a laugh. "Fair enough," he said. "I suppose I'll have to earn it."
 
-Far below, the forest was beginning to glow with tiny green lights. Wren smiled. Pebble's trail of shining stones was still there, waiting to lead them all home.`,
+Far below, the forest was beginning to glow with tiny green lights. Wren smiled, because Pebble's trail of shining stones was still there, patiently waiting to lead them all home.`,
         qs: [
           ['Who was Thunder?', ['Lord Vex\'s wind dragon from long ago', 'Master Oona\'s dragon', 'The baby storm dragon', 'Tobin\'s brother'], 0],
           ['Why did Thunder fly away?', ['Vex pushed him too hard and only cared about winning', 'Thunder got lost in fog', 'Master Oona sent him away', 'Thunder wanted to find the Star Egg'], 0],
@@ -1661,13 +1661,13 @@ Far below, the forest was beginning to glow with tiny green lights. Wren smiled.
 
 "You built this?" Lord Vex asked Pebble, sounding genuinely amazed. Pebble ducked his head shyly. "I had to," he said. "Wren was falling."
 
-They crossed the bridge together. Nim and her family scampered ahead, their silver tails flashing in the sunlight. At the far side, Nim stopped and turned back to Wren.
+They crossed the bridge together while Nim and her family scampered ahead, their silver tails flashing brilliantly in the sunlight. At the far side, Nim stopped and turned back to Wren.
 
 "This is where my family's home is," she said. "Thank you for keeping your promise." She pressed something small and cold into Wren's palm. It was a smooth silver stone, shaped like a crescent moon. "If you ever need the moon sprites, hold this stone up to the night sky, and we will come."
 
 Wren hugged Nim gently, and then the foxes vanished into the trees like drops of moonlight.
 
-The rest of the journey was long. The baby storm dragon got tired quickly and kept stopping to nap in patches of sunshine. Every time it fell asleep, the clouds above them grew a little darker, and a light rain sprinkled down. Every time it woke up happy, the sky turned bright blue again.
+The remainder of the journey was long and exhausting. The baby storm dragon got tired quickly and kept stopping to nap in patches of sunshine. Every time it fell asleep, the clouds above them grew a little darker, and a light rain sprinkled down. Every time it woke up happy, the sky turned bright blue again.
 
 "Its moods control the weather," Mira observed, fascinated. "When it's sad, it rains. When it's scared, there's lightning."
 
@@ -1679,7 +1679,7 @@ Pebble's eyes sparkled. He backed up, ran as fast as he could, and leaped. His w
 
 Everyone cheered. Even Lord Vex clapped.
 
-"His wings got stronger," Mira said in wonder.
+"His wings have gotten so much stronger," Mira said in wonder.
 
 "Or maybe he just stopped believing they were too small," Wren replied.
 
@@ -1696,7 +1696,7 @@ Then Master Oona saw who was walking behind them, and her expression changed com
           ['What does Wren mean when she says Pebble "stopped believing they were too small"?', ['Believing in yourself can help you do hard things', 'His wings shrank', 'He forgot how to fly', 'Wren used magic on him'], 0]
         ] },
       { title: 'The Ceremony of Stars', emoji: '🌟',
-        text: `Three nights later, the entire academy gathered in the Great Hall for the Ceremony of Stars. Hundreds of candles floated near the ceiling, and the walls glittered with crystals that the students had brought back from the floating island. Thanks to Pebble's earth magic, the island had stopped sinking, and it now drifted peacefully above the academy once more.
+        text: `Three nights later, the entire academy gathered in the Great Hall for the Ceremony of Stars. Hundreds of candles floated near the ceiling. The walls glittered with crystals that the students had brought back from the floating island. Thanks to Pebble's earth magic, the island had stopped sinking. Now it drifted peacefully above the academy once more.
 
 Wren sat in the front row between Tobin and Mira, nervously twisting the silver moon stone in her fingers. Pebble sat beside her, his scales polished until they gleamed.
 
@@ -1704,7 +1704,7 @@ Master Oona stepped onto the stage. "Tonight," she announced, "we honor three yo
 
 Tobin and Mira walked up to receive glowing golden pins shaped like dragon wings. The audience applauded loudly.
 
-"And finally," Master Oona continued, her voice growing warm, "Wren and Pebble. When Wren arrived at this academy, Pebble could not fly, and neither of them knew what he could do. Together, they built a bridge out of fog, broke through a cage of thorns, held a tower together in a storm, and calmed the rarest dragon in the world. But the bravest thing Wren did was something else entirely." Master Oona paused. "She offered kindness to someone who had not been kind to her."
+"And finally," Master Oona continued, her voice growing warm, "Wren and Pebble. When Wren arrived at this academy, Pebble could not fly, and neither of them knew what he could do. Together, they built a bridge out of fog and broke through a cage of thorns. They held a tower together in a storm. They calmed the rarest dragon in the world. But the bravest thing Wren did was something else entirely." Master Oona paused. "She offered kindness to someone who had not been kind to her."
 
 Wren's cheeks turned pink. She glanced toward the back of the hall, where Lord Vex sat quietly in a plain gray robe instead of his purple cloak. He gave her a small nod.
 
@@ -1712,9 +1712,9 @@ Wren's cheeks turned pink. She glanced toward the back of the hall, where Lord V
 
 The hall exploded with cheers. Pebble let out a happy roar so loud that it made the candles flicker. Wren walked onto the stage, and Master Oona fastened a silver pin, shaped like a star, onto her collar.
 
-Then a small silver-blue shape fluttered down from the rafters. The baby storm dragon had been watching from above, and now it landed softly on Wren's shoulder, making a tiny rumbling purr.
+Then a small silver-blue shape fluttered down from the rafters. The baby storm dragon had been watching from above. Now it landed softly on Wren's shoulder with a tiny rumbling purr.
 
-"It still hasn't bonded with anyone," Master Oona said quietly. "It will choose when it is ready. Until then, it will stay here, where it is safe, and where it can learn what kindness feels like."
+"It still hasn't bonded with anyone," Master Oona said quietly. "It will choose when it is ready. Until then, it will stay here, where it is safe. Here it can learn what kindness feels like."
 
 "Can it have a name?" Wren asked.
 
@@ -1811,13 +1811,13 @@ By the next day, Blaze felt much better. His first sneeze-free roar was so loud 
   ],
   3: [
     { title: 'The Library of Whispers', emoji: '📚',
-      text: `The academy library was the quietest place in the whole castle. The books there were magic. If you listened closely, you could hear them whispering their stories to each other.
+      text: `The academy library was the quietest place in the whole castle. The books there were magic. If you listened closely, you could hear them whisper their stories to each other.
 
-Wren needed a book about earth dragons. The librarian was an owl named Quill, who wore tiny round glasses. "Be very quiet," Quill hooted, "or the books will fly away."
+Wren needed a book about earth dragons. The librarian was an owl named Quill. He wore tiny round glasses. "Be very quiet," Quill hooted, "or the books will fly away."
 
-Wren tiptoed between the tall shelves. Pebble tiptoed too, but his tail was not as careful. Thump! It bumped a shelf, and suddenly a hundred books flapped their pages and fluttered into the air like birds.
+Wren tiptoed between the tall shelves. Pebble tiptoed too, but his tail was not as careful. Thump! It bumped a shelf. All at once, a hundred books flapped their pages. They fluttered into the air like birds.
 
-When the books finally settled, one landed right at Wren's feet. It was open to a page titled "Earth Dragons Can Build." Wren grinned at Pebble. "I think your tail found exactly what we needed."`,
+At last the books settled down. One landed right at Wren's feet. It was open to a page called "Earth Dragons Can Build." Wren grinned at Pebble. "I think your tail found just what we needed."`,
       qs: [
         ['What was special about the library books?', ['They whispered and could fly', 'They were made of gold', 'They were all blank', 'They were tiny'], 0],
         ['Who was the librarian?', ['An owl named Quill', 'Master Oona', 'Lord Vex', 'A cat'], 0],
@@ -1912,19 +1912,19 @@ Then, on the side of the hill, a huge stone eyelid slid open. An eye as big as a
         ['Why might Old Moss want to teach Pebble?', ['Pebble is an earth dragon like him and showed kindness', 'Pebble woke him on purpose', 'Pebble is the biggest dragon', 'Master Oona told him to'], 0]
       ] },
     { title: 'Sky Race Tryouts', emoji: '🏁',
-      text: `Every spring, the academy chose a team for the Great Sky Race. Riders and their dragons would fly around the tallest mountains and back again. Everyone wanted to be on the team.
+      text: `Every spring, the academy chose a team for the Great Sky Race. Riders and their dragons would fly around the tallest mountains and back again. Everyone wanted to be chosen.
 
-Tobin and Blaze made the team easily. So did Mira and Ripple. But Pebble still couldn't fly, so Wren sat quietly on the grass, trying not to feel sad.
+Tobin and Blaze made the team easily. So did Mira and Ripple. But Pebble still couldn't fly, so Wren sat quietly on the grass, trying not to feel disappointed.
 
-Master Oona sat down beside her. "A team needs more than fast wings," she said. "It needs someone who can read the wind and the clouds. Someone who notices things. Will you be our navigator?"
+Master Oona sat down beside her. "A team needs more than fast wings," she said. "It needs someone who can read the wind and the clouds. Someone who notices everything. Will you be our navigator?"
 
 Wren's eyes went wide. "Me?"
 
-On the day of the race, Wren stood at the top of the tower with a map and a spyglass. She watched the clouds and the bending trees. "Storm coming from the north!" she called through a brass horn. "Fly low through the valley!"
+On the day of the race, Wren stood at the top of the tower with a map and a spyglass. She carefully studied the clouds and the bending trees. "Storm approaching from the north!" she called through a brass horn. "Fly low through the valley!"
 
-The other teams flew straight into the storm and got blown off course. But the Skyfire team zipped safely through the valley and crossed the finish line first.
+The other teams flew straight into the storm and were blown far off course. But the Skyfire team zipped safely through the valley and crossed the finish line first.
 
-That night, Pebble leaned against Wren. "Next year," he whispered, "I'll be flying in that race. And you'll be on my back."`,
+That night, Pebble leaned against Wren. "Next year," he whispered, "I'll be flying in that race, and you'll be riding on my back."`,
       qs: [
         ['What was the Great Sky Race?', ['A flying race around the tallest mountains', 'A running race', 'A swimming race', 'A cooking contest'], 0],
         ['Why couldn\'t Wren race?', ['Pebble couldn\'t fly yet', 'She was sick', 'She was too young', 'She didn\'t want to'], 0],
@@ -1991,9 +1991,9 @@ Pebble sniffed his apple and quietly handed it to Wren. Then he wandered over to
   ],
   7: [
     { title: 'The Ice Caves', emoji: '🧊',
-      text: `In the middle of winter, Master Oona led the students on an expedition to the Frostfang Caves, high in the snowy mountains. Deep inside the caves grew glowcrystals, which the academy used to light its lanterns through the long, dark winter nights.
+      text: `In the middle of winter, Master Oona led the students on an expedition to the Frostfang Caves, high in the snowy mountains. Deep inside the caves grew glowcrystals. The academy used them to light its lanterns through the long, dark winter nights.
 
-The caves were breathtaking. Icicles hung from the ceiling like crystal chandeliers, and the frozen walls shimmered blue and silver. Every footstep echoed.
+The caves were breathtaking. Icicles hung from the ceiling like crystal chandeliers. The frozen walls shimmered blue and silver. Every footstep echoed.
 
 "Stay together," Master Oona warned. "The ice here can be thin."
 
@@ -2240,19 +2240,19 @@ When Mrs. Park came back, she smiled. "How did you keep them together?"
         ['What lesson did the club learn?', ['Turning things into a game can help', 'Yelling works best', 'Twins never listen', 'Hide from toddlers'], 0]
       ] },
     { title: 'The Missing Notebook', emoji: '📒',
-      text: `Priya kept the club notebook. It had every job, every phone number, and every dollar the club had earned. She carried it everywhere.
+      text: `Priya kept the club notebook. It had every job and every phone number. It had every dollar the club had made, too. She took it everywhere.
 
-One Saturday, the notebook was gone. Priya searched her backpack, her bedroom, and the tree house. "Without it, we won't know which jobs we promised!" she cried.
+One Saturday, the notebook was gone. Priya looked in her backpack. She looked in her room and in the tree house. "Without it, we won't know which jobs we promised!" she cried.
 
-Lena noticed something on the tree house floor: a trail of colored pencil shavings. They led to the corner, where Jules sat drawing, the notebook open on her lap.
+Lena saw something on the tree house floor. It was a trail of pencil shavings in lots of colors. The trail led to the corner. Jules sat there drawing, with the notebook open on her lap.
 
 "Jules!" said Priya. "That's our club notebook!"
 
-Jules looked up, surprised. "I'm sorry! I ran out of paper, and I only used the back pages."
+Jules looked up. "I'm sorry! I ran out of paper, so I used the back pages."
 
-Priya flipped to the back. Jules had drawn a beautiful picture of all four friends in the tree house. Priya's frown slowly turned into a smile.
+Priya flipped to the back. Jules had drawn a pretty picture of all four friends in the tree house. Priya's frown slowly turned into a smile.
 
-"Okay," she said. "But next time, ask first. And maybe we should buy you a sketchbook."`,
+"Okay," she said. "But next time, ask first. And maybe we should get you a sketchbook."`,
       qs: [
         ['What was in the club notebook?', ['Jobs, phone numbers, and money earned', 'Only drawings', 'Recipes', 'Spelling words'], 0],
         ['Why was Priya so worried?', ['They wouldn\'t know which jobs they promised', 'It was expensive', 'It was her birthday present', 'Her mom would be mad'], 0],
@@ -2263,23 +2263,23 @@ Priya flipped to the back. Jules had drawn a beautiful picture of all four frien
   ],
   4: [
     { title: 'Two Jobs, One Saturday', emoji: '📅',
-      text: `On Friday night, Priya opened the club notebook and gasped. "Uh-oh. We promised to walk Noodle at ten o'clock tomorrow."
+      text: `On Friday night, Priya opened the club notebook and gasped. "Uh-oh. We said we would walk Noodle at ten tomorrow."
 
 "So?" asked Rosie.
 
-"We ALSO promised to help Mr. Ortiz plant his garden at ten o'clock," Priya said. "We can't be in two places at once!"
+"We ALSO said we would help Mr. Ortiz plant his garden at ten," Priya said. "We can't be in two places at once!"
 
 Everyone was quiet. Then Lena said, "Maybe we can. There are four of us."
 
-"Two people walk Noodle, and two people help Mr. Ortiz," Jules suggested.
+"Two people walk Noodle. Two people help Mr. Ortiz," Jules said.
 
-"But Noodle is really strong," Rosie worried. "Remember last time?"
+"But Noodle is really strong," Rosie said. "Remember last time?"
 
-"Then you and I take Noodle," said Priya. "We'll both hold the leash from the start."
+"Then you and I take Noodle," said Priya. "We'll both hold the leash."
 
 On Saturday, the plan worked. Rosie and Priya walked Noodle all the way around the park. Jules and Lena planted twenty tomato plants with Mr. Ortiz.
 
-That evening, Priya made a new rule in the notebook: "Check the calendar BEFORE saying yes."`,
+That night, Priya wrote a new rule in the notebook: "Check the calendar BEFORE saying yes."`,
       qs: [
         ['What problem did Priya find?', ['Two jobs at the same time', 'A lost dog', 'A broken tree house', 'No jobs at all'], 0],
         ['Who suggested splitting into two teams?', ['Jules', 'Rosie', 'Mr. Ortiz', 'Mrs. Lee'], 0],
@@ -2342,29 +2342,29 @@ The tomatoes were safe. The raccoons still got dinner. Everyone was happy.`,
         ['Why did Mr. Ortiz leave scraps by the woods?', ['So the raccoons could still eat somewhere else', 'To trap them', 'To grow more tomatoes', 'To feed Noodle'], 0]
       ] },
     { title: 'The Big Argument', emoji: '⚡',
-      text: `"We should take every job we can get!" said Rosie, waving her arms. "That's how we'll become the best club in town."
+      text: `"We should take every job we can possibly get!" said Rosie, waving her arms. "That's how we'll become the most popular club in town."
 
-"No," said Priya firmly. "If we take too many jobs, we'll do them badly. We should only take the jobs we can do well."
+"No," said Priya firmly. "If we take too many jobs, we'll do them badly. We should only accept the jobs we can do well."
 
 "That's boring!"
 
 "That's responsible!"
 
-Their voices got louder and louder. Jules covered her ears. Finally, Rosie stomped down the tree house ladder. "Maybe there shouldn't even BE a club!" she shouted.
+Their voices grew louder and louder until Jules covered her ears. Finally, Rosie stomped down the tree house ladder. "Maybe there shouldn't even BE a club!" she shouted.
 
 The tree house was very quiet.
 
-The next day, Lena knocked on Rosie's door, then on Priya's. "Can we meet?" she asked. "Just for ten minutes."
+The next day, Lena knocked on Rosie's door, and then on Priya's. "Can we meet?" she asked. "Just for ten minutes."
 
-When they were all together, Lena handed each girl a piece of paper. "Write down what you think the other person is trying to say. Not what you think. What THEY think."
+When everyone was together, Lena handed each girl a piece of paper. "Write down what you think the other person is trying to say. Not what you believe. What THEY believe."
 
-Rosie wrote: "Priya wants us to do a good job so people trust us."
+Rosie wrote: "Priya wants us to do excellent work so people will trust us."
 
 Priya wrote: "Rosie wants the club to grow so we can help more people."
 
-They read each other's papers and both started laughing. "We actually want the same thing," said Rosie.
+They read each other's papers and both started laughing. "We actually want the same thing," said Rosie, surprised.
 
-They made a new plan: take new jobs, but only one more each week. And they agreed that nobody would say "no club" ever again.`,
+Together they created a new plan: accept new jobs, but only one more each week. And they agreed that nobody would ever say "no club" again.`,
       qs: [
         ['What did Rosie want?', ['To take every job they could get', 'To close the club', 'To only take one job', 'To make Priya the boss'], 0],
         ['What did Priya want?', ['Only jobs they could do well', 'Every job possible', 'No jobs at all', 'To buy a new notebook'], 0],
@@ -2433,17 +2433,17 @@ At the end of the day, Mr. Ortiz said it was the best fair in years. "Anyone can
   ],
   7: [
     { title: 'The Search for Pepper', emoji: '🐈‍⬛',
-      text: `Mrs. Lee knocked on the tree house ladder, looking frantic. "Pepper is missing!" she said. Pepper was her small black cat, with one white paw like a sock. "She slipped out last night, and she has never been gone this long."
+      text: `Mrs. Lee knocked anxiously on the tree house ladder, looking absolutely frantic. "Pepper is missing!" she said. Pepper was her small black cat, with one white paw like a sock. "She slipped out last night, and she has never been gone this long."
 
-The club got to work immediately.
+The club organized a search immediately.
 
 Jules made posters with a drawing of Pepper, so neighbors would know exactly what she looked like. Priya pulled out a map of Maple Lane and drew a grid of squares across it. "If we search one square at a time," she explained, "we won't miss anywhere, and we won't search the same place twice."
 
 Lena packed a flashlight, a can of cat food, and a spoon. "Cats come when they hear a spoon tapping on a can," she said. "My grandma taught me that."
 
-Rosie knocked on every door, asking neighbors to check their sheds, porches, and garages.
+Rosie knocked on every single door, politely asking neighbors to investigate their sheds, porches, and garages.
 
-They searched square after square. They looked under bushes and behind fences. Hours passed. The sun began to set, and the girls grew tired and worried.
+They searched square after square, examining the ground underneath bushes and behind fences. Hours passed, the sun began to set, and the girls grew exhausted and worried.
 
 "Maybe she's gone for good," Jules said quietly.
 
@@ -2453,13 +2453,13 @@ The last square was the Johnsons' house. The Johnsons had been cleaning out thei
 
 Lena knelt down in front of the boxes and tapped the spoon on the can. Tink, tink, tink.
 
-At first, nothing. Then a tiny, muffled sound: "Mew."
+At first, there was nothing but silence. Then they heard a tiny, muffled sound: "Mew."
 
-The girls froze. Tink, tink, tink. "Mew!" It was coming from inside a box labeled HOLIDAY DECORATIONS.
+The girls froze, hardly daring to breathe. Tink, tink, tink. "Mew!" It was coming from inside a box labeled HOLIDAY DECORATIONS.
 
 Rosie carefully opened the flaps. There, curled up in a nest of tinsel, was Pepper, blinking at them sleepily. She must have wandered into the open garage and gotten closed in when the Johnsons shut the door.
 
-When they carried Pepper home, Mrs. Lee burst into happy tears. She hugged each girl one by one.
+When they carried Pepper home, Mrs. Lee burst into grateful tears and hugged each girl individually.
 
 That night, Priya added a new page to the club notebook. At the top, she wrote, "Lost Pet Plan," and listed every step they had used. "Just in case," she said, "someone else ever needs us."`,
       qs: [
@@ -2505,25 +2505,25 @@ They voted on it right then. The vote was four to zero.`,
     { title: 'One Year of Sunshine', emoji: '🎉',
       text: `It had been exactly one year since Jules painted the very first sign: "The Sunny Day Club. We Help!" The paint had faded a little in the sun and rain, but it still hung proudly on the gate.
 
-To celebrate, the girls climbed into the tree house with a box of cupcakes and the club notebook. Priya opened it to the first page.
+To celebrate the anniversary, the girls climbed into the tree house with a box of cupcakes and the club notebook, and Priya opened it to the very first page.
 
-"Job number one," she read. "Walk Noodle." Everyone groaned and laughed at the same time. Rosie rubbed her elbow, remembering how Noodle had dragged her down the street.
+"Job number one," she read. "Walk Noodle." Everyone groaned and laughed simultaneously. Rosie rubbed her elbow, remembering how Noodle had dragged her down the street.
 
 They kept reading. The lemonade stand that raised twenty dollars for the library. The day Max and Mia ran in two directions at once. The raccoon family in Mr. Ortiz's garden. The thunderstorm fair. The search for Pepper. They even read about the week the club almost fell apart, twice.
 
-"Do you know how many jobs we've done?" Priya asked. She had counted. "Eighty-seven."
+"Do you know how many jobs we've completed?" Priya asked, since she had carefully counted them. "Eighty-seven."
 
 "Eighty-seven!" Jules gasped. "That's a lot of helping."
 
-Just then, they heard voices outside. Lots of voices. The girls peeked out the window and stared.
+Just then, they heard voices outside, dozens of them, so the girls peeked curiously out the window and stared in amazement.
 
 All of Maple Lane was standing in Rosie's backyard. Mrs. Lee was there with Noodle and Pepper. Mr. Ortiz held a basket of tomatoes. Mrs. Park stood with the twins, who were now four and holding a giant banner. Even the Johnsons had come, and the librarian from the town library.
 
 The banner said: "THANK YOU, SUNNY DAY CLUB!"
 
-The girls climbed down the ladder, too surprised to speak. Mrs. Lee stepped forward. "For a whole year," she said, "you four have helped every single one of us. Today, we wanted to help you."
+The girls climbed down the ladder, too astonished to say anything. Mrs. Lee stepped forward. "For a whole year," she said, "you four have helped every single one of us. Today, we wanted to help you."
 
-The neighbors had built something under a sheet next to the tree. Mr. Ortiz pulled the sheet away. It was a beautiful wooden bench, painted bright yellow, with four names carved into the back: ROSIE, PRIYA, JULES, LENA.
+The neighbors had constructed something mysterious and hidden it under a sheet beside the tree, and Mr. Ortiz dramatically pulled the sheet away. It was a beautiful wooden bench, painted bright yellow, with four names carved into the back: ROSIE, PRIYA, JULES, LENA.
 
 "For club meetings when the tree house gets too crowded," said Mr. Ortiz with a wink.
 
@@ -2533,9 +2533,9 @@ That evening, after everyone had gone home, the four friends sat on their new be
 
 "To help people," said Priya.
 
-"I think it helped us too," said Lena quietly. "I came here with no friends. Now I have three best ones."
+"I think it helped us too," said Lena quietly. "When my family moved here, I had absolutely no friends, and now I have three wonderful best friends."
 
-Jules didn't say anything. She just pulled out her sketchbook and began to draw the four of them, sitting together on the yellow bench, in the very last light of a sunny day.`,
+Jules didn't say anything; she simply pulled out her sketchbook and began to draw the four of them, sitting together on the yellow bench, in the very last light of a sunny day.`,
       qs: [
         ['What were the girls celebrating?', ['The club\'s one-year anniversary', 'Rosie\'s birthday', 'The end of school', 'A new member'], 0],
         ['How many jobs had the club done?', ['Eighty-seven', 'Twenty', 'One hundred', 'Twelve'], 0],
@@ -2544,25 +2544,25 @@ Jules didn't say anything. She just pulled out her sketchbook and began to draw 
         ['Why do you think the neighbors all came together?', ['To thank the club for a year of help', 'Because Mrs. Lee lost Noodle', 'For a fair', 'Because of a storm'], 0]
       ] },
     { title: 'The Littlest Member', emoji: '🌱',
-      text: `Rosie's little sister, Daisy, was five years old, and she followed the club everywhere. She sat at the bottom of the tree house ladder during meetings. She trailed behind them on dog walks. She drew her own Sunny Day Club signs in crayon and taped them to her bedroom door.
+      text: `Rosie's little sister, Daisy, was five years old, and she followed the club everywhere. She waited patiently at the bottom of the tree house ladder during meetings, and she trailed behind them on every dog walk. She drew her own Sunny Day Club signs in crayon and taped them to her bedroom door.
 
 "Can I join?" she asked for the hundredth time.
 
 "You're too little," Rosie said, for the hundredth time. "Club jobs are hard work."
 
-Daisy's lip trembled, and she walked away without a word.
+Daisy's lip trembled with disappointment, and she walked away without saying a word.
 
 Priya watched her go. "Rosie," she said slowly, "how old were we when we started wanting to help people?"
 
-Rosie thought about it. "I don't know. Little, I guess."
+Rosie considered the question thoughtfully. "I don't remember exactly. Pretty little, I guess."
 
 "Maybe being little doesn't mean you can't help," said Lena. "It just means you help in a different way."
 
-The club called a vote, the way they had promised to do for every big decision. They talked about what Daisy could do safely. She couldn't walk Noodle; he was bigger than she was. She couldn't use Lena's tools. But she could water Mr. Ortiz's plants with a small watering can. She could help Jules color in flyers. She could play with Max and Mia, who were almost her age.
+The club called a vote, the way they had promised to do for every big decision. They discussed which responsibilities Daisy could handle safely. She couldn't walk Noodle; he was bigger than she was. She couldn't use Lena's tools. But she could water Mr. Ortiz's plants with a small watering can. She could help Jules color in flyers. She could play with Max and Mia, who were almost her age.
 
 The vote was four to zero, again.
 
-That evening, Rosie knocked on Daisy's bedroom door. Daisy was lying on her bed, still sad.
+That evening, Rosie knocked gently on Daisy's bedroom door, where Daisy was lying on her bed, still feeling miserable.
 
 "Daisy," Rosie said, "the Sunny Day Club has a new program. It's called the Sunny Sprouts. It's for helpers who are still growing. And we need a first member."
 
@@ -2570,9 +2570,9 @@ Daisy sat straight up. "Me?"
 
 "You," said Rosie. She held out a small yellow badge that Jules had made. It had a tiny green sprout painted on it.
 
-Daisy pinned it to her shirt and ran to the mirror. Then she ran back and threw her arms around her big sister.
+Daisy pinned it proudly to her shirt and raced to the mirror, and then she ran back and threw her arms around her big sister.
 
-On Saturday, Daisy watered every one of Mr. Ortiz's tomato plants, very carefully, one at a time. When she finished, Mr. Ortiz shook her hand like a grown-up. "Excellent work, Sprout," he said.
+On Saturday, Daisy watered every one of Mr. Ortiz's tomato plants, very carefully, one at a time. When she had finished, Mr. Ortiz shook her hand respectfully, just like a grown-up. "Excellent work, Sprout," he said.
 
 Daisy beamed so brightly that, for a moment, Rosie thought she looked exactly like the club's very first sign.
 
@@ -2877,3 +2877,319 @@ Priya opened the notebook one last time that summer and wrote: "Case closed. Two
     ] }
 ];
 
+
+/* ===================== NEW: The Moonstone Mystery (Gia · Skyfire Academy mystery) =====================
+   A chapter-book mystery. Questions train critical reading: clues vs. red herrings, evidence,
+   predictions, main idea and the author's choices. `deep: true` keeps these authored questions first. */
+const MOONSTONE_BOOK = [
+  { title: 'The Empty Tower', emoji: '🌙', series: 'quest', deep: true,
+    text: `Every night, the Star Tower at Skyfire Academy glowed silver. At the very top sat seven moonstones on a stone shelf. They soaked up moonlight and kept the dragon nests warm all winter.
+
+One morning, Master Oona called the students into the hall. Her face was serious. "Three moonstones are missing," she said. "Without them, the baby dragons in the nests will get cold."
+
+Everyone gasped. Mira glanced at her water dragon, Ripple. Ripple loved shiny things, and everybody knew it. Ripple sank low in the pond and blew a nervous bubble.
+
+Tobin crossed his arms. "I saw someone near the tower last night," he whispered to Wren. "But it was too dark to see who."
+
+Wren looked at Pebble, her small gray earth dragon. Pebble could feel stones the way other dragons could smell smoke. "Can you sense the moonstones?" Wren asked in her mind.
+
+Pebble closed his eyes. "They are not far," he answered. "And they are humming. Something is keeping them warm."
+
+Wren frowned. Moonstones only hummed when they were together. So whoever took them had not scattered them. They were all in one place.
+
+"Then this is a mystery," Wren said out loud. "And we are going to solve it."`,
+    qs: [
+      ['What is the main problem in this chapter?', ['Three moonstones are missing and the baby dragons could get cold', 'Ripple will not come out of the pond', 'Tobin lost his way in the dark', 'Master Oona is moving away'], 0],
+      ['Why does everyone look at Ripple?', ['Ripple loves shiny things, so she seems like a suspect', 'Ripple was seen in the tower', 'Ripple told them she took the stones', 'Ripple was crying'], 0],
+      ['What clue tells Wren the stones are all in one place?', ['They are humming, and moonstones only hum when together', 'Tobin saw them in a bag', 'There is silver dust on the stairs', 'Master Oona found one stone'], 0],
+      ['Why do you think the author tells us Ripple "blew a nervous bubble"?', ['To make us wonder if Ripple is guilty', 'To show that Ripple is hungry', 'To explain how dragons breathe underwater', 'To prove that Ripple took the stones'], 0],
+      ['What do you predict Wren will do next?', ['Use Pebble\'s stone sense to search for the moonstones', 'Go home to the farm', 'Ask Ripple to leave the academy', 'Give up and go to sleep'], 0]
+    ] },
+  { title: 'Silver Dust', emoji: '✨', series: 'quest', deep: true,
+    text: `After lessons, Wren, Tobin, and Mira climbed the two hundred steps of the Star Tower. Blaze, Ripple, and Pebble flew beside the windows.
+
+At the top, the stone shelf looked sad and empty in three places. Wren knelt down. On the floor was a thin line of silver dust. It sparkled like crushed stars.
+
+"Moonstone dust," said Mira. "It rubs off when the stones are moved."
+
+The line of dust did not go to the stairs. It went to the window and stopped.
+
+"The thief did not walk down," said Tobin slowly. "The thief went out the window."
+
+"So the thief can fly," said Wren.
+
+Mira bit her lip. "Ripple can fly a little," she said quietly. "But Ripple was in the pond all night. I know, because she splashed me awake at sunrise."
+
+Tobin looked closer at the window ledge. Pressed into the soft moss were tiny footprints. Each one had three thin toes, pointing forward.
+
+"Those are not Ripple's," said Wren. "Water dragons have webbed feet with four toes."
+
+Pebble sniffed the ledge. "There is something else," he said in Wren's mind. "Feathers. Very small ones. And they smell like pine trees."
+
+Wren wrote everything down in her notebook: silver dust, the window, three-toed tracks, pine-smelling feathers.
+
+"A clue is like a puzzle piece," Master Oona always said. "One piece is a guess. Many pieces make a picture."`,
+    qs: [
+      ['Which clue shows that the thief left through the window?', ['The silver dust stopped at the window', 'The door was locked', 'Tobin heard flapping', 'A moonstone was on the stairs'], 0],
+      ['Which piece of evidence helps prove Ripple is NOT the thief?', ['The tracks have three thin toes, but Ripple has four webbed toes', 'Ripple says she is sorry', 'Ripple is too big for the tower', 'Ripple does not like moonstones'], 0],
+      ['What can we infer about the thief from the feathers and tracks?', ['It is a small creature with feathers that can fly', 'It is a big fire dragon', 'It is one of the students', 'It is Master Oona'], 0],
+      ['What does Master Oona\'s saying about puzzle pieces mean?', ['You need many clues, not just one, to be sure', 'Puzzles are better than books', 'Clues are always wrong', 'Only teachers can solve mysteries'], 0],
+      ['Why did the author put Wren\'s list of clues in this chapter?', ['To help the reader remember the clues and solve the mystery too', 'To show that Wren has messy writing', 'To make the chapter longer', 'To tell us the answer right away'], 0]
+    ] },
+  { title: 'The New Student', emoji: '🦅', series: 'quest', deep: true,
+    text: `The next day, a new student arrived at Skyfire Academy. Her name was Kestrel, and her dragon was named Dusk. Dusk was a shadow dragon, dark purple and quick as a whisper.
+
+Kestrel did not smile much. She sat alone at lunch and fed Dusk bits of dried fish.
+
+"Kestrel came the same week the moonstones went missing," Tobin said under his breath. "And shadow dragons are good at sneaking."
+
+Wren wanted to agree. It would be an easy answer. But she thought about her notebook.
+
+"Dusk is a dragon," she said. "Dragons have scales, not feathers. And Dusk's feet are as big as my hand. The tracks were tiny."
+
+Tobin frowned. "Maybe she had help."
+
+"Maybe," said Wren. "But we should not blame someone just because she is new and quiet. That is not a clue. That is a feeling."
+
+That afternoon, Wren sat down next to Kestrel. "Do you want to help us solve a mystery?" she asked.
+
+Kestrel looked surprised. Then, for the first time, she smiled. "Dusk can see in the dark," she said. "If something flies near the tower at night, Dusk will spot it."
+
+Mira grinned. "Then tonight, we keep watch."`,
+    qs: [
+      ['Why does Tobin suspect Kestrel?', ['She is new and her shadow dragon is sneaky', 'She has moonstone dust on her hands', 'She told him she took the stones', 'She was seen at the window'], 0],
+      ['What is the difference between a clue and a feeling, according to Wren?', ['A clue is evidence you found; a feeling is just what you think', 'A clue is always about dragons', 'A feeling is better than a clue', 'There is no difference'], 0],
+      ['Which evidence shows that Dusk probably did not leave the tracks?', ['Dusk has scales and big feet, but the tracks were tiny with feathers', 'Dusk was asleep', 'Dusk cannot fly', 'Dusk is purple'], 0],
+      ['What lesson does the author want readers to learn in this chapter?', ['Don\'t blame someone just because they are new or different', 'Always eat dried fish', 'Shadow dragons are dangerous', 'Never talk to new students'], 0],
+      ['How does Kestrel change by the end of the chapter?', ['She goes from alone and serious to smiling and helping', 'She goes from happy to angry', 'She leaves the academy', 'She becomes the thief'], 0]
+    ] },
+  { title: 'Night Watch', emoji: '🔭', series: 'quest', deep: true,
+    text: `That night, the friends hid behind the big water barrels at the bottom of the Star Tower. Clouds covered the moon. It was very dark.
+
+"Why tonight?" whispered Mira.
+
+Wren opened her notebook. "The stones went missing on Monday, Wednesday, and Friday," she said. "On each of those nights, it was cloudy."
+
+"Why would cloudy nights matter?" asked Tobin.
+
+"On clear nights, the tower glows bright silver," said Wren. "Maybe the thief only comes when it is dark enough to hide."
+
+They waited a long time. Blaze's tummy rumbled. Ripple yawned a bubble. Pebble rested his head on Wren's knee.
+
+Then Dusk lifted her head. Her eyes glowed like two small lamps. "Something is flying," Kestrel whispered.
+
+A small shape fluttered up to the tower window. It was not a dragon. It was smaller than a cat, with green-brown feathers and a long curly tail. It slipped inside.
+
+A moment later, it flew out again. In its tiny claws was a glowing moonstone.
+
+"After it!" said Tobin.
+
+"No," said Wren, holding his sleeve. "If we chase it, it will drop the stone and it might break. Let's follow it quietly and see where it goes."
+
+Pebble's stone sense hummed in Wren's mind. "I can feel the moonstone," he said. "I can follow it, even in the dark."`,
+    qs: [
+      ['Why did Wren choose a cloudy night for the watch?', ['The stones only went missing on cloudy nights', 'Clouds make dragons fly faster', 'Master Oona told her to', 'She likes the rain'], 0],
+      ['What pattern did Wren find in her notebook?', ['Monday, Wednesday, and Friday were all cloudy', 'The thief only came on weekends', 'Tobin was always late', 'The stones were always red'], 0],
+      ['Why does Wren stop Tobin from chasing the creature?', ['The creature might drop and break the moonstone', 'Tobin is too slow', 'She wants the creature to escape', 'It is past bedtime'], 0],
+      ['How is the thief different from what Tobin first guessed?', ['It is a small feathered creature, not a student or a dragon', 'It is a giant dragon', 'It is Master Oona', 'It is Ripple after all'], 0],
+      ['Why does the author show Blaze\'s tummy rumbling and Ripple yawning?', ['To show that waiting took a long time and make the scene feel real', 'To show they were sick', 'To give away the answer', 'To show it was morning'], 0]
+    ] },
+  { title: 'The Secret in the Pines', emoji: '🌲', series: 'quest', deep: true,
+    text: `The little creature flew over the wall and into the pine forest behind the academy. Pebble led the way, following the hum of the moonstone. The others tiptoed after him.
+
+Deep in the pines, there was a soft silver glow. Wren peeked around a tree trunk.
+
+In a hollow log sat a nest made of moss and pine needles. In the middle of the nest were three moonstones, and now a fourth. Snuggled against the warm stones were two speckled eggs.
+
+The creature landed on the edge of the nest and cooed softly.
+
+"It's a quillwing," whispered Kestrel. "My grandmother told me about them. They are very rare. Their eggs need warmth to hatch, or the babies won't make it."
+
+Mira's eyes filled with tears. "So it wasn't stealing to be mean," she said. "It was keeping its babies alive."
+
+Tobin scratched his head. "But the baby dragons at the academy need the stones too."
+
+Everyone was quiet. It was a hard problem. Both sides needed warmth.
+
+Wren looked at Pebble. Then she looked at Blaze, Tobin's fire dragon. An idea sparked in her mind like a match.
+
+"What if," she said slowly, "nobody has to lose?"`,
+    qs: [
+      ['Why did the quillwing take the moonstones?', ['To keep its eggs warm so they could hatch', 'Because it liked shiny things', 'To sell them', 'Because Kestrel told it to'], 0],
+      ['Which earlier clue makes sense now that we know about the quillwing?', ['The tiny three-toed tracks and pine-smelling feathers', 'Ripple\'s nervous bubble', 'Kestrel sitting alone', 'Blaze\'s rumbling tummy'], 0],
+      ['What is the hard problem the friends face at the end of this chapter?', ['The quillwing eggs and the baby dragons both need the warm stones', 'They are lost in the forest', 'The quillwing is angry', 'The moonstones are broken'], 0],
+      ['How did Mira\'s feelings about the thief change?', ['She felt sorry for it when she learned it was saving its babies', 'She got angrier', 'She was afraid of it', 'She did not care'], 0],
+      ['Why do you think the author ended the chapter with Wren\'s question?', ['To make readers wonder about her plan and want to read on', 'Because the book is over', 'To show Wren is confused', 'To make the reader sleepy'], 0]
+    ] },
+  { title: 'Warmth for Everyone', emoji: '🔥', series: 'quest', deep: true,
+    text: `Wren explained her plan. "Pebble can make ordinary stones glow when he touches them," she said. "And Blaze can heat stones with his fire. Together, they can make warm stones for the quillwing."
+
+The next morning, Pebble found the smoothest river stones in the stream. He pressed his nose to each one until it glowed a soft gold. Then Blaze breathed a gentle, careful flame over them. The stones grew warm, but not too hot.
+
+That evening, the friends carried the warm stones to the hollow log. Carefully, Wren swapped them for the moonstones. The quillwing watched with bright eyes. Then it fluffed its feathers and settled down on its eggs. It did not seem to mind at all.
+
+They brought the four moonstones back to the Star Tower. Master Oona held one up to the light and smiled.
+
+"You found the stones," she said. "But you did something better than that. You found out why they were taken. And you made sure no one was hurt."
+
+Three weeks later, two tiny quillwings hatched in the pine forest. Kestrel and Dusk visited them every day.
+
+Wren wrote one last line in her notebook: Every mystery has a reason. Look for the reason, not just the thief.`,
+    qs: [
+      ['What is the main idea of the whole book?', ['Looking for the reason behind a problem can help everyone', 'Moonstones are pretty', 'Fire dragons are the strongest', 'You should never go into the forest'], 0],
+      ['How did the friends solve the problem so nobody lost?', ['They made warm glowing stones for the nest and returned the moonstones', 'They took the eggs to the academy', 'They chased the quillwing away', 'They bought new moonstones'], 0],
+      ['Why does Master Oona say they did "something better" than finding the stones?', ['They figured out why the stones were taken and kept everyone safe', 'They were very fast', 'They got the stones back without help', 'They caught the thief in a cage'], 0],
+      ['What does Wren\'s last notebook line mean?', ['Understanding why someone did something matters more than just blaming them', 'Always write in a notebook', 'Thieves are always mean', 'Mysteries are too hard to solve'], 0],
+      ['What was the author\'s purpose in writing this book?', ['To entertain with a mystery and teach kindness and careful thinking', 'To teach how to build a tower', 'To explain how to cook with fire', 'To list facts about real birds'], 0]
+    ] }
+];
+
+/* ===================== NEW: Dokemon (Miles · Biscuit & Pals track) =====================
+   Original pocket-creature stories. Short sentences for a level-2 reader.
+   Each set of questions includes "mostly about" (main idea) and "why did the author write it" (author's purpose). */
+const DOKEMON = [
+  { level: 5, title: 'Max Meets Sparko', emoji: '⚡', series: 'dokemon',
+    text: `Max has a Doke-Pod. It is red and round. Max goes to the park to find a Dokemon.
+
+He sees a bush shake. Zap! A little yellow Dokemon hops out. It has blue stripes and a tail like a bolt.
+
+"I am Sparko!" it says. Sparko is shy. It hides behind a rock.
+
+Max sits down. He does not run at Sparko. He holds out a snack. Sparko comes close and eats it.
+
+"Will you be my pal?" asks Max. "Zap, zap!" says Sparko. It hops into the Doke-Pod. Now they are a team!`,
+    qs: [
+      ['What is this story mostly about?', ['Max makes friends with a Dokemon named Sparko', 'Max goes to school', 'Sparko eats a big cake', 'Max loses his Doke-Pod'], 0],
+      ['What did Sparko do when it was shy?', ['It hid behind a rock', 'It ran home', 'It went to sleep', 'It cried'], 0],
+      ['How did Max get Sparko to come close?', ['He sat down and held out a snack', 'He ran after it', 'He yelled at it', 'He threw his Doke-Pod'], 0],
+      ['What does Sparko\'s tail look like?', ['A bolt', 'A leaf', 'A fish', 'A star'], 0],
+      ['Why did the author write this story?', ['To show that being calm and kind helps you make friends', 'To teach how to bake bread', 'To tell facts about cars', 'To show that running fast is best'], 0]
+    ] },
+  { level: 5, title: 'Embit Is Cold', emoji: '🔥', series: 'dokemon',
+    text: `Embit is a fire Dokemon. Embit is a red fox with a flame on its tail.
+
+One day, it rains and rains. The rain hits Embit's tail. The flame gets small. Embit is cold. It shakes.
+
+"Oh no!" says Max. "Embit needs to get dry!"
+
+Max picks up Embit. He puts his coat on top of Embit. Sparko makes a warm glow with its zap.
+
+Then the sun comes out. The flame on Embit's tail gets big and bright. Embit licks Max on the nose. "Thank you!" it yips.`,
+    qs: [
+      ['What is this story mostly about?', ['Max and Sparko help Embit when the rain makes it cold', 'Embit learns to swim', 'Max finds a new coat at the store', 'Sparko and Embit have a race'], 0],
+      ['Why did Embit\'s flame get small?', ['The rain hit its tail', 'It was too sleepy', 'It ate too much', 'Sparko took it'], 0],
+      ['How did Max help Embit?', ['He put his coat on top of it', 'He gave it ice', 'He put it in the pond', 'He sent it home'], 0],
+      ['How did Embit feel at the end?', ['Warm and thankful', 'Mad', 'Still cold', 'Scared'], 0],
+      ['Why did the author write this story?', ['To show that friends help each other when things go wrong', 'To teach about cooking', 'To tell how rain is made', 'To show that foxes are scary'], 0]
+    ] },
+  { level: 6, title: 'Splashy Finds a Home', emoji: '💧', series: 'dokemon',
+    text: `Splashy is a water Dokemon. It is a little blue otter. Splashy lives in a pond, but the pond is getting dry. There is not much water left.
+
+"Splashy needs a new home," says Max.
+
+Max, Sparko, and Embit go to look. Is the mud pit good? No, it is too dirty. Is the bird bath good? No, it is too small.
+
+Then they hear a sound. Splish, splash! It is a big, clean lake with lots of fish.
+
+Splashy jumps in and swims in a happy circle. "This is the best home!" says Splashy. Max smiles. Now they can visit Splashy every day.`,
+    qs: [
+      ['What is the main idea of this story?', ['The friends help Splashy find a new home with more water', 'Splashy learns to fly', 'Max goes fishing with his dad', 'The pond gets bigger all by itself'], 0],
+      ['What was the problem at the start?', ['The pond was getting dry', 'Splashy was lost', 'Max was sick', 'Embit was cold'], 0],
+      ['Why was the bird bath not a good home?', ['It was too small', 'It was too dirty', 'It was too far', 'It was too cold'], 0],
+      ['How did the friends find the lake?', ['They heard a splish, splash sound', 'They saw a map', 'A bird told them', 'Max read a sign'], 0],
+      ['Why do you think the author had them try a few places first?', ['To show that you keep trying until you find what works', 'To make the story boring', 'To show that mud is the best', 'Because the author forgot the lake'], 0]
+    ] },
+  { level: 6, title: 'The Doke-Race', emoji: '🏁', series: 'dokemon',
+    text: `It is race day at the Dokemon Club! Max and his pals line up. Sparko is very fast. Leafo the leaf turtle is very slow.
+
+"Ready, set, go!" Sparko zooms off. Zap, zap, zap! Leafo walks one step at a time.
+
+Sparko runs so fast that it runs right past the turn. It ends up in the bushes!
+
+Leafo keeps walking. Step, step, step. Leafo does not stop. Leafo crosses the line first!
+
+Everyone cheers. Sparko is a little sad. Then Sparko laughs. "Next time, I will watch where I am going!" Sparko gives Leafo a high five.`,
+    qs: [
+      ['What is this story mostly about?', ['A slow Dokemon wins a race by not giving up', 'Sparko gets a new pod', 'The friends go to sleep', 'Leafo learns to swim fast'], 0],
+      ['Why did Sparko not win?', ['It ran past the turn and ended up in the bushes', 'It fell asleep', 'It was too slow', 'It did not start'], 0],
+      ['How did Leafo win?', ['It kept walking and did not stop', 'It ran very fast', 'It took a shortcut', 'Sparko let it win'], 0],
+      ['What did Sparko do at the end?', ['Laughed and gave Leafo a high five', 'Went home mad', 'Cried all day', 'Said it was not fair'], 0],
+      ['What lesson does the author want you to learn?', ['Slow and steady can win, and be a good sport', 'Always be the fastest', 'Never race your friends', 'Turtles cannot win races'], 0]
+    ] },
+  { level: 7, title: 'Rumble Is Lost', emoji: '🪨', series: 'dokemon',
+    text: `Rumble is a rock Dokemon. It looks like a little gray bear made of stone. One morning, Rumble is gone! Max looks all over.
+
+"Let's be detectives," says Max. "We need clues."
+
+Sparko finds the first clue. There are big round paw prints in the dirt. They go up the hill.
+
+Embit finds the second clue. There are little bits of gray rock on the path. "Rumble's back is rocky," says Max. "Bits fall off when it climbs!"
+
+They follow the prints and the rock bits to the top of the hill. There is Rumble, sitting in a sunny spot, looking at the view.
+
+"I just wanted to see the whole town," says Rumble. Max sits down next to it. The view is beautiful. "Next time, let's come together," says Max.`,
+    qs: [
+      ['What is this story mostly about?', ['Max and his pals use clues to find Rumble', 'Rumble builds a house', 'Max moves to a new town', 'Embit learns to climb'], 0],
+      ['Which TWO clues helped them find Rumble?', ['Paw prints and bits of gray rock', 'A note and a map', 'A song and a bell', 'A hat and a sock'], 0],
+      ['Why were there bits of rock on the path?', ['Rumble\'s rocky back drops bits when it climbs', 'Someone broke a wall', 'It rained rocks', 'Sparko threw them'], 0],
+      ['Why did Rumble go up the hill?', ['It wanted to see the whole town', 'It was hiding from Max', 'It was scared', 'It wanted food'], 0],
+      ['Why did the author make Max a detective in this story?', ['To show how looking for clues helps you solve a problem', 'To show that detectives are scary', 'To teach how to climb a hill', 'To tell facts about real bears'], 0]
+    ] },
+  { level: 7, title: 'Flutterbit Can Not Sleep', emoji: '🦋', series: 'dokemon',
+    text: `Flutterbit is a wind Dokemon. It is a little butterfly with rainbow wings. At night, Flutterbit can not sleep. It flaps and flaps.
+
+"What is wrong?" asks Max.
+
+"The moon is too bright," says Flutterbit. "And the owl is too loud. Hoo, hoo!"
+
+Max thinks. He has an idea. He makes a little tent out of a leaf to block the moon. Splashy sings a soft, slow song to cover the hoots.
+
+Flutterbit snuggles in the leaf tent. Its wings stop flapping. Its eyes close. Soon, Flutterbit is fast asleep.
+
+In the morning, Flutterbit feels great. "Thank you for helping me rest," it says. "Now I have the energy to fly all day!"`,
+    qs: [
+      ['What is the main idea of the story?', ['The friends help Flutterbit get a good night\'s sleep', 'Flutterbit flies to the moon', 'The owl learns a new song', 'Max goes camping alone'], 0],
+      ['What TWO things kept Flutterbit awake?', ['The bright moon and the loud owl', 'Rain and wind', 'A bad dream and a bug', 'Hunger and thirst'], 0],
+      ['How did Max block the moonlight?', ['He made a tent out of a leaf', 'He turned off the moon', 'He used a blanket', 'He closed a door'], 0],
+      ['What can you infer about why sleep matters?', ['Rest gives you energy for the next day', 'Sleep makes you hungry', 'You should never sleep', 'Sleep is only for owls'], 0],
+      ['Why did the author write this story?', ['To show that friends can solve problems with good ideas', 'To scare kids about owls', 'To teach how to fly', 'To tell facts about the moon'], 0]
+    ] },
+  { level: 8, title: 'The Dokemon Club Show', emoji: '🎪', series: 'dokemon',
+    text: `The Dokemon Club is putting on a show for the whole town. Each Dokemon will do a trick.
+
+Sparko makes the stage lights twinkle. Embit makes a ring of warm, safe flames. Splashy makes a fountain that sprays in the shape of a heart. Rumble lifts a big rock over its head.
+
+But Leafo is worried. "I can't do any tricks," it says. "I am just slow."
+
+Max thinks for a moment. "You are slow, but you are also very patient," he says. "And you can grow plants."
+
+On the night of the show, Leafo goes last. It plants one tiny seed. Everyone waits. Leafo waits too, calm and still. Then the seed sprouts. It grows into a tall sunflower, right in front of everyone!
+
+The town cheers the loudest of the whole night. Leafo grins. "My slow trick was the best one of all."`,
+    qs: [
+      ['What is this story mostly about?', ['Leafo learns that its own special skill is worth sharing', 'Sparko fixes the stage lights', 'The town builds a new school', 'Rumble lifts the heaviest rock'], 0],
+      ['Why was Leafo worried at first?', ['It thought it could not do any tricks', 'It was sick', 'It lost its seed', 'It was scared of the town'], 0],
+      ['What did Max help Leafo notice?', ['That it was patient and could grow plants', 'That it was the fastest', 'That it could fly', 'That it should skip the show'], 0],
+      ['Why did the town cheer the loudest for Leafo?', ['Its patient trick grew a sunflower right in front of them', 'It was the funniest', 'It made the most noise', 'It went first'], 0],
+      ['What message does the author want readers to remember?', ['Everyone has something special they can do', 'Fast tricks are always best', 'Only big Dokemon can be in shows', 'Plants grow in one second'], 0]
+    ] },
+  { level: 8, title: 'The Big Storm Rescue', emoji: '⛈️', series: 'dokemon',
+    text: `A big storm blows into town. The wind is strong. The rain is cold. A little kitten is stuck on top of a shed, and the water below is rising.
+
+"We have to help!" says Max. "But we must be careful. We need a plan."
+
+Max thinks about what each pal can do. Rumble builds a stone step so Max can climb up safely. Sparko makes a bright light so everyone can see in the dark. Flutterbit flaps its wings to push the rain away from the kitten. Splashy swims below, just in case anyone slips.
+
+Max climbs the stone step. He holds out his arms. The kitten jumps right into them!
+
+Everyone gets home safe and dry. The kitten's family says thank you again and again. Max hugs his pals. "We did it together," he says. "Nobody could have done it alone."`,
+    qs: [
+      ['What is the main idea of this story?', ['The team works together to save a kitten in a storm', 'Max plays in the rain', 'Splashy learns to swim', 'The shed falls down'], 0],
+      ['Why did Max say "we need a plan"?', ['The storm was dangerous, so they had to be careful', 'He wanted to go home', 'He was bored', 'The kitten told him to'], 0],
+      ['What did Sparko do to help?', ['Made a bright light so everyone could see', 'Built a stone step', 'Pushed the rain away', 'Swam below'], 0],
+      ['Why was Splashy swimming below?', ['In case anyone slipped into the water', 'To catch fish', 'To take a bath', 'To race'], 0],
+      ['What does Max mean by "nobody could have done it alone"?', ['Each pal\'s special skill was needed to make the rescue work', 'Max was scared to be alone', 'The kitten was too heavy', 'Nobody wanted to help'], 0]
+    ] }
+];
+// Put Dokemon stories at the front of Miles's levels so they come up next
+DOKEMON.forEach(st => { const L = SON_TRACK.levels.find(l => l.n === st.level); if (L && L.stories) L.stories.unshift(st); });
