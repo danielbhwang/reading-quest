@@ -374,7 +374,7 @@ const CLOUD_TEXT = {
 };
 function cloudStatusNode(){ return el('div',{class:'cloud-status'}, CLOUD_TEXT[CLOUD.status] + ' · v' + APP_VERSION); }
 function setCloudStatus(s){ CLOUD.status = s; document.querySelectorAll('.cloud-status').forEach(n => n.textContent = CLOUD_TEXT[s] + ' · v' + APP_VERSION); }
-const settingsOf = d => ({ reportEmail:d.reportEmail || null, pin:d.pin, names:d.names, catName:d.catName || null, gifts:d.gifts || [], record:!!d.record, forceManual:!!d.forceManual, goalMin:d.goalMin || {}, players:d.players || {}, devName:d.devName || null, devTrack:d.devTrack || null, worldMode:d.worldMode || 'world' });
+const settingsOf = d => ({ reportEmail:d.reportEmail || null, pin:d.pin, names:d.names, catName:d.catName || null, gifts:d.gifts || [], record:!!d.record, forceManual:!!d.forceManual, goalMin:d.goalMin || {}, players:d.players || {}, devName:d.devName || null, devTrack:d.devTrack || null, worldMode:d.worldMode || 'world', familyEmail:d.familyEmail || null });
 const cloudBody = key => key === 'settings' ? settingsOf(DB) : DB.kids[key];
 // real progress only (never stars: a fresh device's one-time gift must not outrank the cloud copy)
 const kidScore = k => (k.sessions||[]).length + ((k.world && k.world.items) || []).length + (k.collection||[]).length + (k.placed ? k.level || 1 : 0);
@@ -584,7 +584,11 @@ async function fbLoad(){
   const a = app.initializeApp(FIREBASE_CONFIG), au = auth.getAuth(a);
   let db; try { db = fs.initializeFirestore(a, { localCache: fs.persistentLocalCache() }); } catch(e){ db = fs.getFirestore(a); } // offline cache when the browser allows it
   FB.mod = {
-    onAuth: cb => auth.onAuthStateChanged(au, u => cb(u ? { uid:u.uid, email:u.email } : null)),
+    onAuth: cb => auth.onAuthStateChanged(au, u => cb(u ? { uid:u.uid, email:u.email, verified:u.emailVerified } : null)),
+    sendVerify: () => auth.sendEmailVerification(au.currentUser),
+    refreshUser: async () => { await au.currentUser.reload(); await au.currentUser.getIdToken(true); return au.currentUser.emailVerified; },
+    // creator dashboard: every family's saved progress (the rules only allow this for the creator's verified email)
+    adminAll: async () => (await fs.getDocs(fs.collectionGroup(db, 'rq'))).docs.map(d => ({ uid: d.ref.parent.parent.id, key: d.id, json: d.data().json, ts: d.data().ts })),
     signIn: (e, p) => auth.signInWithEmailAndPassword(au, e, p),
     signUp: (e, p) => auth.createUserWithEmailAndPassword(au, e, p),
     reset: e => auth.sendPasswordResetEmail(au, e),
@@ -630,8 +634,112 @@ function bootLocal(){
   if (DB.pinKid && DB.kids[DB.pinKid] && playerOf(DB.pinKid) && !playerOf(DB.pinKid).removed) return pickPlayer(DB.pinKid);
   screenProfiles();
 }
-function screenFamilyLogin(mode = 'in'){
-  stopAll(); document.body.className = 'parent family-login';
+
+/* ================= CREATOR DASHBOARD =================
+   Only the app's creator sees this. It reads every family's saved progress from Firestore.
+   The security rules only allow it for the creator's email, and only once that email is verified. */
+const CREATOR_EMAILS = ['danielbhwang@gmail.com'];
+const isCreator = () => !familyMode() || !!(FB.user && FB.user.email && CREATOR_EMAILS.includes(FB.user.email.toLowerCase()));
+function kidSummary(kd, meta){
+  const wkAgo = Date.now() - 7 * 86400000, ss = kd.sessions || [], normal = ss.filter(x => x.mode === 'normal');
+  const wk = normal.filter(x => Date.parse(x.date) > wkAgo);
+  const accs = normal.slice(0, 20).map(x => x.accuracy).filter(x => typeof x === 'number');
+  const acc = accs.length ? Math.round(accs.reduce((a, b) => a + b, 0) / accs.length * (accs[0] <= 1 ? 100 : 1)) : null;
+  const last = Math.max(0, ...ss.slice(0, 3).map(x => Date.parse(x.date) || 0));
+  const eq = (kd.gear && kd.gear.eq) || {}, setsOwned = Object.keys((kd.gear && kd.gear.owned) || {}).filter(id => id !== 'traveler');
+  const setOn = eq.chest && eq.chest !== 'traveler' && SET_BY_ID[eq.chest] ? SET_BY_ID[eq.chest].name : 'Traveler';
+  return {
+    name: (meta && meta.name) || 'Player', track: (meta && meta.track) || 'son', style: (meta && meta.style) || null,
+    level: kd.level || 1, placed: !!kd.placed, stars: (kd.stars || 0) - (kd.spent || 0), trophies: (kd.trophies || []).length,
+    reads: normal.length, week: wk.length, acc, last,
+    set: setOn, sets: setsOwned.length, weapons: Object.keys(kd.weapons || {}).length, mounts: Object.keys(kd.mounts || {}).length,
+    tower: (kd.tower && kd.tower.best) || 0, spell: (kd.spellStreak && kd.spellStreak.best) || 0,
+    cosmic: Math.max(0, (kd.cosmic || 0) - (kd.cosmicSpent || 0)), pets: (kd.collection || []).length
+  };
+}
+const agoTxt = t => { if (!t) return 'never'; const d = Math.floor((Date.now() - t) / 86400000); return d <= 0 ? 'today' : d === 1 ? 'yesterday' : d + ' days ago'; };
+async function creatorData(){
+  if (!familyMode()) return [{ uid:'this-device', email: DB.familyEmail || 'This device', world: DB.worldMode || 'world',
+    kids: Object.keys(DB.players || {}).filter(id => DB.kids[id] && id !== 'dev').map(id => Object.assign(kidSummary(DB.kids[id], DB.players[id]), { id, raw: DB.kids[id] })) }];
+  const rows = await FB.mod.adminAll(), fams = {};
+  rows.forEach(r => { const f = fams[r.uid] = fams[r.uid] || { uid:r.uid, docs:{} }; try { f.docs[r.key] = JSON.parse(r.json); } catch(e){} });
+  return Object.values(fams).map(f => {
+    const st = f.docs.settings || {}, players = st.players || {};
+    const kids = Object.keys(f.docs).filter(k => k !== 'settings' && !k.startsWith('plaza_') && k !== 'dev' && f.docs[k] && typeof f.docs[k] === 'object' && 'level' in f.docs[k])
+      .filter(k => !(players[k] && players[k].removed))
+      .map(k => Object.assign(kidSummary(f.docs[k], players[k] || { name: k === 'son' ? 'Son' : k === 'daughter' ? 'Daughter' : k, track: k === 'son' ? 'son' : 'daughter' }), { id:k, raw:f.docs[k] }));
+    return { uid:f.uid, email: st.familyEmail || ('family ' + f.uid.slice(0, 6)), world: st.worldMode || 'world', kids };
+  }).filter(f => f.kids.length);
+}
+function creatorHero(k){
+  const keepK = K; K = Object.assign({}, k.raw, { __style: k.style || (k.track === 'daughter' ? 'girl' : 'boy') });
+  try { return heroSVG(64); } catch(e){ return ''; } finally { K = keepK; }
+}
+async function screenCreator(){
+  stopAll(); document.body.className = 'parent';
+  const body = el('div',{class:'cr-body'}, el('p',{class:'muted'}, 'Loading every family…'));
+  show(el('div',{class:'screen cr-screen', style:'max-width:1200px'},
+    el('div',{class:'row', style:'justify-content:space-between;margin-bottom:10px;gap:8px;flex-wrap:wrap'},
+      el('h1',{style:'margin:0;font-size:30px'}, '👑 Creator dashboard'),
+      el('div',{class:'row', style:'gap:8px'}, el('button',{class:'btn small blue', onclick:screenCreator}, '🔄 Refresh'), el('button',{class:'btn small', onclick:screenPlayers}, 'Done'))),
+    body));
+  if (familyMode() && FB.user && !FB.user.verified){
+    let fresh = false; try { fresh = await FB.mod.refreshUser(); } catch(e){}
+    if (!fresh){
+      body.replaceChildren(el('div',{class:'card'}, el('h3',{style:'margin-top:0'}, '📧 Verify your email first'),
+        el('p',{}, `To protect every family's data, the dashboard only opens for ${FB.user.email} after the email is verified.`),
+        el('button',{class:'btn green', onclick:async e => { try { await FB.mod.sendVerify(); e.target.textContent = '✅ Sent! Tap the link in your email, then tap Refresh'; } catch(err){ e.target.textContent = fbErr(err); } }}, 'Send verification email')));
+      return;
+    }
+  }
+  let fams;
+  try { fams = await creatorData(); }
+  catch(e){ body.replaceChildren(el('div',{class:'card'}, el('h3',{style:'margin-top:0'}, '🔒 Can\'t read all families yet'),
+    el('p',{}, 'Publish the new Firestore rules (they include the creator permission), then tap Refresh.'), el('p',{class:'muted'}, String(e && (e.code || e.message))))); return; }
+  const kids = fams.flatMap(f => f.kids.map(k => Object.assign({ fam:f }, k)));
+  const day = Date.now() - 86400000, week = Date.now() - 7 * 86400000;
+  let sortBy = 'last', q = '';
+  const stat = (n, l) => el('div',{class:'cr-stat'}, el('b',{}, n), el('span',{}, l));
+  const summary = el('div',{class:'cr-stats'},
+    stat(fams.length, 'families'), stat(kids.length, 'players'),
+    stat(kids.filter(k => k.last > day).length, 'played today'), stat(kids.filter(k => k.last > week).length, 'played this week'),
+    stat(kids.reduce((a, k) => a + k.week, 0), 'reads this week'), stat(fams.filter(f => f.world === 'world').length + ' / ' + fams.length, 'in Big World'));
+  const table = el('div',{class:'cr-table'});
+  const SORTS = { last:['Last played', k => -k.last], level:['Level', k => -(k.level * 1000 + k.trophies)], week:['Reads this week', k => -k.week], stars:['Stars', k => -k.stars], tower:['Tower', k => -k.tower], name:['Name', k => k.name.toLowerCase()] };
+  const draw = () => {
+    const list = kids.filter(k => !q || (k.name + ' ' + k.fam.email).toLowerCase().includes(q)).sort((a, b) => { const f = SORTS[sortBy][1], x = f(a), y = f(b); return x < y ? -1 : x > y ? 1 : 0; });
+    table.replaceChildren(...list.map(k => el('div',{class:'cr-row' + (k.last > day ? ' live' : '')},
+      el('div',{class:'cr-hero', html: creatorHero(k)}),
+      el('div',{class:'cr-who'}, el('b',{}, k.name), el('span',{}, `${TRACK_INFO[k.track] ? TRACK_INFO[k.track].icon + ' ' + TRACK_INFO[k.track].name : k.track}`), el('small',{}, `${k.fam.email} · ${k.fam.world === 'world' ? '🌍 Big World' : '🏠 Solo'}`)),
+      el('div',{class:'cr-cells'},
+        el('span',{}, el('i',{}, 'Level'), el('b',{}, k.placed ? k.level : 'not placed')),
+        el('span',{}, el('i',{}, 'Last played'), el('b',{}, agoTxt(k.last))),
+        el('span',{}, el('i',{}, 'Reads'), el('b',{}, `${k.week} this wk · ${k.reads} total`)),
+        el('span',{}, el('i',{}, 'Accuracy'), el('b',{}, k.acc == null ? '—' : k.acc + '%')),
+        el('span',{}, el('i',{}, 'Stars'), el('b',{}, '⭐ ' + k.stars + (k.cosmic ? ' · 💫 ' + k.cosmic : ''))),
+        el('span',{}, el('i',{}, 'Trophies'), el('b',{}, '🏆 ' + k.trophies)),
+        el('span',{}, el('i',{}, 'Armor'), el('b',{}, `${k.set} · ${k.sets} sets`)),
+        el('span',{}, el('i',{}, 'Weapons · mounts'), el('b',{}, `⚔️ ${k.weapons} · 🪽 ${k.mounts}`)),
+        el('span',{}, el('i',{}, 'Tower'), el('b',{}, k.tower ? '🗼 floor ' + k.tower : '—')),
+        el('span',{}, el('i',{}, 'Spelling best'), el('b',{}, k.spell ? '🔥 ' + k.spell + ' in a row' : '—'))))));
+    if (!list.length) table.append(el('p',{class:'muted'}, 'No players found.'));
+  };
+  const search = el('input',{class:'cr-search', type:'search', placeholder:'Search a player or family email', oninput:e => { q = e.target.value.trim().toLowerCase(); draw(); }});
+  const sorter = el('div',{class:'cr-sort'}, el('span',{}, 'Sort:'), ...Object.entries(SORTS).map(([id, [label]]) => el('button',{class:'btn small' + (id === sortBy ? ' blue' : ' ghost'), onclick:e => { sortBy = id; sorter.querySelectorAll('button').forEach(b => b.className = 'btn small ghost'); e.currentTarget.className = 'btn small blue'; draw(); }}, label)));
+  body.replaceChildren(summary, el('div',{class:'cr-tools'}, search, sorter), table,
+    el('p',{class:'muted', style:'margin-top:14px'}, familyMode() ? 'Shows every family that has saved progress to the cloud. Green rows played in the last 24 hours.' : 'Preview mode: this shows the players on this device only. On the GitHub site it shows every family.'));
+  draw();
+}
+
+/* ---------- the landing page: what a new family sees first ---------- */
+function withShowcase(style, hero, setId, fn){
+  const keepK = K, keepTK = TK;
+  K = { __style: style, hero, gear:{ owned:{}, eq: setId ? Object.fromEntries(GEAR_SLOTS.map(sl => [sl, setId])) : {} } };
+  TK = style === 'girl' ? 'daughter' : 'son';
+  try { return fn(); } catch(e){ console.warn('showcase', e); return ''; } finally { K = keepK; TK = keepTK; }
+}
+function screenFamilyLogin(mode = 'in', open = false){
+  stopAll(); document.body.className = 'parent family-login lp-on';
   const email = el('input',{type:'email', placeholder:'Grown-up email', autocomplete:'username', value: DB.familyEmail || ''});
   const pw = el('input',{type:'password', placeholder: mode === 'up' ? 'New password (6+ characters)' : 'Password', autocomplete: mode === 'up' ? 'new-password' : 'current-password'});
   const msg = el('p',{class:'fl-msg'});
@@ -644,24 +752,92 @@ function screenFamilyLogin(mode = 'in'){
   };
   pw.addEventListener('keydown', e => { if (e.key === 'Enter') go(); });
   FB.pendingWorld = DB.worldMode || 'world';
-  const wopt = (v, icon, t, sub) => el('button',{class:'fl-wopt' + (FB.pendingWorld === v ? ' on' : ''), onclick:e => { FB.pendingWorld = v; e.currentTarget.parentNode.querySelectorAll('.fl-wopt').forEach(b => b.classList.toggle('on', b === e.currentTarget)); beep('tap'); }},
+  const wopt = (v, icon, t, sub) => el('button',{class:'fl-wopt' + (FB.pendingWorld === v ? ' on' : ''), onclick:e => { FB.pendingWorld = v; e.currentTarget.parentNode.querySelectorAll('.fl-wopt').forEach(b => b.classList.toggle('on', b === e.currentTarget)); }},
     el('span',{class:'fl-wi'}, icon), el('span',{}, el('b',{}, t), el('small',{}, sub)));
   const worldPick = el('div',{class:'fl-world'}, el('div',{class:'fl-wh'}, 'How do you want to play?'),
     wopt('world', '🌍', 'Big World', 'See heroes from other families in Town Square, and wave hello'),
     wopt('solo', '🏠', 'Just our family', 'Single player: only your own kids, nobody else sees you'));
-  show(el('div',{class:'screen fl-screen'},
-    el('div',{class:'fl-card card'},
-      el('div',{class:'fl-logo'},'📚'), el('h1',{}, 'Storyborne'), el('div',{class:'fl-tag'}, 'Rise of the Readers'),
-      el('p',{class:'fl-sub'}, mode === 'up' ? 'Create a family account. A grown-up signs in once on each iPad. Then every kid taps their own hero.' : 'Grown-up sign in. You only do this once on each iPad.'),
-      email, pw, worldPick,
-      el('button',{class:'btn big', onclick:go}, mode === 'up' ? '✨ Create family account' : '🔑 Sign in'),
+
+  // ---- the sign-in panel (slides up over the landing page) ----
+  const auth = el('div',{class:'lp-auth' + (open ? ' open' : '') + (dayPhase() === 'night' ? '' : ' sky'), onclick:e => { if (e.target === auth) auth.classList.remove('open'); }},
+    el('div',{class:'fl-card lp-panel'},
+      el('button',{class:'lp-x', 'aria-label':'Close', onclick:()=>auth.classList.remove('open')}, '✕'),
+      el('div',{class:'lp-pcrest', html: titleCrestSVG()}),
+      el('h2',{class:'lp-ptitle'}, mode === 'up' ? 'Begin your legend' : 'Welcome back, hero'),
+      el('p',{class:'fl-sub'}, mode === 'up' ? 'A grown-up creates the family account once. Then every kid taps their own hero.' : 'Grown-up sign in. You only do this once on each iPad.'),
+      email, pw, mode === 'up' ? worldPick : null,
+      el('button',{class:'btn big lp-go', onclick:go}, mode === 'up' ? '✨ Create family account' : '🔑 Sign in'),
       msg,
       el('div',{class:'fl-links'},
-        mode === 'up' ? el('button',{class:'btn small ghost', onclick:()=>screenFamilyLogin('in')}, 'I have an account') : el('button',{class:'btn small ghost', onclick:()=>screenFamilyLogin('up')}, 'New here? Create a family account'),
+        mode === 'up' ? el('button',{class:'btn small ghost', onclick:()=>screenFamilyLogin('in', true)}, 'I have an account') : el('button',{class:'btn small ghost', onclick:()=>screenFamilyLogin('up', true)}, 'New here? Create a family account'),
         mode === 'in' ? el('button',{class:'btn small ghost', onclick:async ()=>{ if (!email.value.trim()){ msg.textContent = 'Type your email first, then tap Forgot password.'; return; }
           try { await FB.mod.reset(email.value.trim()); msg.textContent = '📧 Check your email for a link to set a new password.'; } catch(e){ msg.textContent = fbErr(e); } }}, 'Forgot password?') : null),
       Object.keys(DB.kids || {}).some(id => (DB.kids[id].sessions || []).length) ? el('button',{class:'btn small gray', onclick:()=>{ setCloudStatus('local'); screenProfiles(); }}, 'Play on this iPad without signing in') : null,
-      el('p',{class:'fl-fine'}, 'We only store your email for sign-in. Kids never type an email: they use a first name and a 4-digit PIN.'))));
+      el('p',{class:'fl-fine'}, 'We only store your email for sign-in. Kids never type an email: they use a first name and a 4-digit PIN.')));
+  const openAuth = m => { beep('level'); if (m !== mode) return screenFamilyLogin(m, true); auth.classList.add('open'); setTimeout(() => email.focus(), 350); };
+
+  // ---- art from the game itself ----
+  const night = dayPhase() === 'night';
+  const rider = withShowcase('boy', { hairStyle:'spiky', hairColor:'#3b2a1e' }, 'storm', () => mountSVG('phoenix', 230, true, true));
+  const rider2 = withShowcase('girl', { hairStyle:'long', outfit:'dress', hairColor:'#7c3a12' }, 'frost', () => mountSVG('frostmane', 170, true, true));
+  const heroA = withShowcase('girl', { hairStyle:'long', outfit:'dress', hairColor:'#7c3a12' }, 'ember', () => heroSVG(150));
+  const heroB = withShowcase('boy', { hairStyle:'spiky', hairColor:'#2b1d14' }, 'celestial', () => heroSVG(150));
+  const boss = (tk, n, sz) => { try { return bossArt(BOSSES[tk][n], sz, tk); } catch(e){ return ''; } };
+  const weapons = ['sunspire','emberfall','starforged'].map(id => { try { return weaponIcon(id, 160); } catch(e){ return ''; } });
+  const mount = id => { try { return mountSVG(id, 150, false, true); } catch(e){ return ''; } };
+  const sparks = el('div',{class:'lp-sparks'}); for (let i = 0; i < 26; i++) sparks.append(el('i',{style:`left:${(i * 37) % 100}%;animation-delay:-${(i * .53).toFixed(2)}s;animation-duration:${6 + (i % 5)}s;--s:${.5 + (i % 3) * .35}`}));
+  const feature = (art, title, text, cls) => el('div',{class:'lp-feat ' + (cls || '')}, el('div',{class:'lp-fart', html: art}), el('h3',{}, title), el('p',{}, text));
+  const bookArt = `<svg viewBox="0 0 200 150" width="190"><defs><radialGradient id="lpbk"><stop offset="0" stop-color="#fde68a" stop-opacity=".9"/><stop offset="1" stop-color="#fde68a" stop-opacity="0"/></radialGradient></defs>
+    <circle cx="100" cy="70" r="70" fill="url(#lpbk)"/><path d="M20 110 Q60 92 100 108 Q140 92 180 110 L180 126 Q140 110 100 126 Q60 110 20 126Z" fill="#7c4a12"/>
+    <path d="M24 104 Q60 84 98 102 V40 Q60 24 24 44Z" fill="#fff7e0" stroke="#c99a3a" stroke-width="3"/><path d="M176 104 Q140 84 102 102 V40 Q140 24 176 44Z" fill="#fff7e0" stroke="#c99a3a" stroke-width="3"/>
+    <g stroke="#c4a46a" stroke-width="3" stroke-linecap="round"><path d="M38 52 L86 48 M38 64 L86 60 M38 76 L80 72 M114 48 L162 52 M114 60 L162 64 M114 72 L156 76"/></g>
+    <g fill="#fde047"><path class="lp-tw" d="M70 18 l4 10 10 4 -10 4 -4 10 -4 -10 -10 -4 10 -4z"/><path class="lp-tw b" d="M136 10 l3 7 7 3 -7 3 -3 7 -3 -7 -7 -3 7 -3z"/><path class="lp-tw c" d="M104 4 l2 5 5 2 -5 2 -2 5 -2 -5 -5 -2 5 -2z"/></g></svg>`;
+
+  // fresh ids: the same scene also sits (hidden) behind the game, and gradients must not point at the hidden copy
+  const sceneHTML = titleSceneSVG(night).replace(/id="([^"]+)"/g, 'id="lp-$1"').replace(/url\(#([^)]+)\)/g, 'url(#lp-$1)').replace(/href="#([^"]+)"/g, 'href="#lp-$1"');
+  const scene = el('div',{class:'lp-scene' + (night ? ' night' : ''), html: sceneHTML});
+  const svg = scene.querySelector('svg');
+  const fitScene = e => { if (!svg) return; if (e && !document.body.contains(scene)) return removeEventListener('resize', fitScene); const a = innerWidth / innerHeight;
+    svg.setAttribute('preserveAspectRatio', 'xMidYMid slice');
+    if (a < 1.3){ const w = Math.max(560, 1000 * a); svg.setAttribute("viewBox", `${Math.max(0, 380 - w / 2)} 0 ${w} 1000`); } else svg.setAttribute('viewBox', '0 0 1600 1000'); };
+  if (svg){ svg.removeAttribute('width'); svg.removeAttribute('height'); fitScene(); addEventListener('resize', fitScene); }
+  const hero = el('section',{class:'lp-hero'},
+    scene, el('div',{class:'lp-rays'}), sparks,
+    el('div',{class:'lp-flyer', html: rider}), el('div',{class:'lp-flyer two', html: rider2}),
+    el('div',{class:'lp-top'},
+      el('div',{class:'lp-head'},
+      el('div',{class:'lp-crest', html: titleCrestSVG()}),
+      el('h1',{class:'lp-logo', 'data-t':'Storyborne'}, 'Storyborne'),
+      el('div',{class:'lp-sub'}, '✦ Rise of the Readers ✦')),
+      el('div',{class:'lp-foot'},
+      el('p',{class:'lp-tag'}, 'Your voice is magic. ', el('b',{}, 'Read out loud'), ' to defeat bosses, ride dragons and become a legend.'),
+      el('button',{class:'lp-cta', onclick:()=>openAuth('up')}, el('span',{}, '⚔️ Start your legend')),
+      el('button',{class:'lp-link', onclick:()=>openAuth('in')}, 'Already a hero? ', el('b',{}, 'Sign in')))),
+    el('a',{class:'lp-down', href:'#lp-more', onclick:e => { e.preventDefault(); document.getElementById('lp-more').scrollIntoView({ behavior:'smooth' }); }}, 'See the adventure', el('span',{}, '⌄')));
+  const more = el('section',{class:'lp-more', id:'lp-more'},
+    el('h2',{class:'lp-h2'}, 'Every word you read is a spell'),
+    el('div',{class:'lp-feats'},
+      feature(bookArt, 'Read it. Cast it.', 'Stories listen back. Read out loud and the words light up as you go.', 'gold'),
+      feature(boss('son', 12, 150) + boss('daughter', 8, 150), 'Beat the bosses', 'Every level ends with a boss battle. Read your best to win!', 'red'),
+      feature(mount('phoenix') + mount('voidclaw'), 'Ride legendary mounts', 'Owls, storm crows, frost beasts and a blazing phoenix. Fly them yourself.', 'blue'),
+      feature(weapons.join(''), 'Win legendary weapons', 'Open treasure chests to find rare blades, bows and staffs.', 'purple'),
+      feature(`<div class="lp-tower">🗼</div>`, 'Climb the Tower of Tales', '30 floors of riddles, races and guardians. How high can you climb?', 'teal'),
+      feature(`<div class="lp-world">🏰🌍</div>`, 'Meet friends in town', 'See other heroes in Town Square and wave hello.', 'green')),
+    el('h2',{class:'lp-h2'}, 'Two epic adventures'),
+    el('div',{class:'lp-paths'},
+      el('div',{class:'lp-path dragon'}, el('div',{class:'lp-pheroes', html: heroA}), el('h3',{}, '🐉 Dragon Academy'), el('p',{}, 'Dragon riders, wizard schools and castle mysteries. 12 levels of quests.')),
+      el('div',{class:'lp-path pals'}, el('div',{class:'lp-pheroes', html: heroB}), el('h3',{}, '⚡ Biscuit & Pals'), el('p',{}, 'Cat bands, creature catching and detective cases. 12 levels of fun.'))),
+    el('div',{class:'lp-parents'},
+      el('h3',{}, 'For grown-ups'),
+      el('div',{class:'lp-pgrid'},
+        el('div',{}, '🎤 ', el('b',{}, 'Real reading'), el('span',{}, 'The game checks every word read aloud.')),
+        el('div',{}, '📈 ', el('b',{}, 'Gets harder as they grow'), el('span',{}, 'Levels and the Tower adapt to each kid.')),
+        el('div',{}, '📊 ', el('b',{}, 'Weekly reports'), el('span',{}, 'Accuracy, reading speed and tricky words.')),
+        el('div',{}, '🛡️ ', el('b',{}, 'Safe'), el('span',{}, 'No ads. Kids use a first name and a PIN.')))),
+    el('button',{class:'lp-cta', onclick:()=>openAuth('up')}, el('span',{}, '⚔️ Start your legend')),
+    el('button',{class:'lp-link', onclick:()=>openAuth('in')}, 'Already a hero? ', el('b',{}, 'Sign in')));
+  show(el('div',{class:'screen lp'}, hero, more, auth));
+  if (open) setTimeout(() => email.focus(), 400);
 }
 
 /* ---------- kid PINs (a sibling lock; the family sign-in is the real protection) ---------- */
@@ -716,7 +892,9 @@ function screenPlayers(){
   show(el('div',{class:'screen', style:'max-width:1000px'},
     el('div',{class:'row', style:'justify-content:space-between;margin-bottom:12px'},
       el('h1',{style:'margin:0;font-size:30px'},'👨‍👩‍👧 Players'),
-      el('button',{class:'btn small', onclick:()=>{ document.body.className=''; screenProfiles(); }},'Done')),
+      el('div',{class:'row', style:'gap:8px'},
+        isCreator() ? el('button',{class:'btn small creator-btn', onclick:screenCreator},'👑 Creator dashboard') : null,
+        el('button',{class:'btn small', onclick:()=>{ document.body.className=''; screenProfiles(); }},'Done'))),
     familyCard(),
     el('div',{class:'pl-list'}, ...ids.map(card)),
     el('div',{class:'row', style:'gap:10px;margin:14px 0;flex-wrap:wrap'},
@@ -5952,7 +6130,7 @@ function screenPin(after){
   stopAll();
   let entered = '';
   const dots = el('div',{class:'pin-dots'},'○○○○');
-  const msg = el('p',{class:'muted'},'Enter the grown-up PIN (starts as 1234)');
+  const msg = el('p',{class:'muted'},'Enter the grown-up PIN');
   const pad = el('div',{class:'pad'});
   const press = d => {
     if (d === '⌫') entered = entered.slice(0,-1); else if (entered.length < 4) entered += d;
@@ -6709,6 +6887,7 @@ function mountEpicBg(){
   document.body.prepend(bg);
 }
 mountEpicBg(); setInterval(mountEpicBg, 10 * 60 * 1000);
+if (navigator.webdriver) window.__landing = () => screenFamilyLogin();
 /* ---------------- boot ---------------- */
 showTitleScreen();
 window.addEventListener('pagehide', stopAll);
