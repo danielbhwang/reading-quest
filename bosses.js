@@ -292,3 +292,97 @@ Wren closed the book and smiled at Pebble. Somewhere far below, the dragons were
       qs:[['What was the Shadow Storm made of?',['Every fear and worry at the academy','Smoke from a volcano','Lord Vex\'s magic','Ice from Frostbite'],0],['How did the whispers make the storm stronger?',['It grew every time someone believed what it said','They called more clouds','They woke up dragons','They broke windows'],0],['What made Wren realize the whispers were wrong?',['She remembered all the brave things Pebble had done','Master Oona told her','She read it in a library book','Breeze explained it'],0],['Why did Wren ask everyone to write something brave and true?',['To fight fear by remembering the truth','To make a scrapbook','To finish homework','To give the book to Vex'],0],['What does Master Oona mean by "truth, when you read it out loud, is louder"?',['Remembering and saying what\'s true can overcome fear','Reading should be very loud','Storms are quiet','Books are heavier than clouds'],0]] } }
   }
 };
+
+/* Miles — bosses for levels 9–12 (Doke Detectives chapter mysteries) */
+Object.assign(BOSSES.son, {
+  9: { name:'The Riddle Raccoon', e:'🦝', color:'#57534e', taunt:'Hee hee! I hide things and leave riddles. No little detective can follow MY trail!', defeat:'You read every riddle and followed every clue... Okay, okay. You are a real detective.',
+    story:{ title:'The Riddle Raccoon', emoji:'🦝', text:`One morning, every Dokemon ball in Max's backyard was gone. In their place was a note written in muddy pawprints and crayon: I took your balls. Solve my riddles to get them back. Signed, the Riddle Raccoon.
+
+Max opened his Clue Notebook. Under the note was a second piece of paper with the first riddle: I have a trunk but I am not an elephant. Look under my roots.
+
+"A trunk that isn't an elephant," Max said. "A tree has a trunk!" They ran to the big oak tree. Between its roots was a red ball and another riddle.
+
+I have a face and two hands, but no arms or legs. Look behind me.
+
+Nora laughed. "A clock!" Behind the clock on the garage wall was a blue ball and the third riddle.
+
+I get wetter the more I dry. Look inside the basket.
+
+Max thought hard. What dries things but gets wet? "A towel!" In the laundry basket, wrapped in a towel, were the last three balls and a small, sleepy raccoon.
+
+The raccoon blinked. It had been collecting round, shiny things all night, and the riddles were written by Max's little cousin, who thought it would be a fun game.
+
+Max laughed and wrote in his notebook: Three riddles, three clues, one sleepy raccoon. Case closed.`,
+      qs:[['What did the Riddle Raccoon take?',['The Dokemon balls','Max\'s notebook','The clock','A towel'],0],['Which answer fits "I have a trunk but I am not an elephant"?',['A tree','A car','A suitcase','A whale'],0],['What has a face and two hands but no arms?',['A clock','A doll','A robot','A mirror'],0],['Who really wrote the riddles?',['Max\'s little cousin','The raccoon','Nora','Mom'],0]] } },
+  10: { name:'Baron Scramble', e:'🧩', color:'#7c3aed', taunt:'Mwah ha ha! I have scrambled every sign in town. Without reading, NOBODY can find their way!', defeat:'You unscrambled my puzzles faster than I made them! I suppose... I will put the signs back.',
+    story:{ title:'The Scrambled Signs', emoji:'🧩', text:`When Max woke up on Saturday, the whole town was confused. Every sign had been scrambled. The bakery sign said KYRBEA. The library sign said BRAILYR. The park sign said RAKP.
+
+People wandered around, lost. A delivery truck drove in circles. A grandma walked into the fire station looking for muffins.
+
+Max grabbed his Clue Notebook. "When letters are scrambled, the letters are all still there," he said. "They're just in the wrong order. We can figure them out."
+
+He started with the shortest one. RAKP. Four letters: R, A, K, P. "Park!" he said. Nora fixed the sign.
+
+KYRBEA was harder. Max looked for letters that often go together. B and A, K and E. "Bakery!" said Nora. The grandma got her muffins.
+
+They fixed sign after sign. At the very end of Main Street was one last sign, taped to a door: SROSFROPE ZPZUEL.
+
+Max studied it for a long time. "Professor... Puzzle," he read slowly.
+
+They knocked. A small, smiling old man with a bow tie opened the door. He was the town's new puzzle maker, and he had scrambled the signs as a grand-opening game for his shop. He had not realized it would make people so lost.
+
+"Puzzles should be fun," Max said, "but they shouldn't stop people from getting where they need to go."
+
+Professor Puzzle agreed. He gave every kid in town a free puzzle book, and he never scrambled a real sign again.`,
+      qs:[['Why was the town confused?',['Every sign was scrambled','The streets were flooded','The lights went out','Everyone lost their maps'],0],['What did Max know about scrambled words?',['All the letters are still there, just in the wrong order','They cannot be solved','They are always backwards','They are in another language'],0],['What does RAKP spell?',['Park','Rake','Pork','Pack'],0],['Why did Professor Puzzle scramble the signs?',['As a game for his shop\'s grand opening','To trick the town','To steal muffins','Because he could not spell'],0]] } },
+  11: { name:'The Fog Phantom', e:'👻', color:'#64748b', taunt:'Whoooo! My fog covers the whole harbor. The boats are lost and nobody can see the truth!', defeat:'You looked past my fog and found the truth. Whooo... I mean, well done, detective.',
+    story:{ title:'The Fog Phantom', emoji:'🌫️', text:`Every evening for a week, a thick gray fog rolled into the harbor at exactly six o'clock. It was so thick that fishing boats could not find their way home. And every evening, the fishermen heard a strange, low sound drifting through the fog: Whooooo.
+
+"It's the Fog Phantom," people whispered.
+
+Max did not believe in phantoms. He believed in evidence. He and Nora went to the harbor with Splashy and Sparko.
+
+"Clue one," Max wrote. "Real fog comes when warm, wet air meets cold water. It can come at any time. But this fog comes at exactly six o'clock every day, like it's on a timer."
+
+"Clue two," said Nora. "Real fog doesn't smell like anything. This fog smells a little like popcorn."
+
+Max sniffed. She was right.
+
+They followed the smell along the docks to a big building that used to be a movie theater. Behind it was a huge machine with a hose pointed toward the water. A sign on the side said: Fog Machine. Property of the Harbor Theater.
+
+Inside, the theater owner was setting up for a show called The Phantom of the Sea. Every day at six, he tested his fog machine for the play, and every day the fog drifted out over the water. The Whooooo sound was the machine's big fan.
+
+"Oh my!" said the owner when Max showed him his notebook. "I had no idea my fog was reaching the boats!"
+
+He moved the machine inside, where the fog belonged. That night, the boats came home safely under a clear, starry sky, and every fisherman got a free ticket to the play.`,
+      qs:[['Why did Max think the fog was not natural?',['It came at exactly six o\'clock every day','It was blue','It only came in winter','A fisherman told him'],0],['What did the popcorn smell help them find?',['The theater with the fog machine','A popcorn store','A boat','The phantom\'s house'],0],['What made the Whooooo sound?',['The fog machine\'s big fan','A ghost','The wind','An owl'],0],['What is the main idea of this story?',['Max uses evidence to show the "phantom" was a theater fog machine','The harbor is haunted','Fishermen love plays','Fog smells like popcorn everywhere'],0]] } },
+  12: { name:'The Mastermind', e:'🎩', color:'#1e1b4b', taunt:'I have planned the greatest mystery of all. Five clues, five places, one answer. Even YOU cannot solve it!', defeat:'Brilliant. Every clue, every place, every answer. You truly are the Legendary Detective.',
+    story:{ title:'The Mastermind\'s Challenge', emoji:'🎩', text:`A black envelope arrived at Max's door. Inside was a card with gold letters: I am the Mastermind. I have hidden the Golden Notebook, the greatest prize a detective can win. Follow my five clues. If you fail, it stays hidden forever.
+
+Clue one said: Begin where the bell sleeps when it is quiet.
+
+Max smiled. "The clock tower! The bell is quiet between the hours." At the bottom of the tower stairs, under the first step, was a second card.
+
+Clue two: Go where a fish once hid from tapping fingers.
+
+"The aquarium," said Nora. "Goldie's tank!" Ms. Reyes let them look. Inside Goldie's treasure chest, sealed in a plastic bag, was the third card.
+
+Clue three: Visit the place where a coin lost its tail.
+
+"The museum," said Max. "The fake coin had a dragon tail curled the wrong way." Dr. Patel led them to the Dragon Coin case. Taped beneath it was the fourth card.
+
+Clue four: Find the bush that once hid a ribbon.
+
+They hurried to the pet show field, where the big blue bush still grew. Deep inside it, Flutterbit found the fifth card.
+
+Clue five: The Mastermind is someone who has seen every case you solved. Look beside you.
+
+Max slowly turned to Nora. She was grinning from ear to ear and holding a gold notebook behind her back.
+
+"You?" Max said.
+
+"Me," said Nora. "Every clue was a place from one of our cases. I wanted to see if you remembered them all."
+
+Max laughed and took the Golden Notebook. On the first page, Nora had written: To the Legendary Detective, from his partner. Max wrote just below it: The best detectives remember the details and never forget their friends.`,
+      qs:[['Where did the first clue send Max?',['The clock tower','The library','The beach','The zoo'],0],['Why did each clue point to a different place?',['Each place was from one of Max\'s old cases','The Mastermind was lost','They were random places','Nora lived there'],0],['Who was the Mastermind?',['Nora','Professor Puzzle','Mr. Chen','Mayor Bloom'],0],['What does Max\'s last sentence mean?',['Good detectives pay attention to details and value their friends','Detectives should work alone','Notebooks are the best prize','Clues are always gold'],0]] } }
+});

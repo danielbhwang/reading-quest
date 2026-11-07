@@ -520,7 +520,7 @@ function watchForUpdates(){
       const t = await (await fetch(location.pathname + '?v=' + Date.now(), { cache:'no-store' })).text();
       const m = t.match(/app\.js\?v=([^"'&]+)/);
       if (m && m[1] !== APP_VERSION && !$('.update-banner'))
-        document.body.append(el('div',{class:'update-banner'}, '✨ A new version of Reading Quest is ready!',
+        document.body.append(el('div',{class:'update-banner'}, '✨ A new version of Storyborne is ready!',
           el('button',{class:'btn small', onclick:()=>location.reload()},'Refresh')));
     } catch(e){}
   };
@@ -651,7 +651,7 @@ function screenFamilyLogin(mode = 'in'){
     wopt('solo', '🏠', 'Just our family', 'Single player: only your own kids, nobody else sees you'));
   show(el('div',{class:'screen fl-screen'},
     el('div',{class:'fl-card card'},
-      el('div',{class:'fl-logo'},'📚'), el('h1',{}, 'Reading Quest'),
+      el('div',{class:'fl-logo'},'📚'), el('h1',{}, 'Storyborne'), el('div',{class:'fl-tag'}, 'Rise of the Readers'),
       el('p',{class:'fl-sub'}, mode === 'up' ? 'Create a family account. A grown-up signs in once on each iPad. Then every kid taps their own hero.' : 'Grown-up sign in. You only do this once on each iPad.'),
       email, pw, worldPick,
       el('button',{class:'btn big', onclick:go}, mode === 'up' ? '✨ Create family account' : '🔑 Sign in'),
@@ -755,7 +755,7 @@ function screenPlayerEdit(id){
     Object.assign(DB.players[pid], { name:n, track, style, quiz, ear });
     if (pin.value) DB.players[pid].pin = await pinHash(pid, pin.value);
     ensurePlayerData(); CLOUD.dirty[pid] = true; save(); cloudSubscribeAll(); beep('star');
-    if (!id) await modal(el('div',{}, el('div',{class:'big-e'},'🎉'), el('h2',{}, `${n} joined Reading Quest!`), el('p',{}, `${n} can now tap their hero on the "Who is reading?" screen` + (pin.value ? ' and type their PIN.' : '.'))), [['Great ▶','',1]]);
+    if (!id) await modal(el('div',{}, el('div',{class:'big-e'},'🎉'), el('h2',{}, `${n} joined Storyborne!`), el('p',{}, `${n} can now tap their hero on the "Who is reading?" screen` + (pin.value ? ' and type their PIN.' : '.'))), [['Great ▶','',1]]);
     screenPlayers();
   };
   show(el('div',{class:'screen', style:'max-width:760px'},
@@ -825,13 +825,25 @@ function screenProfiles(){
   CLOUD.editing = null;
   document.body.className = '';
   stopAll();
-  const s = el('div',{class:'screen'},
-    el('div',{class:'topbar center'}, el('div',{}, el('h1',{class:'title center'},'📚 Reading Quest'), el('p',{class:'subtitle center'},'Who is reading today?'))),
+  // the same epic vista as the title screen (day or night), softly blurred behind the hero cards
+  const hr = new Date().getHours(), night = hr >= 19 || hr < 6;
+  const s = el('div',{class:'screen epic-picker' + (night ? ' night' : '')},
+    el('div',{class:'ep-head'},
+      el('div',{class:'ep-crest', html: titleCrestSVG()}),
+      el('h1',{class:'ep-title'}, 'Storyborne'),
+      el('div',{class:'ep-sub'}, '✦ Rise of the Readers ✦'),
+      el('div',{class:'ep-choose'}, 'Choose your hero')),
     el('div',{class:'profiles'}, ...playerIds(true).map(id => { const D = DB.kids[id], P = DB.players[id], tr = trackOf(id);
-      return el('button',{class:'profile ' + (P.wizard ? 'wizard' : tr), onclick:()=>{ beep('tap'); pickPlayer(id); }},
-        D.hero ? profileHero(id) : D.avatar.base ? el('div',{html: avatarSVG(D.avatar, 120)}) : el('div',{class:'pic'}, P.wizard ? '🧙' : tr === 'son' ? '🐲' : '🐰'),
-        kidName(id), el('small',{}, P.wizard ? 'Master Developer · everything unlocked' : (P.pin ? '🔒 ' : '') + TRACK_INFO[tr].sub)); }),
-      playerIds(false).length ? null : el('button',{class:'profile add-player', onclick:()=>screenPin(() => screenPlayerEdit(null))}, el('div',{class:'pic'},'➕'), 'Add a player', el('small',{}, 'A grown-up sets up each reader'))),
+      const T2 = TRACKS[tr], lv = D.placed ? Math.min(D.level || 1, T2.levels.length) : 0, Lv = lv ? T2.levels[lv - 1] : null;
+      return el('button',{class:'profile hero-card ' + (P.wizard ? 'wizard' : tr), onclick:()=>{ beep('tap'); pickPlayer(id); }},
+        el('div',{class:'hc-rank'}, P.wizard ? '✦ Master Developer ✦' : lv ? `${tr === 'daughter' ? 'Rank' : 'Level'} ${lv} · ${Lv.title}` : '✦ New Hero ✦'),
+        el('div',{class:'hc-stage'}, el('div',{class:'hc-glow'}), el('div',{class:'hc-ped'}),
+          D.hero ? profileHero(id, 165) : D.avatar.base ? el('div',{html: avatarSVG(D.avatar, 120)}) : el('div',{class:'pic'}, P.wizard ? '🧙' : tr === 'son' ? '🐲' : '🐰')),
+        el('div',{class:'hc-name'}, kidName(id)),
+        el('small',{}, P.wizard ? 'Everything unlocked' : (P.pin ? '🔒 ' : '') + TRACK_INFO[tr].sub),
+        P.wizard ? null : el('div',{class:'hc-stats'}, el('span',{}, '⭐ ' + Math.max(0, (D.stars || 0) - (D.spent || 0))), el('span',{}, '🏆 ' + ((D.trophies || []).length)), el('span',{}, '💫 ' + Math.max(0, (D.cosmic || 0) - (D.cosmicSpent || 0))), D.tower && D.tower.best ? el('span',{}, '🗼 ' + D.tower.best) : null),
+        el('div',{class:'hc-go'}, '▶ Begin')); }),
+      playerIds(false).length ? null : el('button',{class:'profile hero-card add-player', onclick:()=>screenPin(() => screenPlayerEdit(null))}, el('div',{class:'hc-rank'}, '✦ A New Legend ✦'), el('div',{class:'hc-stage'}, el('div',{class:'hc-glow'}), el('div',{class:'hc-ped'}), el('div',{class:'pic'},'➕')), el('div',{class:'hc-name'}, 'Add a player'), el('small',{}, 'A grown-up sets up each reader'))),
     cloudStatusNode(),
     el('button',{class:'gear', onclick:()=>screenPin()},'⚙︎ Grown-ups')
   );
@@ -853,6 +865,11 @@ function enterKid(k){
   if (k === 'dev'){ DB.devOn = true; DB.players.dev = DB.players.dev || { name:DB.devName || 'The Wizard', track:'daughter', style:'boy', wizard:true, order:99 }; DB.kids.dev = DB.kids.dev || freshKid(); DB.kids.dev.avatar = Object.assign({ base:null, owned:[], equipped:{} }, DB.kids.dev.avatar || {}); }
   setKid(k);
   if (k === 'dev') wizardSetup();
+  // Biscuit & Pals grew from 8 to 12 levels: a reader who already beat the old final boss moves on to level 9
+  if (trackOf(k) === 'son' && K.placed && K.level === 8 && T.levels.length > 8 && (K.bossesBeaten || []).includes(8) && !K.grew12){
+    K.grew12 = true; K.level = 9; K.passStreak = 0; awardTrophiesUpTo(9); save();
+    setTimeout(() => { try { burst('NEW LEVELS!'); say('New mystery levels are open! Welcome to Case Cracker!'); } catch(e){} }, 900);
+  }
   // Gianna reads quietly, so she skips the read-aloud placement check (a grown-up can set her rank)
   if (!K.placed && trackOf(k) === 'daughter'){ K.placed = true; K.level = K.level || 1; awardTrophiesUpTo(K.level); save(); }
   if (!K.placed) screenPlacementIntro(); else if (!K.avatar.base) screenAvatarPick(); else screenHome();
@@ -935,6 +952,7 @@ function screenHome(msg){
     el('h2',{},'Spelling Practice'),
     el('p',{},'Hear a word, then build it with letter tiles! +1 ⭐ for each word you spell on the first try.'),
     el('button',{class:'btn big blue', onclick:()=>{ beep('tap'); startSpelling(); }},'✏️ Spell')));
+  cards.push(spellCard());
   const avatar = K.hero ? riderNode(150) : avatarNode(150);
   avatar.classList.add('mascot-av');
   avatar.onclick = () => K.hero ? screenArmory() : screenShop();
@@ -943,6 +961,7 @@ function screenHome(msg){
       homeBtn(),
       el('div',{class:'row'},
         isDev() ? el('button',{class:'btn small wizard-btn', onclick:()=>{ beep('tap'); screenWizard(); }},'🧙 Wizard') : null,
+        el('button',{class:'btn small tower-btn', onclick:()=>{ beep('tap'); screenTower(); }},'🗼 Tower of Tales'),
         el('button',{class:'btn small town-btn', onclick:()=>{ beep('tap'); screenTownSquare(); }},'🏰 Town Square'),
         el('button',{class:'btn ghost small', onclick:()=>screenWorld()},'🏗️ My World'),
         el('button',{class:'btn ghost small', onclick:screenShop},'🛍️ Shop'),
@@ -1015,11 +1034,11 @@ function levelProgress(){
   if (K.level >= T.levels.length && (K.bossesBeaten||[]).includes(K.level)) return el('div',{class:'lvl-progress'}, el('div',{class:'lvl-tip'}, `👑 You beat the final boss! Reading legend!`));
   const have = Math.min(K.passStreak||0, LEVEL_UP_STREAK), left = LEVEL_UP_STREAK - have;
   return el('div',{class:'lvl-progress'},
-    el('div',{class:'lvl-head'}, el('span',{}, `${word} ${K.level}`), el('span',{}, bossFor(K.level) ? `${bossFor(K.level).e} Boss → ${word} ${K.level+1}` : `${word} ${K.level+1} 🔓`)),
+    el('div',{class:'lvl-head'}, el('span',{}, `${word} ${K.level}`), el('span',{}, bossFor(K.level) ? `${bossFor(K.level).e} ${K.level >= T.levels.length ? 'Final boss 👑' : 'Boss → ' + word + ' ' + (K.level+1)}` : `${word} ${K.level+1} 🔓`)),
     el('div',{class:'lvl-bar'}, ...Array.from({length:LEVEL_UP_STREAK}, (_,i) => el('div',{class:'lvl-seg' + (i < have ? ' on' : '')}, i < have ? '⭐⭐⭐' : ''))),
     el('div',{class:'lvl-tip'}, TK === 'daughter'
-      ? (bossReady() ? `⚔️ The boss is waiting! Beat it to reach ${word} ${K.level+1}.` : `${left} more stor${left>1?'ies':'y'} with 4 or 5 questions right to face the boss!`)
-      : (bossReady() ? `⚔️ The boss is waiting! Beat it to reach ${word} ${K.level+1}.` : `${left} more ⭐⭐⭐ read${left>1?'s':''} to face the boss!`)),
+      ? (bossReady() ? (K.level >= T.levels.length ? '⚔️ The final boss is waiting! Beat it to become a Reading Legend.' : `⚔️ The boss is waiting! Beat it to reach ${word} ${K.level+1}.`) : `${left} more stor${left>1?'ies':'y'} with 4 or 5 questions right to face the boss!`)
+      : (bossReady() ? (K.level >= T.levels.length ? '⚔️ The final boss is waiting! Beat it to become a Reading Legend.' : `⚔️ The boss is waiting! Beat it to reach ${word} ${K.level+1}.`) : `${left} more ⭐⭐⭐ read${left>1?'s':''} to face the boss!`)),
     bossReady() ? null : el('div',{class:'lvl-rule'}, '⭐⭐⭐ = ' + greatRule().short),
     el('button',{class:'btn small lvl-how', onclick:()=>{ beep('tap'); levelGuide(); }},'❓ How do I level up?'));
 }
@@ -1258,6 +1277,169 @@ function startSpelling(){
   });
 }
 
+
+/* ================= DAILY SPELLING STREAK =================
+   One rewarded run a day. Every word has a picture (things) or an action picture (verbs), plus a
+   slow, clear voice and a sentence, so the child never has to guess from the voice alone.
+   Spell as many as you can in a row: the words get harder and the rewards grow. One miss ends the run. */
+const SPELL_BANK = [
+  // [word, picture, sentence, tier]  tier 1 = 3 letters ... tier 4 = long words
+  ['cat','🐱','The cat says meow.',1], ['dog','🐶','The dog wags its tail.',1], ['sun','☀️','The sun is hot and bright.',1], ['hat','🎩','He wears a tall hat.',1],
+  ['bus','🚌','We ride the bus to school.',1], ['bed','🛏️','I sleep in my bed.',1], ['pig','🐷','The pig rolls in the mud.',1], ['cup','🥤','I drink from a cup.',1],
+  ['fox','🦊','The fox has a fluffy tail.',1], ['bee','🐝','The bee makes honey.',1], ['egg','🥚','The hen laid an egg.',1], ['car','🚗','Dad drives the car.',1],
+  ['box','📦','The toy is in the box.',1], ['map','🗺️','The map shows the way.',1], ['ant','🐜','The ant is very small.',1], ['owl','🦉','The owl hoots at night.',1],
+  ['cow','🐄','The cow gives us milk.',1], ['key','🔑','The key opens the door.',1], ['run','🏃','I run fast in the race.',1], ['dig','⛏️','We dig a hole in the sand.',1],
+  ['hug','🤗','I give Mom a big hug.',1], ['cry','😢','The baby starts to cry.',1], ['sit','🪑','Please sit in the chair.',1], ['web','🕸️','The spider spins a web.',1],
+  ['frog','🐸','The frog jumps into the pond.',2], ['fish','🐟','The fish swims in the water.',2], ['duck','🦆','The duck says quack.',2], ['cake','🎂','We eat cake on my birthday.',2],
+  ['kite','🪁','The kite flies high in the sky.',2], ['bear','🐻','The bear sleeps all winter.',2], ['ship','🚢','The ship sails on the sea.',2], ['moon','🌙','The moon shines at night.',2],
+  ['star','⭐','I wish on a star.',2], ['tree','🌳','The bird sits in the tree.',2], ['ball','⚽','Kick the ball!',2], ['boat','⛵','The boat floats on the lake.',2],
+  ['milk','🥛','I drink milk with my cookies.',2], ['bike','🚲','I ride my bike to the park.',2], ['lion','🦁','The lion has a big mane.',2], ['corn','🌽','We eat corn on the cob.',2],
+  ['rain','🌧️','The rain makes puddles.',2], ['snow','❄️','The snow is cold and white.',2], ['king','🤴','The king lives in a castle.',2], ['drum','🥁','Bang on the drum!',2],
+  ['sock','🧦','I lost one sock.',2], ['shoe','👟','Tie your shoe.',2], ['bell','🔔','The bell rings at school.',2], ['crab','🦀','The crab walks sideways.',2],
+  ['swim','🏊','I like to swim in the pool.',2], ['sing','🎤','We sing a happy song.',2], ['clap','👏','Clap your hands!',2], ['wave','👋','Wave hello to your friend.',2],
+  ['read','📖','I read a book every night.',2], ['kiss','😘','Grandma gives me a kiss.',2], ['wink','😉','He gives me a wink.',2], ['yawn','🥱','I yawn when I am sleepy.',2],
+  ['horse','🐴','The horse runs in the field.',3], ['apple','🍎','I eat a red apple.',3], ['train','🚂','The train goes choo choo.',3], ['house','🏠','This is my house.',3],
+  ['snake','🐍','The snake says hiss.',3], ['pizza','🍕','We have pizza for dinner.',3], ['robot','🤖','The robot can walk and talk.',3], ['tiger','🐯','The tiger has orange stripes.',3],
+  ['zebra','🦓','The zebra has black and white stripes.',3], ['chair','🪑','Sit on the chair.',3], ['clock','⏰','The clock tells the time.',3], ['bread','🍞','Mom makes bread.',3],
+  ['cloud','☁️','A cloud floats in the sky.',3], ['sheep','🐑','The sheep has soft wool.',3], ['mouse','🐭','The mouse eats cheese.',3], ['whale','🐋','The whale is very big.',3],
+  ['shark','🦈','The shark has sharp teeth.',3], ['crown','👑','The queen wears a crown.',3], ['candy','🍬','I have one piece of candy.',3], ['bunny','🐰','The bunny hops away.',3],
+  ['sleep','😴','I sleep in my bed.',3], ['dance','💃','We dance to the music.',3], ['write','✍️','I write my name.',3], ['paint','🎨','I paint a picture.',3],
+  ['climb','🧗','We climb up the rock wall.',3], ['laugh','😂','The joke makes me laugh.',3], ['smile','😊','Smile for the picture!',3], ['think','🤔','I think about the answer.',3],
+  ['skate','⛸️','We skate on the ice.',3], ['pencil','✏️','I write with a pencil.',3], ['rocket','🚀','The rocket blasts into space.',3], ['carrot','🥕','The bunny eats a carrot.',3],
+  ['flower','🌸','The flower smells sweet.',3], ['spider','🕷️','The spider has eight legs.',3], ['monkey','🐒','The monkey swings in the tree.',3], ['turtle','🐢','The turtle is slow.',3],
+  ['cookie','🍪','I share my cookie.',3], ['banana','🍌','The monkey eats a banana.',3], ['castle','🏰','The castle has tall towers.',3], ['dragon','🐉','The dragon breathes fire.',3],
+  ['guitar','🎸','He plays the guitar.',3], ['planet','🪐','Saturn is a planet with rings.',3], ['school','🏫','I go to school.',3], ['sneeze','🤧','Dust makes me sneeze.',3],
+  ['penguin','🐧','The penguin slides on the ice.',4], ['pumpkin','🎃','We carve a pumpkin.',4], ['rainbow','🌈','A rainbow has many colors.',4], ['giraffe','🦒','The giraffe has a long neck.',4],
+  ['octopus','🐙','The octopus has eight arms.',4], ['dolphin','🐬','The dolphin jumps out of the water.',4], ['unicorn','🦄','The unicorn has one horn.',4], ['volcano','🌋','The volcano is erupting.',4],
+  ['elephant','🐘','The elephant has a long trunk.',4], ['umbrella','☂️','Take an umbrella in the rain.',4], ['butterfly','🦋','The butterfly has pretty wings.',4], ['dinosaur','🦕','The dinosaur lived long ago.',4],
+  ['computer','💻','I type on the computer.',4], ['scissors','✂️','Cut the paper with scissors.',4], ['sandwich','🥪','I eat a sandwich for lunch.',4], ['popcorn','🍿','We eat popcorn at the movie.',4],
+  ['snowman','⛄','We build a snowman.',4], ['kangaroo','🦘','The kangaroo hops very far.',4], ['hamburger','🍔','I want a hamburger.',4], ['telescope','🔭','I look at stars with a telescope.',4],
+  ['crocodile','🐊','The crocodile has a long tail.',4], ['strawberry','🍓','The strawberry is red and sweet.',4], ['astronaut','🧑‍🚀','The astronaut flies to space.',4], ['skateboard','🛹','I ride my skateboard.',4],
+  ['basketball','🏀','We play basketball.',4], ['firework','🎆','The firework lights up the sky.',4], ['lightning','⚡','Lightning flashes in the storm.',4], ['treasure','💰','The pirate finds treasure.',4]
+];
+// how hard the next word is, by how many are already right in a row
+function spellTierFor(n){
+  const steps = TK === 'son' ? [3, 7, 12] : [2, 5, 9];   // Miles starts easier
+  const base = TK === 'son' ? 1 : 2;
+  return Math.min(4, base + steps.filter(s => n >= s).length);
+}
+const spellStarsFor = n => n <= 3 ? 1 : n <= 6 ? 2 : n <= 9 ? 3 : n <= 14 ? 4 : 5;   // stars for the n-th word in a row
+const SPELL_MILESTONES = { 5:['chest','silver','5 in a row!'], 10:['chest','gold','10 in a row!'], 15:['cosmic',5,'15 in a row!'], 20:['chest','cosmic','20 in a row!'] };
+function spellState(){ K.spellStreak = K.spellStreak || { best:0, day:null, today:0, runs:0 }; return K.spellStreak; }
+function spellCard(){
+  const S = spellState(), done = S.day === todayStr();
+  return el('div',{class:'card next-card streak-card'},
+    el('div',{class:'series-tag'},'🔥 Daily Challenge'),
+    el('h2',{},'Spelling Streak'),
+    el('p',{}, done ? `Today: ${S.today} in a row! Your best ever: ${S.best}. Practice runs are open, and the daily prize comes back tomorrow.`
+      : `How many words can you spell in a row? Look at the picture, listen, and spell it. Every word in a row is worth more! Your best: ${S.best}.`),
+    el('div',{class:'streak-ladder'}, ...[[1,'⭐'],[4,'⭐⭐'],[7,'⭐⭐⭐'],[5,'🎁'],[10,'🎁🎁'],[15,'💫'],[20,'👑']].map(([n, r]) => el('span',{}, `${n}: ${r}`))),
+    el('button',{class:'btn big' + (done ? ' blue' : ''), onclick:()=>{ beep('tap'); startSpellStreak(!done); }}, done ? '✏️ Practice run' : '🔥 Start today\'s challenge'));
+}
+async function sayWordClearly(W, withSentence = true){
+  await say(W[0], { rate: .6 });
+  if (!withSentence) return;
+  await new Promise(r => setTimeout(r, 250));
+  await say(W[2], { rate: .8 });
+  await new Promise(r => setTimeout(r, 250));
+  await say(W[0], { rate: .6 });
+}
+function startSpellStreak(rewarded){
+  stopAll();
+  const S = spellState(), started = Date.now(), used = new Set();
+  if (rewarded){ S.day = todayStr(); S.today = 0; S.runs = (S.runs || 0) + 1; save(); }
+  let streak = 0, earned = 0, over = false;
+  const nextWord = () => {
+    const tier = spellTierFor(streak);
+    let pool = SPELL_BANK.filter(w => w[3] === tier && !used.has(w[0]));
+    if (!pool.length) pool = SPELL_BANK.filter(w => !used.has(w[0]));
+    const W = pick(pool); used.add(W[0]); return W;
+  };
+  const finish = async (W, guess) => {
+    over = true;
+    const best = streak > S.best;
+    if (best){ S.best = streak; if (rewarded && streak >= 3){ K.stars += 5; earned += 5; } }
+    if (rewarded){ S.today = streak; }
+    if (addReadingTime(Math.min(Date.now() - started, MAX_ACTIVITY_MS))) await celebrateGoal();
+    K.sessions.unshift({ id: kid + '_' + Date.now(), date: new Date().toISOString(), level: K.level, title:'Spelling streak', kind:'spelling', mode:'spelling',
+      total: streak + (W ? 1 : 0), correct: streak, helped: 0, accuracy: Math.round(streak / Math.max(1, streak + (W ? 1 : 0)) * 1000) / 10, wcpm: null, quiz: null,
+      missed: W ? [W[0]] : [], stars: earned, ms: Math.min(Date.now() - started, MAX_ACTIVITY_MS) });
+    save();
+    if (streak >= 5) confetti(streak >= 10 ? 120 : 60);
+    say(`${streak} in a row!` + (best ? ' That is your best ever!' : ''));
+    const again = await modal(el('div',{}, el('div',{class:'big-e'}, streak >= 10 ? '🏆' : streak >= 5 ? '🔥' : '✏️'),
+      el('h2',{}, `${streak} in a row!`),
+      best ? el('p',{style:'font-weight:800;color:#b45309'}, '🎉 New personal best!' + (rewarded && streak >= 3 ? ' +5 ⭐' : '')) : el('p',{}, `Your best: ${S.best}`),
+      W ? el('div',{class:'spell-miss'}, el('span',{class:'sm-pic'}, W[1]), el('div',{}, el('small',{}, guess ? `You wrote: ${guess}` : 'The word was:'), el('b',{}, W[0]))) : null,
+      rewarded ? el('p',{}, `You earned ${earned} ⭐ today.`) : el('p',{class:'muted'}, 'Practice run: no prizes, but your best still counts!')),
+      [['✏️ Practice run','blue',true],['Done','gray',false]]);
+    again ? startSpellStreak(false) : screenHome();
+  };
+  const ask = () => {
+    if (over) return;
+    const W = nextWord(), word = W[0];
+    let typed = [];
+    const slots = el('div',{class:'ss-slots'});
+    const drawSlots = () => { slots.innerHTML = ''; for (let i = 0; i < word.length; i++) slots.append(el('span',{class:'ss-slot' + (typed[i] ? ' on' : '')}, typed[i] || '')); };
+    drawSlots();
+    const check = async () => {
+      const guess = typed.join('');
+      if (guess.length < word.length) return;
+      if (guess === word){
+        streak++;
+        const st = rewarded ? spellStarsFor(streak) : 0;
+        if (st){ K.stars += st; earned += st; }
+        if (rewarded) S.today = streak;
+        save();
+        slots.classList.add('good'); beep('ok');
+        const m = rewarded && SPELL_MILESTONES[streak];
+        if (m){ if (m[0] === 'chest') awardChest(m[1], 'Spelling Streak · ' + m[2]); else addCosmic(m[1], 'Spelling Streak · ' + m[2]); burst(m[2].toUpperCase()); confetti(70); }
+        else if (streak >= 25 && streak % 5 === 0 && rewarded){ awardChest('gold', `Spelling Streak · ${streak} in a row!`); burst(`${streak}!`); }
+        say(pick(['Yes!','Correct!','You got it!','Great spelling!','Awesome!']));
+        setTimeout(ask, 900);
+      } else {
+        slots.classList.add('bad'); beep('bad');
+        await say(`Oh no! ${word} is spelled ${word.split('').join(', ')}.`, { rate: .75 });
+        finish(W, guess);
+      }
+    };
+    let input = null, tiles = null;
+    if (TK === 'daughter'){
+      input = el('input',{type:'text', class:'spell-input', autocomplete:'off', autocapitalize:'off', autocorrect:'off', spellcheck:'false', placeholder:'Type the word', maxlength: word.length + 4});
+      input.addEventListener('input', () => { typed = input.value.toLowerCase().replace(/[^a-z]/g,'').slice(0, word.length).split(''); drawSlots(); });
+      input.addEventListener('keydown', e => { if (e.key === 'Enter') check(); });
+    } else {
+      // letter tiles: the word's letters plus two extra, mixed up
+      const extra = shuffle('abcdefghijklmnoprstuwy'.split('').filter(c => !word.includes(c))).slice(0, 2);
+      const letters = shuffle(word.split('').concat(extra));
+      tiles = el('div',{class:'ss-tiles'}, ...letters.map(c => {
+        const b = el('button',{class:'ss-tile', onclick:()=>{ if (b.disabled || typed.length >= word.length) return; typed.push(c); b.disabled = true; b.dataset.used = typed.length; beep('tap'); drawSlots(); if (typed.length === word.length) setTimeout(check, 250); }}, c);
+        return b; }));
+    }
+    const undo = el('button',{class:'btn small gray', onclick:()=>{
+      if (input){ input.value = input.value.slice(0, -1); input.dispatchEvent(new Event('input')); input.focus(); return; }
+      const n = typed.length; if (!n) return; typed.pop();
+      const b = [...tiles.children].find(x => x.dataset.used == n); if (b){ b.disabled = false; delete b.dataset.used; }
+      drawSlots(); }}, '⌫ Undo');
+    const reward = rewarded ? spellStarsFor(streak + 1) : 0;
+    show(el('div',{class:'screen spell-streak'},
+      el('div',{class:'topbar'}, el('button',{class:'btn ghost small', onclick:()=>{ if (!over && streak) finish(null, ''); else screenHome(); }}, streak ? '🏁 Stop' : '← Back'),
+        el('div',{class:'pageinfo'}, `🔥 ${streak} in a row` + (rewarded ? ` · next word +${reward} ⭐` : ' · practice')), el('div',{style:'width:80px'})),
+      el('div',{class:'card center ss-card'},
+        el('div',{class:'ss-pic', onclick:()=>sayWordClearly(W, false)}, W[1]),
+        el('div',{class:'row center'},
+          el('button',{class:'btn blue', onclick:()=>sayWordClearly(W, false)}, '🔊 Say the word'),
+          el('button',{class:'btn small blue', onclick:()=>sayWordClearly(W, true)}, '💬 Use it in a sentence')),
+        el('p',{class:'ss-sentence'}, W[2].replace(new RegExp('\\b' + word + '\\b', 'i'), '_'.repeat(word.length))),
+        slots, input || tiles,
+        el('div',{class:'row center'}, undo, input ? el('button',{class:'btn', onclick:check}, '✓ Check') : null),
+        el('div',{class:'ss-tier'}, ['', '⭐ Easy', '⭐⭐ Medium', '⭐⭐⭐ Hard', '👑 Expert'][spellTierFor(streak)]))));
+    if (input) setTimeout(() => input.focus(), 200);
+    setTimeout(() => sayWordClearly(W, true), 350);
+  };
+  ask();
+}
+
 /* ---------- building passages ---------- */
 function tokensOf(text){
   return text.split(/\s+/).filter(Boolean).map(disp => { const n = norm(disp); return n ? { disp, n } : { disp, n:'', skip:true }; });
@@ -1453,14 +1635,8 @@ function onWordTap(i){
   // listening mode: tap = hear the word (counts as helped)
   p.helped[i] = true; paintWords();
   const t = p.tokens[i];
-  if (run.opts.focus && run.opts.focus.words.includes(t.n)){
-    const old = $('.tile-pop'); if (old) old.remove();
-    const pop = el('div',{class:'tile-pop'}, tileRow(t.disp, true), el('button',{class:'btn small gray', onclick:()=>pop.remove()},'✕'));
-    document.body.append(pop); setTimeout(()=>pop.remove(), 6000);
-    const gs = graphemes(t.disp).filter(g => g.sound);
-    let k = 0; const nextSnd = () => { if (k < gs.length) { say(gs[k++].sound, {rate:0.8}).then(nextSnd); } else say(t.disp, {rate:0.8}); };
-    nextSnd();
-  } else say(t.disp, { rate:0.8 });
+  // just say the whole word, clearly (no sounding out)
+  say(t.disp, { rate:0.75 });
 }
 
 function gradeSingle(ok){
@@ -2062,7 +2238,7 @@ async function commitResults(stars, quiz){
   if (bossUnlocked){
     const B = bossFor(K.level); confetti(80); beep('level'); burst('BOSS!');
     say(`A boss appeared! ${B.name} is guarding the next level!`);
-    await modal(el('div',{}, el('div',{class:'big-e boss-shake'}, B.e), el('h2',{}, '⚔️ BOSS UNLOCKED!'),
+    await modal(el('div',{}, el('div',{class:'big-e boss-shake', html: bossArt(B, 150)}), el('h2',{}, '⚔️ BOSS UNLOCKED!'),
       el('p',{}, `${B.name} guards ${TK === 'daughter' ? 'Rank' : 'Level'} ${K.level + 1}. Beat the boss story to level up!`), el('p',{class:'boss-taunt'}, `"${B.taunt}"`)), [['⚔️ Let me at it!','',1]]);
   }
   if (goalJustHit) await celebrateGoal();
@@ -2417,7 +2593,7 @@ function screenShop(){
 /* ---------- trophies ---------- */
 const TROPHIES = {
   daughter: [['🥉','Bronze Egg'],['📌','Apprentice Pin'],['🥈','Silver Wing'],['🛡️','Rider\'s Shield'],['🥇','Golden Saddle'],['🏅','Knight\'s Crest'],['🌟','Captain\'s Star'],['👑','Guardian Crown']],
-  son: [['🔤','Letter Champ'],['🪄','Word Wizard'],['⭐','Sight Word Star'],['🦸','Sentence Hero'],['🧭','Story Explorer'],['📚','Big Reader'],['🔍','Junior Detective'],['🕵️','Super Sleuth']]
+  son: [['🔤','Letter Champ'],['🪄','Word Wizard'],['⭐','Sight Word Star'],['🦸','Sentence Hero'],['🧭','Story Explorer'],['📚','Big Reader'],['🔍','Junior Detective'],['🕵️','Super Sleuth'],['🗝️','Case Cracker'],['🔦','Clue Hunter'],['🎩','Mystery Master'],['🏆','Legendary Detective']]
 };
 function awardTrophiesUpTo(level){
   const got = [];
@@ -3003,8 +3179,33 @@ const SCENE_EXTRA = {
   aurora: (W, H, R) => `<g transform="translate(420 246)"><path d="M-50 0 A50 40 0 0 1 50 0Z" fill="#f8fafc" stroke="#cbd5e1" stroke-width="3"/><path d="M-30 -14 h60 M-40 -26 h80" stroke="#cbd5e1" stroke-width="2"/><path d="M-10 0 v-16 a10 10 0 0 1 20 0 v16" fill="#475569"/></g><g transform="translate(1300 240)"><ellipse cx="0" cy="0" rx="18" ry="20" fill="#f8fafc"/><circle cx="0" cy="-22" r="12" fill="#f8fafc"/><circle cx="-4" cy="-24" r="1.6"/><circle cx="4" cy="-24" r="1.6"/><path d="M-4 -18 l4 4 l4 -4" fill="#f97316"/></g>`
 };
 function seeded(n){ return () => { n = (n * 1664525 + 1013904223) % 4294967296; return n / 4294967296; }; }
+/* ---------- time of day: the sky and light follow the real clock ---------- */
+function dayPhase(){ const h = new Date().getHours(); return h >= 5 && h < 8 ? 'dawn' : h >= 8 && h < 12 ? 'morning' : h >= 12 && h < 17 ? 'afternoon' : h >= 17 && h < 20 ? 'sunset' : 'night'; }
+const PHASE = {
+  dawn:     { name:'Sunrise',   icon:'🌅', sky:['#2f3c8f','#c86a9a','#ffb27a'], sun:'#ffd59e', sunX:.16, sunY:215, sunR:46, cloud:'#ffd0c0', tint:'#ffa58a', tintOp:.5 },
+  morning:  { name:'Morning',   icon:'🌤️', sky:['#3aa6f5','#8fd3ff','#e6f7ff'], sun:'#fff8d6', sunX:.3, sunY:110, sunR:32, cloud:'#ffffff', tint:null },
+  afternoon:{ name:'Afternoon', icon:'☀️', sky:['#1b7fe6','#58b8ff','#cbeaff'], sun:'#fffbe8', sunX:.62, sunY:62, sunR:30, cloud:'#ffffff', tint:'#ffe7b0', tintOp:.16 },
+  sunset:   { name:'Sunset',    icon:'🌇', sky:['#2a1b5e','#c43c78','#ff9a4a'], sun:'#ffc46b', sunX:.84, sunY:222, sunR:52, cloud:'#ffb08f', tint:'#ff8550', tintOp:.55 },
+  night:    { name:'Night',     icon:'🌙', sky:['#040720','#121a52','#28377f'], moon:true, cloud:'#7f8bc4', tint:'#26338c', tintOp:.62 }
+};
+const FIXED_SKY = ['night','space','under','aurora','lava'];
+// a light layer over a whole scene (items and heroes too) so everything is lit by the time of day
+function todLayer(cls, glows){
+  const ph = PHASE[dayPhase()], wrap = el('div',{class:'tod-layer ' + (cls || '')});
+  if (ph.tint) wrap.append(el('div',{class:'tod-tint', style:`background:${ph.tint};opacity:${ph.tintOp}`}));
+  if (dayPhase() === 'sunset' || dayPhase() === 'dawn') wrap.append(el('div',{class:'tod-rays ' + dayPhase()}));
+  if (glows && (dayPhase() === 'night' || dayPhase() === 'sunset')){
+    const g = el('div',{class:'tod-glows'});
+    glows.forEach(([x, y, r]) => g.append(el('i',{style:`left:${x - r}px;top:${y - r}px;width:${r*2}px;height:${r*2}px;opacity:${dayPhase() === 'night' ? 1 : .55}`})));
+    wrap.append(g);
+  }
+  if (dayPhase() === 'night'){ const f = el('div',{class:'tod-flies'}); for (let i = 0; i < 18; i++) f.append(el('i',{style:`left:${(i*53)%100}%;top:${30 + (i*37)%65}%;animation-delay:-${(i*.7).toFixed(1)}s;animation-duration:${(5 + i%5)}s`})); wrap.append(f); }
+  return wrap;
+}
+function todBadge(place){ const ph = PHASE[dayPhase()]; return el('div',{class:'tod-badge ' + dayPhase()}, `${ph.icon} ${ph.name}${place ? ' in ' + place : ''}`); }
 function sceneSVG(themeId){
-  const P = SCENE_PAL[themeId] || SCENE_PAL.meadow, R = seeded([...themeId].reduce((a, c) => a + c.charCodeAt(0), 7));
+  const P0 = SCENE_PAL[themeId] || SCENE_PAL.meadow, PH = PHASE[dayPhase()], live = !FIXED_SKY.includes(themeId);
+  const P = live ? Object.assign({}, P0, { sky: dayPhase() === 'morning' ? P0.sky : PH.sky, stars: dayPhase() === 'night', sun: P0.sun === false ? false : (PH.moon ? false : PH.sun) }) : P0, R = seeded([...themeId].reduce((a, c) => a + c.charCodeAt(0), 7));
   const W = WORLD_W, H = WORLD_H;
   // a jagged ridge line across the whole width
   const ridge = (base, minH, maxH, step) => { let d = `M0 ${base}`; for (let x = 0; x <= W + step; x += step) d += ` L${x} ${base - minH - R() * (maxH - minH)} L${x + step / 2} ${base - minH * 0.5 - R() * minH}`; return d + ` L${W} ${base + 40} L0 ${base + 40}Z`; };
@@ -3026,18 +3227,20 @@ function sceneSVG(themeId){
   };
   let s = `<svg xmlns="http://www.w3.org/2000/svg" width="${W}" height="${H}" viewBox="0 0 ${W} ${H}" preserveAspectRatio="none">
   <defs>
-    <linearGradient id="sc-sky" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="${P.sky[0]}"/><stop offset="1" stop-color="${P.sky[1]}"/></linearGradient>
+    <linearGradient id="sc-sky" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="${P.sky[0]}"/>${P.sky[2] ? `<stop offset=".6" stop-color="${P.sky[1]}"/><stop offset="1" stop-color="${P.sky[2]}"/>` : `<stop offset="1" stop-color="${P.sky[1]}"/>`}</linearGradient>
     <linearGradient id="sc-water" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="${P.water[0]}"/><stop offset="1" stop-color="${P.water[1]}"/></linearGradient>
     <linearGradient id="sc-grass" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="${P.grass[0]}"/><stop offset="1" stop-color="${P.grass[1]}"/></linearGradient>
     <radialGradient id="sc-sun"><stop offset="0" stop-color="${P.sun}"/><stop offset=".35" stop-color="${P.sun}" stop-opacity=".9"/><stop offset="1" stop-color="${P.sun}" stop-opacity="0"/></radialGradient>
   </defs>
   <rect width="${W}" height="${H}" fill="url(#sc-sky)"/>`;
   if (P.stars) for (let i = 0; i < 90; i++) s += `<circle cx="${R() * W}" cy="${R() * 180}" r="${(R() * 1.4 + .4).toFixed(1)}" fill="#fff" opacity="${(R() * .6 + .3).toFixed(2)}"/>`;
-  if (P.sun) s += `<circle cx="1480" cy="78" r="90" fill="url(#sc-sun)"/><circle cx="1480" cy="78" r="30" fill="${P.sun}"/>`;
+  if (P.sun && live){ const sx = W * PH.sunX, sy = PH.sunY, sr = PH.sunR; s += `<circle cx="${sx}" cy="${sy}" r="${sr * 4.5}" fill="url(#sc-sun)"/><circle cx="${sx}" cy="${sy}" r="${sr}" fill="${P.sun}"/>`; }
+  else if (P.sun) s += `<circle cx="1480" cy="78" r="90" fill="url(#sc-sun)"/><circle cx="1480" cy="78" r="30" fill="${P.sun}"/>`;
+  if (live && PH.moon) s += `<circle cx="${W*.78}" cy="70" r="110" fill="#c7d2fe" opacity=".12"/><circle cx="${W*.78}" cy="70" r="30" fill="#f8fafc"/><circle cx="${W*.78 - 9}" cy="64" r="5" fill="#cbd5e1"/><circle cx="${W*.78 + 8}" cy="80" r="4" fill="#cbd5e1"/>`;
   if (P.extra && SCENE_SKY[P.extra]) s += SCENE_SKY[P.extra](W, H, R, P);
   // drifting clouds
   for (let i = 0; i < (P.sun === false ? 0 : 6); i++){ const x = R() * W, y = 30 + R() * 90, c = R() * .5 + .8;
-    s += `<g class="sc-cloud" style="animation-duration:${(60 + R() * 60).toFixed(0)}s;animation-delay:-${(R() * 60).toFixed(0)}s" opacity="${P.stars ? .35 : .9}"><g transform="translate(${x.toFixed(0)} ${y.toFixed(0)}) scale(${c.toFixed(2)})"><ellipse cx="0" cy="0" rx="46" ry="18" fill="#fff"/><ellipse cx="-24" cy="-8" rx="24" ry="18" fill="#fff"/><ellipse cx="16" cy="-14" rx="28" ry="22" fill="#fff"/></g></g>`; }
+    s += `<g class="sc-cloud" style="animation-duration:${(60 + R() * 60).toFixed(0)}s;animation-delay:-${(R() * 60).toFixed(0)}s" opacity="${P.stars ? .35 : .9}"><g transform="translate(${x.toFixed(0)} ${y.toFixed(0)}) scale(${c.toFixed(2)})" fill="${live ? PH.cloud : '#fff'}"><ellipse cx="0" cy="0" rx="46" ry="18"/><ellipse cx="-24" cy="-8" rx="24" ry="18"/><ellipse cx="16" cy="-14" rx="28" ry="22"/></g></g>`; }
   // far mountains, near mountains with highlights and caps
   if (!P.noMtn) s += `<path d="${ridge(232, 60, 140, 160)}" fill="${P.far}"/>`;
   const peaks = [];
@@ -3118,8 +3321,10 @@ function screenWorld(visitKid){
     nodes[it.id] = n; stage.append(n);
   };
   W.items.forEach(place);
+  if (!FIXED_SKY.includes(themeId)) stage.append(todLayer('world'));
   const scroller = el('div',{class:'world-scroll'});
   const zw = zoomable({ view: scroller, content: stage, W: WORLD_W, H: WORLD_H, start: worldZoom, max: 2.5, fit: 'width', onZoom: z => { worldZoom = z; } });
+  if (!FIXED_SKY.includes(themeId) && zw.frame) zw.frame.append(todBadge());
 
   // selection toolbar
   const tools = el('div',{class:'world-tools hidden'});
@@ -3861,6 +4066,137 @@ async function commitSkill(act, focus){
      Miles (read aloud): 90%+ of words read right AND 80%+ questions right
      Gianna (quiet):     4 or 5 of 5 tough questions right
    Reading pages and right answers knock the boss's power bar down live. */
+
+/* ================= BOSS ART =================
+   Big, armored, original boss monsters drawn in SVG (replacing the emoji faces).
+   One sturdy "brute" body with spiked armor, plus special bodies (phantom, blob, kraken) and
+   head/extra parts (horns, mane, crown, wings, tail, mask, beak...) mixed per boss. */
+const BOSS_LOOKS = {
+  son: {
+    1:{ body:'brute', f:['antennae','wings','bug'], skin:'#65a30d', belly:'#d9f99d', eye:'#facc15' },
+    2:{ body:'blob', skin:'#92400e', belly:'#d6a26a', eye:'#fde047' },
+    3:{ body:'brute', f:['eyestalks','shell','crown'], skin:'#7c3aed', belly:'#ddd6fe', eye:'#fde047' },
+    4:{ body:'brute', f:['ears','bandit','tail','pirate'], skin:'#64748b', belly:'#e2e8f0', eye:'#fbbf24' },
+    5:{ body:'brute', f:['ears','tail','mane'], skin:'#ea580c', belly:'#ffedd5', eye:'#a3e635', mane:'#fff7ed' },
+    6:{ body:'brute', f:['crown','sparks','wide'], skin:'#2563eb', belly:'#bfdbfe', eye:'#fde047' },
+    7:{ body:'brute', f:['beak','tufts','wings'], skin:'#0f766e', belly:'#99f6e4', eye:'#fde047' },
+    8:{ body:'phantom', f:['mask','tophat'], skin:'#be123c', belly:'#fecdd3', eye:'#fde047' },
+    9:{ body:'brute', f:['ears','bandit','tail'], skin:'#57534e', belly:'#d6d3d1', eye:'#fbbf24' },
+    10:{ body:'brute', f:['horns','tophat','mane'], skin:'#7c3aed', belly:'#e9d5ff', eye:'#34d399', mane:'#f0abfc' },
+    11:{ body:'phantom', f:['hood'], skin:'#64748b', belly:'#e2e8f0', eye:'#67e8f9' },
+    12:{ body:'brute', f:['horns','mane','crown','wings','tail','cape','fire'], skin:'#312e81', belly:'#c7d2fe', eye:'#f43f5e', mane:'#f97316' }
+  },
+  daughter: {
+    1:{ body:'brute', f:['ears','tusks','mane'], skin:'#4d7c0f', belly:'#d9f99d', eye:'#fde047', mane:'#78350f' },
+    2:{ body:'brute', f:['horns','wings','rock'], skin:'#78716c', belly:'#d6d3d1', eye:'#f97316' },
+    3:{ body:'phantom', f:['hood','vines'], skin:'#166534', belly:'#bbf7d0', eye:'#a3e635' },
+    4:{ body:'kraken', skin:'#1d4ed8', belly:'#93c5fd', eye:'#fde047' },
+    5:{ body:'phantom', f:['hood'], skin:'#475569', belly:'#cbd5e1', eye:'#67e8f9' },
+    6:{ body:'brute', f:['rock','horns','crown'], skin:'#78716c', belly:'#a8a29e', eye:'#38bdf8' },
+    7:{ body:'brute', f:['horns','mane','wings','tail','ice'], skin:'#0891b2', belly:'#cffafe', eye:'#e0f2fe', mane:'#f0f9ff' },
+    8:{ body:'phantom', f:['horns','crown','storm'], skin:'#4c1d95', belly:'#c4b5fd', eye:'#f0abfc' }
+  }
+};
+let bossSeq = 0;
+function bossArt(B, size = 160, track){
+  const tk = track || TK, lv = Object.keys(BOSSES[tk] || {}).find(k => BOSSES[tk][k] === B);
+  const L = Object.assign({ body:'brute', f:[], skin:B.color, belly:'#fde68a', eye:'#fde047', mane:'#1f2937' }, (BOSS_LOOKS[tk] || {})[lv] || {});
+  const has = x => L.f.includes(x), u = 'bs' + (++bossSeq), O = `stroke="${INK}" stroke-width="3.5" stroke-linejoin="round"`;
+  const armor = '#27213a', horn = has('ice') ? '#e0f2fe' : has('rock') ? '#d6d3d1' : '#fef3c7';
+  const mirror = d => `<path d="${d}" transform="translate(240 0) scale(-1 1)"`;
+  const spikes = (pts, c = '#f8fafc') => pts.map(([x, y, a]) => `<path d="M${x-6} ${y} L${x} ${y-15} L${x+6} ${y}Z" transform="rotate(${a || 0} ${x} ${y})" fill="${c}" stroke="${INK}" stroke-width="2.5" stroke-linejoin="round"/>`).join('');
+  let back = '', body = '', head = '', front = '';
+  // glowing aura behind every boss
+  back += `<defs><radialGradient id="${u}a"><stop offset="0" stop-color="${L.skin}" stop-opacity=".75"/><stop offset=".6" stop-color="${L.skin}" stop-opacity=".25"/><stop offset="1" stop-color="${L.skin}" stop-opacity="0"/></radialGradient>
+    <linearGradient id="${u}s" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#fff" stop-opacity=".28"/><stop offset=".5" stop-color="#fff" stop-opacity="0"/><stop offset="1" stop-color="#000" stop-opacity=".25"/></linearGradient>
+    <filter id="${u}g" x="-50%" y="-50%" width="200%" height="200%"><feGaussianBlur stdDeviation="3" result="b"/><feMerge><feMergeNode in="b"/><feMergeNode in="SourceGraphic"/></feMerge></filter></defs>
+    <circle cx="120" cy="124" r="118" fill="url(#${u}a)"/>`;
+  if (has('wings')){ const w = 'M80 96 Q24 34 4 94 Q24 88 30 112 Q40 92 54 116 Q62 98 82 122Z';
+    back += `<path d="${w}" fill="${armor}" ${O}/>${mirror(w)} fill="${armor}" ${O}/><path d="M80 98 L30 64 M80 104 L44 104" stroke="${L.skin}" stroke-width="3" opacity=".7"/>`; }
+  if (has('cape')) back += `<path d="M66 100 Q40 180 30 230 L210 230 Q200 180 174 100Z" fill="#7f1d1d" ${O}/><path d="M66 100 Q40 180 30 230 L50 230 Q60 170 80 106Z" fill="#450a0a"/>`;
+  if (has('tail')) back += `<path d="M150 192 Q216 214 230 160 Q236 186 214 206 Q190 222 152 206Z" fill="${L.skin}" ${O}/>` + (has('ears') ? `<path d="M222 172 Q236 160 230 150 Q238 176 220 190Z" fill="${L.belly}"/>` : spikes([[214,196,40],[226,178,70]]));
+  if (has('shell')) back += `<g ${O}><circle cx="120" cy="140" r="78" fill="#a16207"/><path d="M120 140 m0 -60 a60 60 0 1 1 -1 0 M120 140 m0 -38 a38 38 0 1 1 -1 0 M120 140 m0 -16 a16 16 0 1 1 -1 0" fill="none" stroke="#713f12" stroke-width="5"/></g>`;
+
+  const face = (cx, cy) => {
+    let h = '';
+    const ex = 15, ey = -6;
+    if (has('horns')) h += `<path d="M${cx-30} ${cy-26} Q${cx-58} ${cy-50} ${cx-46} ${cy-82} Q${cx-40} ${cy-56} ${cx-18} ${cy-36}Z" fill="${horn}" ${O}/>${`<path d="M${cx+30} ${cy-26} Q${cx+58} ${cy-50} ${cx+46} ${cy-82} Q${cx+40} ${cy-56} ${cx+18} ${cy-36}Z" fill="${horn}" ${O}/>`}`;
+    if (has('ears')) h += `<path d="M${cx-38} ${cy-18} L${cx-50} ${cy-64} L${cx-14} ${cy-36}Z M${cx+38} ${cy-18} L${cx+50} ${cy-64} L${cx+14} ${cy-36}Z" fill="${L.skin}" ${O}/><path d="M${cx-38} ${cy-26} L${cx-44} ${cy-52} L${cx-24} ${cy-36}Z M${cx+38} ${cy-26} L${cx+44} ${cy-52} L${cx+24} ${cy-36}Z" fill="${L.belly}"/>`;
+    if (has('antennae')) h += `<path d="M${cx-14} ${cy-34} Q${cx-30} ${cy-80} ${cx-52} ${cy-78} M${cx+14} ${cy-34} Q${cx+30} ${cy-80} ${cx+52} ${cy-78}" stroke="${INK}" stroke-width="4" fill="none"/><circle cx="${cx-52}" cy="${cy-78}" r="8" fill="${L.eye}" ${O} filter="url(#${u}g)"/><circle cx="${cx+52}" cy="${cy-78}" r="8" fill="${L.eye}" ${O} filter="url(#${u}g)"/>`;
+    if (has('eyestalks')) h += `<path d="M${cx-16} ${cy-30} L${cx-26} ${cy-74} M${cx+16} ${cy-30} L${cx+26} ${cy-74}" stroke="${L.skin}" stroke-width="10" stroke-linecap="round"/><circle cx="${cx-26}" cy="${cy-78}" r="11" fill="${L.eye}" ${O} filter="url(#${u}g)"/><circle cx="${cx+26}" cy="${cy-78}" r="11" fill="${L.eye}" ${O} filter="url(#${u}g)"/><ellipse cx="${cx-25}" cy="${cy-78}" rx="3" ry="7" fill="${INK}"/><ellipse cx="${cx+27}" cy="${cy-78}" rx="3" ry="7" fill="${INK}"/>`;
+    if (has('mane')) h += `<path d="M${cx-46} ${cy-4} L${cx-60} ${cy-26} L${cx-44} ${cy-30} L${cx-50} ${cy-52} L${cx-28} ${cy-46} L${cx-24} ${cy-70} L${cx-6} ${cy-52} L${cx+6} ${cy-74} L${cx+16} ${cy-50} L${cx+34} ${cy-66} L${cx+34} ${cy-42} L${cx+56} ${cy-48} L${cx+46} ${cy-26} L${cx+62} ${cy-20} L${cx+46} ${cy-4}Z" fill="${L.mane}" ${O}/>`;
+    if (has('tufts')) h += `<path d="M${cx-34} ${cy-26} L${cx-48} ${cy-58} L${cx-20} ${cy-38}Z M${cx+34} ${cy-26} L${cx+48} ${cy-58} L${cx+20} ${cy-38}Z" fill="${L.skin}" ${O}/>`;
+    // the head
+    h += `<ellipse cx="${cx}" cy="${cy}" rx="${has('wide') ? 54 : 44}" ry="38" fill="${L.skin}" ${O}/><ellipse cx="${cx}" cy="${cy}" rx="${has('wide') ? 54 : 44}" ry="38" fill="url(#${u}s)"/>`;
+    if (has('rock')) h += `<path d="M${cx-30} ${cy-20} l10 8 l-4 10 M${cx+24} ${cy-26} l-6 12 l10 6" stroke="${INK}" stroke-width="2.5" fill="none" opacity=".6"/><circle cx="${cx+26}" cy="${cy-24}" r="6" fill="#65a30d" opacity=".8"/>`;
+    if (has('bandit')) h += `<path d="M${cx-42} ${cy-16} Q${cx} ${cy-6} ${cx+42} ${cy-16} L${cx+38} ${cy+2} Q${cx} ${cy+10} ${cx-38} ${cy+2}Z" fill="#1f2937"/>`;
+    // snout / beak and mouth
+    if (has('beak')) h += `<path d="M${cx-14} ${cy+6} L${cx} ${cy+38} L${cx+14} ${cy+6}Z" fill="#f59e0b" ${O}/><path d="M${cx-12} ${cy+12} L${cx+12} ${cy+12}" stroke="${INK}" stroke-width="2"/>`;
+    else {
+      h += `<ellipse cx="${cx}" cy="${cy+16}" rx="${has('wide') ? 44 : 30}" ry="20" fill="${L.belly}" ${O}/>`;
+      h += `<path d="M${cx-(has('wide') ? 34 : 22)} ${cy+20} Q${cx} ${cy+34} ${cx+(has('wide') ? 34 : 22)} ${cy+20}" stroke="${INK}" stroke-width="3.5" fill="#7f1d1d"/>`;
+      h += `<path d="M${cx-16} ${cy+24} l4 -12 l4 12z M${cx+8} ${cy+24} l4 -12 l4 12z" fill="#fff" stroke="${INK}" stroke-width="2" stroke-linejoin="round"/>`;
+      h += `<circle cx="${cx-7}" cy="${cy+8}" r="2.6" fill="${INK}"/><circle cx="${cx+7}" cy="${cy+8}" r="2.6" fill="${INK}"/>`;
+      if (has('tusks')) h += `<path d="M${cx-24} ${cy+24} q-4 -20 6 -26 q-2 14 2 24z M${cx+24} ${cy+24} q4 -20 -6 -26 q2 14 -2 24z" fill="#fef3c7" ${O}/>`;
+    }
+    // glowing angry eyes
+    if (!has('eyestalks')){
+      h += `<g filter="url(#${u}g)"><path d="M${cx-ex-12} ${cy+ey-6} Q${cx-ex} ${cy+ey-12} ${cx-ex+11} ${cy+ey-2} Q${cx-ex} ${cy+ey+8} ${cx-ex-12} ${cy+ey-6}Z" fill="${L.eye}" ${O}/>
+        <path d="M${cx+ex+12} ${cy+ey-6} Q${cx+ex} ${cy+ey-12} ${cx+ex-11} ${cy+ey-2} Q${cx+ex} ${cy+ey+8} ${cx+ex+12} ${cy+ey-6}Z" fill="${L.eye}" ${O}/></g>
+        <ellipse cx="${cx-ex+1}" cy="${cy+ey-2}" rx="2.6" ry="6" fill="${INK}"/><ellipse cx="${cx+ex-1}" cy="${cy+ey-2}" rx="2.6" ry="6" fill="${INK}"/>
+        <path d="M${cx-ex-16} ${cy+ey-16} L${cx-4} ${cy+ey-8} M${cx+ex+16} ${cy+ey-16} L${cx+4} ${cy+ey-8}" stroke="${INK}" stroke-width="6" stroke-linecap="round"/>`;
+    }
+    if (has('mask')) h += `<path d="M${cx-46} ${cy-20} Q${cx} ${cy-30} ${cx+46} ${cy-20} Q${cx+44} ${cy+4} ${cx+20} ${cy+2} Q${cx} ${cy-8} ${cx-20} ${cy+2} Q${cx-44} ${cy+4} ${cx-46} ${cy-20}Z" fill="#fff" ${O}/><ellipse cx="${cx-18}" cy="${cy-10}" rx="9" ry="6" fill="${L.eye}" filter="url(#${u}g)"/><ellipse cx="${cx+18}" cy="${cy-10}" rx="9" ry="6" fill="${L.eye}" filter="url(#${u}g)"/>`;
+    // hats and crowns
+    if (has('crown')) h += `<path d="M${cx-30} ${cy-30} L${cx-34} ${cy-62} L${cx-16} ${cy-46} L${cx} ${cy-70} L${cx+16} ${cy-46} L${cx+34} ${cy-62} L${cx+30} ${cy-30}Z" fill="#facc15" ${O}/><circle cx="${cx}" cy="${cy-40}" r="5" fill="#ef4444" stroke="${INK}" stroke-width="2"/><circle cx="${cx-20}" cy="${cy-38}" r="3.5" fill="#3b82f6"/><circle cx="${cx+20}" cy="${cy-38}" r="3.5" fill="#22c55e"/>`;
+    if (has('tophat')) h += `<path d="M${cx-40} ${cy-30} h80 v-8 h-80z M${cx-26} ${cy-38} v-44 h52 v44z" fill="#111827" ${O}/><rect x="${cx-26}" y="${cy-50}" width="52" height="9" fill="#be123c"/>`;
+    if (has('pirate')) h += `<path d="M${cx-50} ${cy-28} Q${cx} ${cy-80} ${cx+50} ${cy-28} Q${cx} ${cy-40} ${cx-50} ${cy-28}Z" fill="#111827" ${O}/><text x="${cx}" y="${cy-42}" font-size="16" text-anchor="middle">☠️</text>`;
+    if (has('hood')) h += `<path d="M${cx-52} ${cy+18} Q${cx-56} ${cy-60} ${cx} ${cy-96} Q${cx+56} ${cy-60} ${cx+52} ${cy+18} Q${cx+46} ${cy-36} ${cx} ${cy-44} Q${cx-46} ${cy-36} ${cx-52} ${cy+18}Z" fill="${armor}" ${O}/>`;
+    if (has('vines')) h += `<path d="M${cx-48} ${cy-10} q-10 30 4 50 M${cx+48} ${cy-10} q12 26 -2 50" stroke="#15803d" stroke-width="5" fill="none"/><circle cx="${cx-46}" cy="${cy+20}" r="5" fill="#ef4444"/><circle cx="${cx+48}" cy="${cy+28}" r="5" fill="#ef4444"/>`;
+    return h;
+  };
+  const armorPads = () => `<g ${O}><path d="M44 112 Q46 84 76 84 Q96 88 94 112Z" fill="${armor}"/><path d="M196 112 Q194 84 164 84 Q144 88 146 112Z" fill="${armor}"/></g>` + spikes([[56,92,-30],[74,84,-8],[184,92,30],[166,84,8]]);
+  const fists = () => {
+    const band = (x, y) => `<rect x="${x-20}" y="${y-8}" width="40" height="14" rx="5" fill="${armor}" ${O}/>` + spikes([[x-12,y-8,-20],[x,y-9,0],[x+12,y-8,20]]);
+    return `<path d="M68 114 Q26 128 30 170 L58 170 Q58 144 84 132Z" fill="${L.skin}" ${O}/><path d="M172 114 Q214 128 210 170 L182 170 Q182 144 156 132Z" fill="${L.skin}" ${O}/>
+      ${band(44, 160)}${band(196, 160)}
+      <circle cx="44" cy="180" r="18" fill="${L.skin}" ${O}/><circle cx="196" cy="180" r="18" fill="${L.skin}" ${O}/>
+      <path d="M34 176 h20 M34 184 h20 M186 176 h20 M186 184 h20" stroke="${INK}" stroke-width="2" opacity=".5"/>`;
+  };
+  if (L.body === 'brute'){
+    body += `<path d="M82 186 L80 226 L112 226 L112 186Z M158 186 L160 226 L128 226 L128 186Z" fill="${L.skin}" ${O}/>` + `<path d="M76 228 l6 -10 l6 10z M88 228 l6 -10 l6 10z M100 228 l6 -10 l6 10z M128 228 l6 -10 l6 10z M140 228 l6 -10 l6 10z M152 228 l6 -10 l6 10z" fill="#f8fafc" stroke="${INK}" stroke-width="2"/>`;
+    body += `<path d="M66 106 Q56 198 120 202 Q184 198 174 106 Q148 86 120 88 Q92 86 66 106Z" fill="${L.skin}" ${O}/><path d="M66 106 Q56 198 120 202 Q184 198 174 106 Q148 86 120 88 Q92 86 66 106Z" fill="url(#${u}s)"/>`;
+    body += `<path d="M90 116 Q120 106 150 116 L146 190 Q120 200 94 190Z" fill="${L.belly}" ${O}/><path d="M92 134 Q120 128 148 134 M92 152 Q120 146 148 152 M94 170 Q120 164 146 170" stroke="${INK}" stroke-width="2.5" fill="none" opacity=".55"/>`;
+    if (has('bug')) body += `<path d="M64 140 l-22 -6 M64 156 l-24 4 M176 140 l22 -6 M176 156 l24 4" stroke="${INK}" stroke-width="4"/>`;
+    body += `<rect x="78" y="176" width="84" height="14" rx="6" fill="${armor}" ${O}/><rect x="110" y="174" width="20" height="18" rx="4" fill="#facc15" ${O}/>`;
+    body += fists() + armorPads();
+    head = face(120, 64);
+  } else if (L.body === 'phantom'){
+    body += `<path d="M64 104 Q50 190 66 226 Q80 206 92 228 Q104 208 116 230 Q128 208 140 228 Q154 206 168 226 Q186 190 176 104 Q150 84 120 86 Q90 84 64 104Z" fill="${L.skin}" opacity=".92" ${O}/>`;
+    body += `<path d="M64 104 Q50 190 66 226 Q80 206 92 228 Q104 208 116 230 Q128 208 140 228 Q154 206 168 226 Q186 190 176 104 Q150 84 120 86 Q90 84 64 104Z" fill="url(#${u}s)"/>`;
+    body += `<path d="M68 112 Q28 120 20 160 Q34 150 40 166 Q46 146 74 136Z M172 112 Q212 120 220 160 Q206 150 200 166 Q194 146 166 136Z" fill="${L.skin}" ${O}/>`;
+    body += `<path d="M92 120 Q120 140 148 120" stroke="${L.belly}" stroke-width="4" fill="none" opacity=".7"/>`;
+    if (has('storm')) body += `<path d="M30 60 l14 22 l-10 2 l14 24 M210 54 l-14 22 l10 2 l-14 24" stroke="#fde047" stroke-width="4" fill="none" filter="url(#${u}g)" class="boss-zap"/>`;
+    head = face(120, 64);
+  } else if (L.body === 'blob'){
+    body += `<path d="M40 210 Q20 140 60 100 Q90 60 130 64 Q190 70 206 130 Q224 196 196 212 Q182 200 172 216 Q150 202 136 220 Q118 204 100 220 Q84 200 70 216 Q56 200 40 210Z" fill="${L.skin}" ${O}/><path d="M40 210 Q20 140 60 100 Q90 60 130 64 Q190 70 206 130 Q224 196 196 212Z" fill="url(#${u}s)"/>`;
+    body += `<circle cx="80" cy="110" r="8" fill="${L.belly}" opacity=".6"/><circle cx="170" cy="150" r="11" fill="${L.belly}" opacity=".5"/><circle cx="64" cy="170" r="6" fill="${L.belly}" opacity=".5"/>`;
+    head = face(124, 128);
+  } else if (L.body === 'kraken'){
+    const tent = (x, d) => `<path d="M${x} 170 Q${x + d*24} 210 ${x + d*44} 214 Q${x + d*56} 200 ${x + d*44} 194 Q${x + d*30} 196 ${x + d*12} 166Z" fill="${L.skin}" ${O}/>`;
+    body += [72, 96, 120, 144, 168].map((x, i) => tent(x, i < 2 ? -1 : i > 2 ? 1 : (i % 2 ? 1 : -1))).join('');
+    body += `<path d="M30 120 Q10 150 26 176 Q34 156 50 160 Q40 140 60 126Z M210 120 Q230 150 214 176 Q206 156 190 160 Q200 140 180 126Z" fill="${L.skin}" ${O}/>`;
+    body += `<ellipse cx="120" cy="110" rx="70" ry="74" fill="${L.skin}" ${O}/><ellipse cx="120" cy="110" rx="70" ry="74" fill="url(#${u}s)"/>`;
+    body += `<circle cx="84" cy="64" r="8" fill="${L.belly}" opacity=".6"/><circle cx="154" cy="58" r="10" fill="${L.belly}" opacity=".6"/><circle cx="168" cy="96" r="6" fill="${L.belly}" opacity=".6"/>`;
+    head = face(120, 124);
+  }
+  // fire / sparks / ice in front
+  if (has('fire')) front += `<g class="boss-fire">${flameShape(34, 30, 1.3, '#f97316', '#fde047')}${flameShape(206, 26, 1.1, '#ef4444', '#fdba74')}</g>`;
+  if (has('sparks')) front += `<path d="M26 40 l12 18 l-8 2 l12 20 M214 36 l-12 18 l8 2 l-12 20" stroke="#fde047" stroke-width="4" fill="none" filter="url(#${u}g)" class="boss-zap"/>`;
+  if (has('ice')) front += `<g fill="#e0f2fe" ${O}><path d="M24 40 l6 -14 l6 14 l-6 6z"/><path d="M210 30 l6 -14 l6 14 l-6 6z"/></g>`;
+  return `<svg viewBox="0 -28 240 268" width="${size}" height="${size}" xmlns="http://www.w3.org/2000/svg" class="boss-svg">${back}<g class="boss-body">${body}${head}</g>${front}</svg>`;
+}
+
 function bossFor(level){ return (BOSSES[TK] || {})[level] || null; }
 function bossReady(){ return K.bossReady === K.level && !!bossFor(K.level); }
 function bossCard(){
@@ -3869,7 +4205,7 @@ function bossCard(){
   return el('div',{class:'card boss-card', style:`--boss:${B.color}`},
     el('div',{class:'boss-tag'}, K.level >= T.levels.length ? '👑 FINAL BOSS' : `⚔️ LEVEL ${K.level} BOSS`),
     el('div',{class:'boss-row'},
-      el('div',{class:'boss-face'}, B.e),
+      el('div',{class:'boss-face art', html: bossArt(B, 170)}),
       el('div',{class:'grow'},
         el('h2',{}, B.name), el('p',{class:'boss-taunt'}, `"${B.taunt}"`),
         el('div',{class:'hp'}, el('div',{class:'hp-fill', style:'width:100%'}), el('span',{}, 'BOSS POWER 100%')),
@@ -3885,7 +4221,7 @@ function bossIntro(level){
   const ov = el('div',{class:'boss-intro', style:`--boss:${B.color}`},
     el('div',{class:'epic-rays'}),
     el('div',{class:'boss-intro-card'},
-      el('div',{class:'boss-vs'}, K.hero ? heroNode(130) : el('div',{html: avatarSVG(K.avatar, 120)}), el('span',{class:'vs'},'VS'), el('div',{class:'boss-face big'}, B.e)),
+      el('div',{class:'boss-vs'}, K.hero ? heroNode(130) : el('div',{html: avatarSVG(K.avatar, 120)}), el('span',{class:'vs'},'VS'), el('div',{class:'boss-face big art', html: bossArt(B, 220)})),
       (K.bossesBeaten || []).includes(level) || level < K.level ? el('p',{style:'color:#fde68a;font-weight:700'}, `Rematch! Win to collect a missing ${(setForLevel(level) || {}).name || ''} gear piece.`) : null,
       el('h2',{}, B.name), el('p',{class:'boss-taunt'}, `"${B.taunt}"`),
       el('div',{class:'row center'},
@@ -3921,7 +4257,7 @@ function bossHud(hit){
   if (!run || !run.opts.boss){ const h = $('.boss-hud'); if (h) h.remove(); return; }
   const B = run.opts.boss, pw = bossPower();
   let h = $('.boss-hud');
-  if (!h){ h = el('div',{class:'boss-hud', style:`--boss:${B.color}`}, el('span',{class:'boss-face sm'}, B.e), el('div',{class:'grow'}, el('b',{}, B.name), el('div',{class:'hp'}, el('div',{class:'hp-fill'}), el('span',{})))); document.body.append(h); }
+  if (!h){ h = el('div',{class:'boss-hud', style:`--boss:${B.color}`}, el('span',{class:'boss-face sm art', html: bossArt(B, 52)}), el('div',{class:'grow'}, el('b',{}, B.name), el('div',{class:'hp'}, el('div',{class:'hp-fill'}), el('span',{})))); document.body.append(h); }
   h.querySelector('.hp-fill').style.width = pw + '%';
   h.querySelector('.hp span').textContent = `BOSS POWER ${pw}%`;
   if (hit){ const f = h.querySelector('.boss-face'); f.classList.remove('hit'); void f.offsetWidth; f.classList.add('hit'); }
@@ -3943,7 +4279,7 @@ async function bossResult(){
     K.bossesBeaten = [...new Set((K.bossesBeaten || []).concat(a.level))];
     K.stars += 3; save();
     confetti(100); beep('level'); burst('K.O.!'); say(`You beat ${B.name} again!`);
-    await modal(el('div',{}, el('div',{class:'big-e'}, B.e), el('h2',{}, `${B.name} defeated again!`), el('p',{}, `"${B.defeat}" +3 ⭐`)), [['🎁 Get my loot!','',1]]);
+    await modal(el('div',{}, el('div',{class:'big-e', html: bossArt(B, 140)}), el('h2',{}, `${B.name} defeated again!`), el('p',{}, `"${B.defeat}" +3 ⭐`)), [['🎁 Get my loot!','',1]]);
     await bossGearDrop(a.level, true); awardChest('gold', 'Boss defeated');
     await checkBadges(); run = null; return screenQuestMap();
   }
@@ -3957,7 +4293,7 @@ async function bossResult(){
     addCosmic(5, `Defeated ${B.name}!`);
     const ov = el('div',{class:'boss-intro boss-win', style:`--boss:${B.color}`}, el('div',{class:'epic-rays'}),
       el('div',{class:'boss-intro-card'},
-        el('div',{class:'boss-face big defeated'}, B.e),
+        el('div',{class:'boss-face big defeated art', html: bossArt(B, 220)}),
         el('h2',{}, 'BOSS DEFEATED!'), el('p',{class:'boss-taunt'}, `"${B.defeat}"`),
         el('p',{style:'font-size:22px;font-weight:700'}, top ? '👑 You beat the FINAL BOSS! You are a reading legend!' : `${TK === 'daughter' ? 'Rank' : 'Level'} ${K.level} unlocked! +10 ⭐ +5 💫`),
         el('button',{class:'btn big', onclick:async()=>{ ov.remove(); await bossGearDrop(a.level, false); awardChest('gold', 'Boss defeated'); await checkBadges(); run = null; screenHome(); }},'🏆 Victory! Get my loot ▶')));
@@ -3968,7 +4304,7 @@ async function bossResult(){
     const pw = bossPower();
     const tip = a.quiet ? `You got ${quiz.c} of ${quiz.t}. You need 4 or 5 to win.`
       : `Words right: ${Math.round((R.accuracy||0)*100)}% (need 90%) · Questions: ${quiz.c} of ${quiz.t} (need ${Math.ceil(quiz.t*0.8)}).`;
-    await modal(el('div',{}, el('div',{class:'big-e'}, B.e), el('h2',{}, `${B.name} is still standing!`),
+    await modal(el('div',{}, el('div',{class:'big-e', html: bossArt(B, 140)}), el('h2',{}, `${B.name} is still standing!`),
       el('p',{}, `Boss power left: ${pw}%. ${tip}`), el('p',{}, 'Every battle makes you stronger. Try again anytime!')), [['💪 Back','',1]]);
     await checkBadges(); run = null; replay ? screenQuestMap() : screenHome();
   }
@@ -4106,7 +4442,7 @@ function spikes(cx, cy, n, len, spread, base, col, stroke){
 }
 const flameShape = (x, y, k, c1, c2) => `<g transform="translate(${x} ${y}) scale(${k})"><path d="M0 0 C-10 -8 -6 -20 0 -30 C2 -22 8 -20 6 -12 C10 -16 12 -22 10 -28 C18 -18 16 -4 0 0Z" fill="${c1}"/><path d="M2 -2 C-2 -8 0 -14 3 -18 C5 -12 8 -10 6 -4Z" fill="${c2}"/></g>`;
 const starShape = (x, y, r, c) => `<path d="M${x} ${y-r} l${r*.3} ${r*.62} l${r*.68} ${r*.1} l-${r*.5} ${r*.48} l${r*.12} ${r*.68} l-${r*.6} -${r*.32} l-${r*.6} ${r*.32} l${r*.12} -${r*.68} l-${r*.5} -${r*.48} l${r*.68} -${r*.1}z" fill="${c}"/>`;
-const INK = '#3b2a35'; // warm dark outline (softer than black)
+const INK = '#24141f'; // dark warm outline: crisp, game-art look
 let heroSeq = 0;
 const EYE_COLORS = ['#6b3f1f','#2f6fd6','#2f9e5b','#8b5cf6','#2a2230'];
 
@@ -4219,6 +4555,16 @@ function hairFront(h){
   if (h.hairStyle === 'curly') return `<g fill="${c}" stroke="${INK}" stroke-width="3">${[[70,44],[86,34],[102,32],[118,36],[132,46],[78,54]].map(([x,y]) => `<circle cx="${x}" cy="${y}" r="12"/>`).join('')}</g>`;
   return `<path d="M64 64 q-4 -40 36 -40 q40 0 36 40 q-10 -18 -30 -20 q-2 10 -12 12 q4 -8 2 -12 q-20 4 -32 20z" fill="${c}" stroke="${INK}" stroke-width="3" stroke-linejoin="round"/>`;
 }
+function heroShield(C, girl){
+  const face = C.tier ? C.prim : (girl ? '#7c3aed' : '#1e3a8a'), rim = C.tier ? C.trim : '#fbbf24', boss = C.tier ? C.gem : (girl ? '#f9a8d4' : '#facc15');
+  const emb = C.motif === 'flame' ? flameShape(46, 180, .55, '#f97316', '#fde047') : C.motif === 'star' || !C.tier ? starShape(46, 168, 10, boss)
+    : C.motif === 'crystal' ? spikes(46, 176, 3, 14, 70, 270, '#e0f2fe', '#60a5fa') : C.motif === 'storm' ? `<path d="M50 156 l-10 14 h7 l-5 14 l13 -18 h-7 l5 -10z" fill="${boss}" stroke="${INK}" stroke-width="1.5"/>`
+    : C.motif === 'wing' ? `<path d="M46 170 q-14 -4 -16 -14 q8 2 16 6 q8 -4 16 -6 q-2 10 -16 14z" fill="#fff" stroke="${rim}" stroke-width="1.5"/>` : `<circle cx="46" cy="168" r="6" fill="${boss}" stroke="${INK}" stroke-width="2"/>`;
+  return `<g class="hero-shield"><path d="M22 142 Q46 132 70 142 Q72 178 46 200 Q20 178 22 142Z" fill="${shade(face, -.35)}" stroke="${INK}" stroke-width="3" stroke-linejoin="round"/>
+    <path d="M26 145 Q46 137 66 145 Q67 176 46 194 Q25 176 26 145Z" fill="${face}"/>
+    <path d="M26 145 Q46 137 66 145" stroke="${rim}" stroke-width="4" fill="none"/><path d="M46 140 V196" stroke="${rim}" stroke-width="2.5" opacity=".55"/>
+    <path d="M30 150 Q40 145 46 145 L44 172 Q34 166 30 150Z" fill="#fff" opacity=".18"/>${emb}</g>`;
+}
 function heroSVG(size=200, override={}){
   const h = Object.assign({ skin:SKIN_TONES[1], hairColor:HAIR_COLORS[1], hairStyle:'short', weapon:'sword' }, K.hero || {}, override.hero || {});
   const G = heroState(), eq = Object.assign({}, G.eq, override.eq || {});
@@ -4237,6 +4583,17 @@ function heroSVG(size=200, override={}){
   <linearGradient id="${u}v" x1="0" y1="0" x2="1" y2="0"><stop offset="0" stop-color="#fff" stop-opacity=".18"/><stop offset=".45" stop-color="#fff" stop-opacity="0"/><stop offset="1" stop-color="#1c0f1c" stop-opacity=".22"/></linearGradient></defs>`;
   if (full) s += `<ellipse class="hero-aura" cx="100" cy="130" rx="96" ry="118" fill="url(#${u}a)"/>${[[30,60],[170,80],[24,170],[176,190],[60,20],[150,24]].map(([x,y],i) => `<g class="hero-spark" style="animation-delay:-${i*.4}s">${starShape(x, y, 6, full.gem)}</g>`).join('')}`;
   s += `<ellipse cx="100" cy="238" rx="56" ry="8" fill="#000" opacity=".18"/>`;
+  { const C = S('chest');
+    if (C.motif !== 'wizard'){
+      const TC = K.tower && K.tower.cape && TOWER_CAPE_BY_ID[K.tower.cape];
+      const cape = TC ? TC.color : C.cape || (C.tier ? (C.motif === 'wing' ? '#fef3c7' : C.motif === 'flame' ? '#7f1d1d' : C.motif === 'crystal' ? '#e0f2fe' : C.motif === 'star' ? '#312e81' : shade(C.sec, -.25)) : (girl ? '#7c3aed' : '#b91c1c'));
+      const lining = TC ? TC.edge : C.tier ? C.sec : (girl ? '#f9a8d4' : '#facc15'), edge = TC ? TC.edge : C.tier ? C.trim : '#fbbf24';
+      s += `<defs><linearGradient id="${u}c" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="${shade(cape, .18)}"/><stop offset=".55" stop-color="${cape}"/><stop offset="1" stop-color="${shade(cape, -.45)}"/></linearGradient></defs>
+      <g class="hero-cape"><path d="M66 100 Q40 160 18 234 Q36 222 50 236 Q70 222 88 238 Q106 224 124 238 Q142 222 158 236 Q172 222 184 232 Q160 160 134 100Z" fill="${lining}" stroke="${INK}" stroke-width="3" stroke-linejoin="round"/>
+      <path d="M66 100 Q44 160 28 228 Q46 218 60 230 Q78 218 94 232 Q112 220 128 232 Q146 218 172 228 Q156 160 134 100Z" fill="url(#${u}c)"/>
+      <path d="M86 112 Q80 170 74 222 M114 112 Q120 170 128 222" stroke="${shade(cape, -.4)}" stroke-width="2.5" fill="none" opacity=".55"/>
+      <path d="M66 100 Q40 160 18 234" stroke="${edge}" stroke-width="2" fill="none" opacity=".8"/></g>`;
+    } }
   if (!helmOn || h.hairStyle === 'long' || h.hairStyle === 'ponytail') s += hairBack(h);
   // arms (skin), then body pieces
   s += `<path d="M68 106 L52 158" stroke="${INK}" stroke-width="15" stroke-linecap="round"/><path d="M68 106 L52 158" stroke="${S('chest').tier ? S('chest').sec : S('chest').prim}" stroke-width="10" stroke-linecap="round"/>
@@ -4263,6 +4620,7 @@ function heroSVG(size=200, override={}){
     </g>`; };
   s += `<circle cx="100" cy="64" r="34" fill="${h.skin}" stroke="${INK}" stroke-width="3"/><circle cx="100" cy="64" r="33" fill="url(#${u}s)"/>
     ${eyeAt(86, false)}${eyeAt(114, true)}
+    <path d="M79 57.5 Q86 53 93 56" stroke="${h.hairColor === '#f1f5f9' ? '#94a3b8' : shade(h.hairColor, -.2)}" stroke-width="3.2" fill="none" stroke-linecap="round"/><path d="M107 56 Q114 53 121 57.5" stroke="${h.hairColor === '#f1f5f9' ? '#94a3b8' : shade(h.hairColor, -.2)}" stroke-width="3.2" fill="none" stroke-linecap="round"/>
     <ellipse cx="78" cy="80" rx="8" ry="5" fill="url(#${u}b)"/><ellipse cx="122" cy="80" rx="8" ry="5" fill="url(#${u}b)"/>
     <path d="M75 79 l2 -2.4 M79 79 l2 -2.4 M119 79 l2 -2.4 M123 79 l2 -2.4" stroke="#fff" stroke-width="1.1" opacity=".7" stroke-linecap="round"/>
     <path d="M99 77.5 q1.2 1 2.4 0" stroke="#b9775f" stroke-width="1.4" fill="none" stroke-linecap="round"/>
@@ -4272,11 +4630,12 @@ function heroSVG(size=200, override={}){
   const shine = `<path d="M74 47 q9 -13 25 -15" stroke="#fff" stroke-width="4.5" opacity=".32" fill="none" stroke-linecap="round"/><path d="M104 32 q6 0 11 2" stroke="#fff" stroke-width="3" opacity=".25" fill="none" stroke-linecap="round"/>`;
   s += helmOn ? gearPiece('helmet', S('helmet'), h) : hairFront(h) + shine + bow + (S('helmet').id === 'traveler' && override.showCap ? gearPiece('helmet', S('helmet'), h) : '');
   s += gearPiece('gloves', S('gloves'), h);
+  if ((h.weapon || 'sword') === 'sword' || h.weapon === 'laser') s += heroShield(S('chest'), girl);
   const wpn = override.wpn !== undefined ? override.wpn : K.wpn;
   s += wpn && LW_BY_ID[wpn] ? legendWeaponSVG(wpn) : gearPiece('weapon', S('weapon'), h);
   return s + '</svg>';
 }
-function profileHero(k){ const keep = K; K = DB.kids[k]; try { return heroNode(110); } finally { K = keep; } }
+function profileHero(k, size){ const keep = K; K = DB.kids[k]; try { return size ? riderNode(size) : heroNode(110); } finally { K = keep; } }
 function heroNode(size=170, withBuddy=true){
   const wrap = el('div',{class:'hero-wrap'}, el('div',{class:'hero-main', html: heroSVG(size)}));
   if (withBuddy && K.avatar && K.avatar.base) wrap.append(el('div',{class:'hero-buddy', html: avatarSVG(K.avatar, Math.round(size*.42))}));
@@ -4426,11 +4785,11 @@ function screenHeroHall(){
         .map(([e,n,l]) => el('div',{class:'hh-stat'}, el('b',{}, e + ' ' + n), el('span',{}, l)))))));
 }
 /* ---------- quest map ---------- */
-const MAP_SPOTS = [[9,82],[25,60],[14,34],[34,18],[52,40],[46,72],[68,80],[88,46]];
+const MAP_SPOTS = [[9,82],[25,60],[14,34],[34,18],[52,40],[46,72],[68,80],[88,46],[76,18],[62,8],[90,10],[94,76]];
 function screenQuestMap(){
   stopAll();
   const map = el('div',{class:'quest-map'});
-  let path = 'M' + MAP_SPOTS.map(([x,y]) => `${x*10} ${y*6}`).join(' L');
+  let path = 'M' + MAP_SPOTS.slice(0, T.levels.length).map(([x,y]) => `${x*10} ${y*6}`).join(' L');
   map.innerHTML = `<svg viewBox="0 0 1000 600" preserveAspectRatio="none" class="qm-svg"><path d="${path}" stroke="#7c5a33" stroke-width="12" fill="none" stroke-dasharray="2 22" stroke-linecap="round"/></svg>`;
   for (let lv = 1; lv <= T.levels.length; lv++){
     const B = bossFor(lv), S = setForLevel(lv), [x, y] = MAP_SPOTS[lv-1] || [50,50];
@@ -4441,7 +4800,7 @@ function screenQuestMap(){
       if (state === 'locked'){ say(`${B.name} is far ahead. Keep reading to get there!`); return; }
       if (state === 'current'){ const left = Math.max(0, LEVEL_UP_STREAK - (K.passStreak || 0)); say(`${B.name} is sleeping. Read ${left} more great stor${left === 1 ? 'y' : 'ies'} to wake the boss!`); return; }
       bossIntro(lv); }},
-      el('div',{class:'qm-face'}, state === 'locked' ? '❔' : B.e),
+      el('div',{class:'qm-face', html: state === 'locked' ? '❔' : bossArt(B, 64)}),
       el('div',{class:'qm-label'}, el('b',{}, state === 'locked' ? '???' : B.name), el('span',{}, `${S ? S.name : ''} set ${S ? setCount(S.id) : 0}/8`)),
       el('div',{class:'qm-badge'}, state === 'beaten' ? '✅ Re-battle for gear' : state === 'ready' ? '⚔️ BATTLE!' : state === 'current' ? '💤 Read to wake' : state === 'skipped' ? '⚔️ Battle for gear' : '🔒'));
     map.append(node);
@@ -4711,7 +5070,7 @@ function screenStables(){
   stopAll();
   const own = mountState(); save();
   const cur = K.mount && own[K.mount] ? K.mount : null;
-  const stage = el('div',{class:'st-stage'}, el('div',{class:'st-clouds'}), cur ? el('div',{class:'st-ride', html: mountSVG(cur, 470)}) : el('div',{class:'st-walk'}, heroNode(170)));
+  const stage = el('div',{class:'st-stage ph-' + dayPhase()}, el('div',{class:'st-clouds'}), cur ? el('div',{class:'st-ride', html: mountSVG(cur, 470)}) : el('div',{class:'st-walk'}, heroNode(170)));
   const flights = flightsLeft();
   const grid = el('div',{class:'st-grid'}, ...MOUNTS.map(M => {
     const have = !!own[M.id] || isDev(), on = cur === M.id, R = RARITY[M.r];
@@ -4754,7 +5113,7 @@ function screenFly(){
   stopAll();
   const today = todayStr();
   K.flights = K.flights && K.flights.day === today ? K.flights : { day:today, used:0 }; K.flights.used++; save();
-  const words = flyWords(), sky = el('div',{class:'fly-sky'}), hud = el('div',{class:'fly-hud'}), goal = el('div',{class:'fly-goal'});
+  const words = flyWords(), sky = el('div',{class:'fly-sky ph-' + dayPhase()}), hud = el('div',{class:'fly-hud'}), goal = el('div',{class:'fly-goal'});
   const rider = el('div',{class:'fly-rider', html: mountSVG(K.mount, 230)});
   for (let i = 0; i < 6; i++) sky.append(el('div',{class:'fly-cloud', style:`top:${8 + i*15}%;animation-duration:${9 + i*2.5}s;animation-delay:-${i*3}s;transform:scale(${.6 + (i%3)*.3})`}));
   sky.append(rider, hud, goal);
@@ -5327,10 +5686,13 @@ function screenTownSquare(){
   const world = el('div',{class:'plaza-world', html: pzSceneSVG()});
   const view = el('div',{class:'plaza-view'});
   const zz = zoomable({ view, content: world, W: PZ_W, H: PZ_H, start: PZ.z || (innerWidth < 600 ? .7 : 1), max: 2.2, onZoom: z => { PZ.z = z; } });
-  const frame = zz.frame; frame.classList.add('plaza-frame');
+  const frame = zz.frame; frame.classList.add('plaza-frame'); frame.append(todBadge('Storybrook'));
   const actor = (node, name, cls) => el('div',{class:'plaza-actor ' + (cls || '')}, el('div',{class:'pz-tag'}, name), node);
   const me = actor(pzHeroFor(kid, 96), kidName(), 'me' + (isDev() ? ' wizard' : ''));
   world.append(me);
+  world.append(todLayer('plaza', [[640,554,60],[960,554,60],[800,364,60],[800,754,60],[470,454,60],[1130,454,60],[470,794,60],[1130,794,60],[PZ_C.x, PZ_C.y - 100, 90]]
+    .concat(PZ_BUILDINGS.map(b => [b.x, b.y - 40, 110]))
+    .concat([[90,260],[1510,260],[110,1090],[1490,1090],[300,1110],[1300,1110],[560,180],[1040,180]].map(([x, y]) => [x, y - 30, 70]))));
   const put = (n, x, y, w = 96) => { n.style.left = (x - w/2) + 'px'; n.style.top = (y - w*1.25 - 30) + 'px'; n.style.zIndex = Math.round(y); };
   const bubble = (n, text, big) => { n.querySelectorAll('.pz-bubble').forEach(b => b.remove()); const b = el('div',{class:'pz-bubble' + (big ? ' big' : '')}, text); n.append(b); setTimeout(() => b.remove(), 2600); };
   const camera = (x, y, smooth = true) => view.scrollTo({ left: x*zz.z - view.clientWidth/2, top: y*zz.z - view.clientHeight/2, behavior: smooth ? 'smooth' : 'auto' });
@@ -5614,6 +5976,16 @@ function screenPin(after){
 /* ================= PROGRESS REPORT (for grown-ups, by email) =================
    Builds a plain-text report per player for the last 7 days: what's going well, what needs work,
    tricky words, and one tip. Sent from the device with the Share sheet / Mail app. */
+function towerReport(k, since){
+  const T = k.tower; if (!T || !T.log || !T.log.length) return [];
+  const wk = T.log.filter(x => new Date(x.d + 'T12:00') >= since), cleared = wk.filter(x => x.pass).length;
+  const byType = {}; wk.filter(x => x.type !== 'guardian').forEach(x => (byType[x.type] = byType[x.type] || []).push(x.acc));
+  const speeds = wk.filter(x => x.wcpm).map(x => x.wcpm).reverse();
+  return [``, `🗼 Tower of Tales: best floor ${T.best || 0}, difficulty step ${T.diff} of 6`,
+    `  • This week: ${wk.length} floor tries, ${cleared} cleared`,
+    ...Object.entries(byType).map(([t, a]) => `  • ${FLOOR_TYPES[t] ? FLOOR_TYPES[t].name : t}: ${Math.round(a.reduce((x, y) => x + y, 0) / a.length)}% of words right`),
+    ...(speeds.length ? [`  • Speed Runs (words a minute): ${speeds.join(' → ')}`] : [])];
+}
 function progressReport(id, days = 7){
   const k = DB.kids[id], name = kidName(id), tr = trackOf(id);
   const since = new Date(); since.setHours(0, 0, 0, 0); since.setDate(since.getDate() - (days - 1));
@@ -5651,6 +6023,7 @@ function progressReport(id, days = 7){
     ``, `✅ Doing well:`, ...(good.length ? good.map(x => '  • ' + x) : ['  • (not enough answers yet this week)']),
     ``, `🎯 Needs practice:`, ...(work.length ? work.map(x => '  • ' + x) : ['  • Nothing stands out. Nice!']),
     ...(tricky.length ? [``, `🔤 Tricky words: ${tricky.join(', ')}`] : []),
+    ...towerReport(k, since),
     ``, `💡 Tip: ${tip}`];
   return { name, good, work, tricky, tip, text: lines.join('\n'), reads: reads.length, minutes, qRight, qAll };
 }
@@ -5658,8 +6031,8 @@ function screenReport(){
   stopAll(); document.body.className = 'parent';
   const ids = playerIds(false), reps = ids.map(id => Object.assign({ id }, progressReport(id)));
   const when = new Date().toLocaleDateString(undefined, { month:'short', day:'numeric' });
-  const subject = `Reading Quest weekly report · ${when}`;
-  const body = reps.map(r => r.text).join('\n\n────────────\n\n') + `\n\nSent from Reading Quest`;
+  const subject = `Storyborne weekly report · ${when}`;
+  const body = reps.map(r => r.text).join('\n\n────────────\n\n') + `\n\nSent from Storyborne: Rise of the Readers`;
   const to = DB.reportEmail || DB.familyEmail || '';
   const email = el('input',{type:'email', placeholder:'Your email', value: to, class:'wiz-input', style:'max-width:320px'});
   const msg = el('span',{class:'muted'});
@@ -5677,6 +6050,7 @@ function screenReport(){
     el('h3',{}, '✅ Doing well'), el('ul',{}, ...(r.good.length ? r.good : ['Not enough answers yet this week']).map(x => el('li',{}, x))),
     el('h3',{}, '🎯 Needs practice'), el('ul',{}, ...(r.work.length ? r.work : ['Nothing stands out. Nice!']).map(x => el('li',{}, x))),
     r.tricky.length ? el('p',{}, el('b',{}, '🔤 Tricky words: '), r.tricky.join(', ')) : null,
+    ...(() => { const sn = new Date(); sn.setHours(0,0,0,0); sn.setDate(sn.getDate() - 6); const L = towerReport(DB.kids[r.id], sn).filter(Boolean); return L.length ? [el('div',{class:'tw-rep'}, el('h3',{}, L[0]), ...L.slice(1).map(x => el('div',{}, x)))] : []; })(),
     el('p',{class:'week-tip'}, '💡 ' + r.tip));
   show(el('div',{class:'screen', style:'max-width:900px'},
     el('div',{class:'row', style:'justify-content:space-between;margin-bottom:12px'}, el('h1',{style:'margin:0;font-size:28px'}, '📧 Weekly report'), el('button',{class:'btn small', onclick:screenPlayers}, 'Done')),
@@ -5862,7 +6236,7 @@ function screenParent(which){
   show(s);
   function doImport(txt){
     try { const d = JSON.parse(txt); if (!d.kids) throw 0; DB = Object.assign(load(), d); for (const kk of Object.keys(DB.players)) if (d.kids[kk]) DB.kids[kk] = Object.assign(freshKid(), d.kids[kk]); save(); status2.textContent = 'Imported ✅'; setTimeout(()=>screenParent(which), 600); }
-    catch(e){ status2.textContent = 'That doesn\'t look like a Reading Quest export.'; }
+    catch(e){ status2.textContent = 'That doesn\'t look like a Storyborne export.'; }
   }
 }
 let status2 = null;
@@ -5888,14 +6262,462 @@ function showErr(msg){
 }
 window.addEventListener('error', e => showErr((e.message || 'error') + (e.lineno ? ' @' + e.lineno : '')));
 window.addEventListener('unhandledrejection', e => showErr(e.reason && (e.reason.message || e.reason)));
+
+/* ================= TITLE SCREEN =================
+   An epic opening vista (original art): a lone hero on a cliff at sunrise, a far-off academy castle,
+   a floating island with a waterfall, a dragon gliding through golden clouds, and the glowing
+   Storyborne crest. Tap anywhere to begin. Shown once per visit; the app loads underneath. */
+function titleSceneSVG(night){
+  const N = (day, nite) => night ? nite : day;
+  const rnd = (a, b) => a + Math.random() * (b - a);
+  const cloud = (x, y, s, o, cls) => `<g class="${cls}" opacity="${o}" transform="translate(${x} ${y}) scale(${s})">
+    <ellipse cx="0" cy="0" rx="160" ry="54" fill="url(#tsCloud)"/><ellipse cx="-90" cy="-26" rx="90" ry="58" fill="url(#tsCloud)"/>
+    <ellipse cx="40" cy="-52" rx="110" ry="74" fill="url(#tsCloud)"/><ellipse cx="140" cy="-14" rx="80" ry="48" fill="url(#tsCloud)"/></g>`;
+  const ridge = (pts, fill, op = 1) => `<path d="M0 1000 L${pts} L1600 1000Z" fill="${fill}" opacity="${op}"/>`;
+  const pts = (base, amp, step, seed) => { const a = []; let k = seed; for (let x = 0; x <= 1600; x += step){ k = (k * 9301 + 49297) % 233280; a.push(`${x} ${Math.round(base - (k / 233280) * amp)}`); } return a.join(' L'); };
+  const sparks = [...Array(26)].map((_, i) => `<circle class="ts-mote" cx="${rnd(40, 1560)}" cy="${rnd(620, 980)}" r="${rnd(1.6, 4)}" fill="${i % 3 ? N('#fde68a', '#bae6fd') : '#a5f3fc'}" style="animation-delay:-${rnd(0, 9).toFixed(1)}s;animation-duration:${rnd(7, 13).toFixed(1)}s"/>`).join('');
+  const rays = [...Array(14)].map((_, i) => `<path d="M0 0 L${-26} -1300 L26 -1300Z" transform="rotate(${-70 + i * 10.5})" fill="${N('#fff7d6', '#cfe3f5')}" opacity="${(i % 2 ? .05 : .09) * N(1, .5)}"/>`).join('');
+  return `<svg class="ts-svg" viewBox="0 0 1600 1000" preserveAspectRatio="xMidYMid slice" xmlns="http://www.w3.org/2000/svg">
+  <defs>
+    <linearGradient id="tsSky" x1="0" y1="0" x2="0" y2="1">${N(`<stop offset="0" stop-color="#1e1b4b"/><stop offset=".32" stop-color="#4c3b8f"/><stop offset=".55" stop-color="#c2669b"/><stop offset=".72" stop-color="#f6a85e"/><stop offset=".86" stop-color="#ffe2a3"/>`, `<stop offset="0" stop-color="#050b1a"/><stop offset=".35" stop-color="#13243d"/><stop offset=".62" stop-color="#2d4a5e"/><stop offset=".85" stop-color="#6b8a96"/>`)}</linearGradient>
+    <radialGradient id="tsSun" cx="${N(1040, 520)}" cy="${N(470, 130)}" r="420" gradientUnits="userSpaceOnUse">${N(`<stop offset="0" stop-color="#fffbe8"/><stop offset=".12" stop-color="#fff1b8" stop-opacity=".95"/><stop offset=".4" stop-color="#ffcf7a" stop-opacity=".45"/><stop offset="1" stop-color="#ff9a5a" stop-opacity="0"/>`, `<stop offset="0" stop-color="#f8fbff" stop-opacity=".9"/><stop offset=".15" stop-color="#cfe3f5" stop-opacity=".5"/><stop offset=".5" stop-color="#7fa6c4" stop-opacity=".16"/><stop offset="1" stop-color="#7fa6c4" stop-opacity="0"/>`)}</radialGradient>
+    <radialGradient id="tsCloud" cx=".4" cy=".25" r=".9">${N(`<stop offset="0" stop-color="#fff6dc"/><stop offset=".45" stop-color="#f7c99a"/><stop offset="1" stop-color="#9a6aa8"/>`, `<stop offset="0" stop-color="#e2ecf4"/><stop offset=".5" stop-color="#8ea5b8"/><stop offset="1" stop-color="#3a4d63"/>`)}</radialGradient>
+    <linearGradient id="tsFar" x1="0" y1="0" x2="0" y2="1">${N(`<stop offset="0" stop-color="#8c7bb8"/><stop offset="1" stop-color="#d9a7b5"/>`, `<stop offset="0" stop-color="#3b5170"/><stop offset="1" stop-color="#5f7d92"/>`)}</linearGradient>
+    <linearGradient id="tsMid" x1="0" y1="0" x2="0" y2="1">${N(`<stop offset="0" stop-color="#4f4a8a"/><stop offset="1" stop-color="#7a6aa0"/>`, `<stop offset="0" stop-color="#24344d"/><stop offset="1" stop-color="#3a5068"/>`)}</linearGradient>
+    <linearGradient id="tsNear" x1="0" y1="0" x2="0" y2="1">${N(`<stop offset="0" stop-color="#2a2f5e"/><stop offset="1" stop-color="#1d2244"/>`, `<stop offset="0" stop-color="#16213a"/><stop offset="1" stop-color="#0d1526"/>`)}</linearGradient>
+    <linearGradient id="tsRock" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#3a3350"/><stop offset=".6" stop-color="#181528"/><stop offset="1" stop-color="#0c0a16"/></linearGradient>
+    <linearGradient id="tsFall" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#e0f2fe"/><stop offset="1" stop-color="#e0f2fe" stop-opacity="0"/></linearGradient>
+    <linearGradient id="tsMist" x1="0" y1="0" x2="0" y2="1">${N(`<stop offset="0" stop-color="#ffd9b0" stop-opacity="0"/><stop offset=".5" stop-color="#ffd9b0" stop-opacity=".55"/><stop offset="1" stop-color="#ffd9b0" stop-opacity="0"/>`, `<stop offset="0" stop-color="#dbe8f0" stop-opacity="0"/><stop offset=".5" stop-color="#dbe8f0" stop-opacity=".5"/><stop offset="1" stop-color="#dbe8f0" stop-opacity="0"/>`)}</linearGradient>
+    <filter id="tsBlur"><feGaussianBlur stdDeviation="2.4"/></filter>
+    <filter id="tsGlow" x="-50%" y="-50%" width="200%" height="200%"><feGaussianBlur stdDeviation="6" result="b"/><feMerge><feMergeNode in="b"/><feMergeNode in="SourceGraphic"/></feMerge></filter>
+  </defs>
+  <rect width="1600" height="1000" fill="url(#tsSky)"/>
+  ${[...Array(night ? 90 : 40)].map(() => `<circle cx="${rnd(0, 1600)}" cy="${rnd(0, night ? 420 : 260)}" r="${rnd(.8, 2)}" fill="#fff" opacity="${rnd(.3, .9).toFixed(2)}" class="ts-twinkle" style="animation-delay:-${rnd(0, 4).toFixed(1)}s"/>`).join('')}
+  <g class="ts-rays" transform="translate(${N(1040, 520)} ${N(470, 130)})">${rays}</g>
+  <circle cx="${N(1040, 520)}" cy="${N(470, 130)}" r="420" fill="url(#tsSun)"/>
+  ${N(`<circle cx="1040" cy="470" r="46" fill="#fffdf2" filter="url(#tsGlow)"/>`, `<circle cx="520" cy="130" r="52" fill="#f4f8ff" filter="url(#tsGlow)"/><circle cx="504" cy="118" r="10" fill="#d8e3ef" opacity=".7"/><circle cx="540" cy="144" r="7" fill="#d8e3ef" opacity=".6"/>`)}
+  ${cloud(260, 300, 1.4, .85, 'ts-drift1')}${cloud(1380, 250, 1.2, .8, 'ts-drift2')}${cloud(760, 190, .9, .7, 'ts-drift1')}
+  <!-- floating island with a waterfall -->
+  <g class="ts-float" transform="translate(1400 520) scale(.85)">
+    <path d="M-120 0 Q-110 -24 -60 -30 Q0 -40 60 -30 Q120 -22 124 0 Q90 30 60 70 Q30 120 0 150 Q-20 110 -50 80 Q-90 40 -120 0Z" fill="#5b4a7a"/>
+    <path d="M-120 0 Q-110 -24 -60 -30 Q0 -40 60 -30 Q120 -22 124 0 Q60 10 0 8 Q-60 10 -120 0Z" fill="#6aa86e"/>
+    <path d="M-70 -30 q4 -46 14 -40 q8 -30 22 0 q10 -6 10 40z" fill="#4a8a5a"/><path d="M40 -30 q2 -36 12 -32 q8 -22 18 2 q6 0 6 30z" fill="#3e7a4e"/>
+    <path d="M-20 -32 v-50 l20 -24 l20 24 v50z" fill="#d6c4e8"/><path d="M-20 -82 l20 -40 l20 40z" fill="#7c3aed"/><rect x="-6" y="-66" width="12" height="16" rx="6" fill="#fde68a" filter="url(#tsGlow)"/>
+    <rect x="70" y="4" width="16" height="230" fill="url(#tsFall)" class="ts-fall"/>
+  </g>
+  <!-- far mountains -->
+  ${ridge(pts(620, 170, 80, 7), 'url(#tsFar)', .9)}
+  <!-- the academy castle on a far hill -->
+  <g transform="translate(660 530) scale(1.15)" class="ts-castle">
+    <path d="M-160 120 Q-60 40 0 50 Q80 40 180 120Z" fill="${N('#7a6aa0', '#34465f')}"/>
+    <g fill="${N('#5a4f88', '#26324a')}">
+      <rect x="-90" y="-10" width="40" height="90"/><path d="M-96 -10 l26 -60 l26 60z"/>
+      <rect x="-40" y="-70" width="50" height="150"/><path d="M-48 -70 l33 -90 l33 90z"/>
+      <rect x="20" y="-30" width="44" height="110"/><path d="M14 -30 l28 -70 l28 70z"/>
+      <rect x="74" y="0" width="34" height="80"/><path d="M68 0 l23 -50 l23 50z"/>
+      <rect x="-120" y="30" width="250" height="50"/>
+    </g>
+    <g fill="#ffd77a" filter="url(#tsGlow)"><rect x="-22" y="-40" width="10" height="16" rx="5"/><rect x="-74" y="20" width="8" height="12" rx="4"/><rect x="38" y="0" width="8" height="12" rx="4"/><rect x="86" y="24" width="7" height="10" rx="3"/><circle cx="-15" cy="-160" r="5"/></g>
+  </g>
+  <rect x="0" y="560" width="1600" height="160" fill="url(#tsMist)" class="ts-mist"/>
+  ${ridge(pts(720, 140, 60, 21), 'url(#tsMid)')}
+  ${cloud(1100, 700, 1.6, .55, 'ts-drift2')}
+  ${ridge(pts(830, 90, 45, 3), 'url(#tsNear)')}
+  <!-- a dragon gliding across the sky -->
+  <g class="ts-dragon"><g transform="scale(.9)">
+    <path d="M0 0 Q30 -8 60 0 Q80 4 96 -4 Q88 8 70 10 Q40 14 10 8 Q-30 10 -60 24 Q-34 4 0 0Z" fill="#2a2140"/>
+    <path class="ts-wing" d="M30 0 Q10 -60 -40 -80 Q0 -40 -6 -10Z M40 2 Q70 -50 120 -60 Q84 -24 70 4Z" fill="#2a2140"/>
+  </g></g>
+  <g fill="#2a2140" class="ts-birds"><path d="M0 0 q8 -6 16 0 q8 -6 16 0 q-8 -2 -16 3 q-8 -5 -16 -3z" transform="translate(560 360)"/><path d="M0 0 q6 -5 12 0 q6 -5 12 0 q-6 -2 -12 2 q-6 -4 -12 -2z" transform="translate(600 390)"/><path d="M0 0 q6 -5 12 0 q6 -5 12 0 q-6 -2 -12 2 q-6 -4 -12 -2z" transform="translate(530 395)"/></g>
+  <!-- the foreground cliff and the hero -->
+  <path d="M0 1000 L0 700 Q60 660 140 650 L260 632 Q330 628 380 660 Q430 700 470 780 Q520 880 560 1000Z" fill="url(#tsRock)"/>
+  <path d="M140 650 L260 632 Q330 628 380 660 L370 676 Q300 660 230 668 Q170 676 120 690Z" fill="#4a4266" opacity=".7"/>
+  <g transform="translate(320 646) scale(1.75)">
+    <ellipse cx="0" cy="0" rx="40" ry="7" fill="#000" opacity=".35"/>
+    <path class="ts-cape" d="M-14 -96 Q-34 -50 -40 -6 Q-20 2 -6 -4 Q2 -40 10 -92Z" fill="#7f1d1d"/>
+    <path d="M-12 -4 L-8 -46 L-2 -46 L-4 -4Z M4 -4 L4 -46 L10 -46 L12 -4Z" fill="#1a1426"/>
+    <path d="M-14 -50 Q-16 -96 0 -100 Q16 -96 14 -50Z" fill="#1f1830"/>
+    <circle cx="0" cy="-112" r="13" fill="#1f1830"/><path d="M-12 -118 q6 -14 18 -10 q10 4 8 14 q-6 -6 -14 -6 q-8 0 -12 2z" fill="#3b2a1a"/>
+    <path d="M14 -84 L34 -60 L38 -64 L18 -88Z" fill="#1f1830"/>
+    <g class="ts-sword"><path d="M36 -62 L84 -150 L88 -146 L42 -58Z" fill="#e0f2fe" filter="url(#tsGlow)"/><path d="M30 -66 L46 -56" stroke="#facc15" stroke-width="5" stroke-linecap="round"/></g>
+    <path d="M-22 -80 Q-34 -66 -30 -48 L-22 -50 Q-24 -64 -14 -74Z" fill="#1f1830"/>
+    <g class="ts-shield"><circle cx="-14" cy="-72" r="22" fill="#2a2140" stroke="#c99a3a" stroke-width="4"/><circle cx="-14" cy="-72" r="14" fill="#3a2f5a" stroke="#8a6a2a" stroke-width="2"/>
+      <path d="M-14 -82 L-11 -75 L-4 -72 L-11 -69 L-14 -62 L-17 -69 L-24 -72 L-17 -75Z" fill="#f6c453"/><circle cx="-14" cy="-72" r="2.5" fill="#fff7cc"/></g>
+  </g>
+  ${sparks}
+  <rect width="1600" height="1000" fill="url(#tsMist)" opacity=".25" class="ts-mist2"/>
+</svg>`;
+}
+
+/* the second title scene: a moonlit, misty academy on a crag, a robed young wizard with a glowing wand */
+function moonSceneSVG(){
+  const rnd = (a, b) => a + Math.random() * (b - a);
+  const pts = (base, amp, step, seed) => { const a = []; let k = seed; for (let x = 0; x <= 1600; x += step){ k = (k * 9301 + 49297) % 233280; a.push(`${x} ${Math.round(base - (k / 233280) * amp)}`); } return a.join(' L'); };
+  const ridge = (p, fill, op = 1) => `<path d="M0 1000 L${p} L1600 1000Z" fill="${fill}" opacity="${op}"/>`;
+  const cloud = (x, y, s, o, cls) => `<g class="${cls}" opacity="${o}" transform="translate(${x} ${y}) scale(${s})">
+    <ellipse cx="0" cy="0" rx="170" ry="50" fill="url(#msCloud)"/><ellipse cx="-90" cy="-22" rx="90" ry="52" fill="url(#msCloud)"/>
+    <ellipse cx="50" cy="-46" rx="110" ry="66" fill="url(#msCloud)"/><ellipse cx="150" cy="-10" rx="80" ry="44" fill="url(#msCloud)"/></g>`;
+  // a tall gothic tower: body, pointed roof, lit windows
+  const tower = (x, base, w, h, roof, lit = 2) => {
+    let s = `<rect x="${x - w/2}" y="${base - h}" width="${w}" height="${h}" fill="#2b3550"/><path d="M${x - w/2 - 6} ${base - h} L${x} ${base - h - roof} L${x + w/2 + 6} ${base - h}Z" fill="#1f2840"/>`;
+    for (let i = 0; i < lit; i++) s += `<rect x="${x - 4}" y="${base - h + 18 + i * 34}" width="8" height="14" rx="4" fill="#ffd27a" filter="url(#msGlow)" class="ms-win" style="animation-delay:-${rnd(0, 5).toFixed(1)}s"/>`;
+    return s;
+  };
+  const motes = [...Array(30)].map((_, i) => `<circle class="ts-mote" cx="${rnd(40, 1560)}" cy="${rnd(600, 980)}" r="${rnd(1.4, 3.6)}" fill="${i % 3 ? '#bae6fd' : '#fde68a'}" style="animation-delay:-${rnd(0, 9).toFixed(1)}s;animation-duration:${rnd(8, 14).toFixed(1)}s"/>`).join('');
+  return `<svg class="ts-svg" viewBox="0 0 1600 1000" preserveAspectRatio="xMidYMid slice" xmlns="http://www.w3.org/2000/svg">
+  <defs>
+    <linearGradient id="msSky" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#050b1a"/><stop offset=".35" stop-color="#13243d"/><stop offset=".65" stop-color="#2d4a5e"/><stop offset=".85" stop-color="#6b8a96"/></linearGradient>
+    <radialGradient id="msMoonGlow" cx="1180" cy="230" r="360" gradientUnits="userSpaceOnUse"><stop offset="0" stop-color="#f8fbff" stop-opacity=".9"/><stop offset=".15" stop-color="#cfe3f5" stop-opacity=".55"/><stop offset=".5" stop-color="#7fa6c4" stop-opacity=".18"/><stop offset="1" stop-color="#7fa6c4" stop-opacity="0"/></radialGradient>
+    <radialGradient id="msCloud" cx=".4" cy=".2" r=".9"><stop offset="0" stop-color="#e2ecf4"/><stop offset=".5" stop-color="#8ea5b8"/><stop offset="1" stop-color="#3a4d63"/></radialGradient>
+    <linearGradient id="msMist" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#dbe8f0" stop-opacity="0"/><stop offset=".5" stop-color="#dbe8f0" stop-opacity=".6"/><stop offset="1" stop-color="#dbe8f0" stop-opacity="0"/></linearGradient>
+    <linearGradient id="msRock" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#2c3346"/><stop offset=".6" stop-color="#121826"/><stop offset="1" stop-color="#070a12"/></linearGradient>
+    <linearGradient id="msCrag" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#3a4760"/><stop offset="1" stop-color="#1a2234"/></linearGradient>
+    <radialGradient id="msWand"><stop offset="0" stop-color="#ffffff"/><stop offset=".3" stop-color="#a5f3fc"/><stop offset="1" stop-color="#38bdf8" stop-opacity="0"/></radialGradient>
+    <filter id="msGlow" x="-80%" y="-80%" width="260%" height="260%"><feGaussianBlur stdDeviation="5" result="b"/><feMerge><feMergeNode in="b"/><feMergeNode in="SourceGraphic"/></feMerge></filter>
+  </defs>
+  <rect width="1600" height="1000" fill="url(#msSky)"/>
+  ${[...Array(70)].map(() => `<circle cx="${rnd(0, 1600)}" cy="${rnd(0, 420)}" r="${rnd(.6, 1.9)}" fill="#fff" opacity="${rnd(.3, 1).toFixed(2)}" class="ts-twinkle" style="animation-delay:-${rnd(0, 4).toFixed(1)}s"/>`).join('')}
+  <circle cx="1180" cy="230" r="360" fill="url(#msMoonGlow)"/>
+  <circle cx="1180" cy="230" r="62" fill="#f4f8ff"/><circle cx="1160" cy="214" r="12" fill="#d8e3ef" opacity=".7"/><circle cx="1204" cy="246" r="8" fill="#d8e3ef" opacity=".6"/><circle cx="1188" cy="206" r="5" fill="#d8e3ef" opacity=".6"/>
+  ${cloud(1300, 330, 1.3, .55, 'ts-drift2')}${cloud(300, 220, 1.5, .5, 'ts-drift1')}
+  ${ridge(pts(640, 200, 70, 11), '#2a3a52', .85)}
+  <!-- the academy on its crag -->
+  <g class="ts-castle" transform="translate(0 20)">
+    <path d="M560 1000 L600 640 Q640 560 700 540 L760 470 Q800 440 850 452 L940 470 Q1010 470 1050 520 L1110 600 L1150 1000Z" fill="url(#msCrag)"/>
+    <path d="M640 600 Q700 560 760 560 M980 520 Q1040 560 1080 620" stroke="#4d5d7a" stroke-width="4" fill="none" opacity=".6"/>
+    ${tower(700, 560, 46, 170, 90, 3)}${tower(760, 500, 40, 120, 70, 2)}
+    <rect x="690" y="430" width="300" height="80" fill="#26304a"/>
+    ${tower(840, 470, 64, 260, 130, 5)}${tower(910, 470, 42, 170, 92, 3)}${tower(970, 490, 50, 210, 110, 4)}${tower(1040, 540, 38, 140, 76, 2)}
+    <rect x="700" y="450" width="360" height="12" fill="#1c2438"/>
+    ${[...Array(9)].map((_, i) => `<rect x="${722 + i * 36}" y="470" width="8" height="12" rx="4" fill="#ffd27a" filter="url(#msGlow)" class="ms-win" style="animation-delay:-${(i * .7).toFixed(1)}s"/>`).join('')}
+    <path d="M1060 560 Q1120 580 1180 640" stroke="#2b3550" stroke-width="16" fill="none"/>
+  </g>
+  <rect x="0" y="560" width="1600" height="200" fill="url(#msMist)" class="ts-mist"/>
+  ${ridge(pts(780, 120, 55, 29), '#1c2a3e')}
+  ${cloud(1150, 820, 2, .45, 'ts-drift1')}${cloud(200, 860, 1.6, .4, 'ts-drift2')}
+  <!-- winged creatures circling the towers -->
+  <g class="ms-flyer" fill="#0b1220"><path d="M0 0 Q14 -16 30 -6 Q46 -18 62 0 Q46 -6 31 4 Q16 -6 0 0Z"/></g>
+  <g class="ms-flyer ms-f2" fill="#0b1220"><path d="M0 0 Q10 -12 22 -4 Q34 -14 46 0 Q34 -4 23 3 Q12 -4 0 0Z"/></g>
+  <g class="ts-dragon" style="animation-duration:34s"><g transform="scale(.7)">
+    <path d="M0 0 Q30 -8 60 0 Q80 4 96 -4 Q88 8 70 10 Q40 14 10 8 Q-30 10 -60 24 Q-34 4 0 0Z" fill="#0b1220"/>
+    <path class="ts-wing" d="M30 0 Q10 -60 -40 -80 Q0 -40 -6 -10Z M40 2 Q70 -50 120 -60 Q84 -24 70 4Z" fill="#0b1220"/></g></g>
+  <!-- foreground cliff and the young wizard -->
+  <path d="M0 1000 L0 690 Q80 650 170 646 L300 640 Q370 640 410 676 Q460 730 490 820 Q520 900 540 1000Z" fill="url(#msRock)"/>
+  <path d="M170 646 L300 640 Q370 640 410 676 L398 690 Q330 668 260 672 Q200 678 150 694Z" fill="#475571" opacity=".6"/>
+  <g transform="translate(300 650) scale(1.8)">
+    <ellipse cx="0" cy="0" rx="34" ry="6" fill="#000" opacity=".4"/>
+    <path class="ts-cape" d="M-6 -104 Q-30 -60 -34 -2 Q-6 4 18 -2 Q20 -50 12 -100Z" fill="#1e3a8a"/>
+    <path d="M-6 -104 Q-30 -60 -34 -2 Q-24 0 -16 -2 Q-18 -50 -2 -100Z" fill="#172554"/>
+    <path d="M-10 -100 Q-16 -124 0 -136 Q16 -124 12 -100Z" fill="#1e3a8a"/>
+    <path d="M10 -84 Q26 -76 38 -90" stroke="#1e3a8a" stroke-width="9" stroke-linecap="round" fill="none"/>
+    <path d="M38 -90 L60 -122" stroke="#5b3a1a" stroke-width="3" stroke-linecap="round"/>
+    <circle cx="61" cy="-124" r="26" fill="url(#msWand)" class="ms-wand"/><circle cx="61" cy="-124" r="4" fill="#fff"/>
+  </g>
+  <g class="ms-spell">${[...Array(10)].map((_, i) => `<circle cx="${410 + i * 22}" cy="${426 - i * 14 + (i % 2 ? 8 : -8)}" r="${3 - i * .2}" fill="#a5f3fc" filter="url(#msGlow)" style="animation-delay:-${(i * .25).toFixed(2)}s"/>`).join('')}</g>
+  ${motes}
+  <rect width="1600" height="1000" fill="url(#msMist)" opacity=".3" class="ts-mist2"/>
+</svg>`;
+}
+
+function titleCrestSVG(){
+  return `<svg class="ts-crest" viewBox="0 0 220 150" xmlns="http://www.w3.org/2000/svg">
+    <defs><linearGradient id="tcGold" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#fff7cc"/><stop offset=".45" stop-color="#f6c453"/><stop offset="1" stop-color="#a86a12"/></linearGradient>
+      <radialGradient id="tcLight"><stop offset="0" stop-color="#fffbe6"/><stop offset=".5" stop-color="#ffe49a" stop-opacity=".6"/><stop offset="1" stop-color="#ffe49a" stop-opacity="0"/></radialGradient></defs>
+    <circle cx="110" cy="70" r="70" fill="url(#tcLight)" class="tc-pulse"/>
+    <path d="M110 18 L118 52 L152 60 L118 68 L110 102 L102 68 L68 60 L102 52Z" fill="#fffbe6" class="tc-star"/>
+    <path d="M24 92 Q66 72 110 96 Q154 72 196 92 L196 132 Q154 112 110 136 Q66 112 24 132Z" fill="url(#tcGold)" stroke="#5a3a08" stroke-width="3" stroke-linejoin="round"/>
+    <path d="M110 96 L110 136" stroke="#5a3a08" stroke-width="3"/>
+    <path d="M40 102 Q74 88 102 104 M40 114 Q74 100 102 116 M118 104 Q146 88 180 102 M118 116 Q146 100 180 114" stroke="#8a5a10" stroke-width="2" fill="none" opacity=".7"/>
+  </svg>`;
+}
+function showTitleScreen(){
+  try {
+    if (navigator.webdriver || sessionStorage.getItem('rqTitleSeen')) return;
+    sessionStorage.setItem('rqTitleSeen', '1');
+  } catch(e){}
+  // two scenes take turns: golden sunrise quest, and a moonlit misty academy
+  // same hero, sword and shield: golden sunrise by day, moonlit blue at night (7 pm – 6 am)
+  const hr = new Date().getHours(), night = hr >= 19 || hr < 6, cx = 470;
+  const ts = el('div',{class:'title-screen' + (night ? ' night' : ''), html: titleSceneSVG(night)});
+  // tall screens (iPad held upright): crop the scene around the hero and the castle instead of the middle
+  const fit = () => { const a = innerWidth / innerHeight, svg = ts.querySelector('.ts-svg'); if (!svg) return;
+    if (a < 1.3){ const w = Math.max(600, 1000 * a); svg.setAttribute('viewBox', `${Math.max(0, cx - w / 2)} 0 ${w} 1000`); } else svg.setAttribute('viewBox', '0 0 1600 1000'); };
+  fit(); addEventListener('resize', fit);
+  ts.append(el('div',{class:'ts-logo'},
+    el('div',{class:'ts-crest-wrap', html: titleCrestSVG()}),
+    el('h1',{class:'ts-title'}, 'Storyborne'),
+    el('div',{class:'ts-sub'}, '✦ Rise of the Readers ✦')),
+    el('div',{class:'ts-tap'}, 'Tap to begin'));
+  const go = () => {
+    if (ts.classList.contains('out')) return;
+    ts.classList.add('out'); try { beep('level'); } catch(e){}
+    setTimeout(() => ts.remove(), 1300);
+  };
+  ts.addEventListener('pointerup', go);
+  document.body.append(ts);
+}
+
+/* the epic vista stays behind every kid screen (day or night), blurred and darkened so cards stay readable */
+/* =================================================================
+   TOWER OF TALES (prototype): climb floor by floor by reading out loud.
+   Every floor needs the mic (or grown-up scoring) to clear. Difficulty adapts.
+   ================================================================= */
+const TOWER_TOP = 30, TOWER_SEASON = { name:'Frost Spire', icon:'❄️' };
+const TOWER_BY_ID = {};
+['son','daughter'].forEach(tk => Object.values(TOWER_PASSAGES[tk]).flat().forEach(p => TOWER_BY_ID[p.id] = p));
+const TOWER_CAPES = [
+  { floor:10, id:'starweave', name:'Starweave Cape', color:'#1e1b4b', edge:'#fbbf24' },
+  { floor:20, id:'emberveil', name:'Emberveil Cape', color:'#9a3412', edge:'#fde047' },
+  { floor:30, id:'aurora',    name:'Aurora Cape',    color:'#0f766e', edge:'#a5f3fc' } ];
+const TOWER_CAPE_BY_ID = Object.fromEntries(TOWER_CAPES.map(c => [c.id, c]));
+const FLOOR_TYPES = {
+  story:   { icon:'📜', name:'Story Floor',    how:'Read the story out loud. Then answer 2 questions.' },
+  riddle:  { icon:'❓', name:'Riddle Room',    how:'Read the riddle out loud. Then pick the answer.' },
+  words:   { icon:'🚪', name:'Word Gate',      how:'Read 8 tricky words to open the gate.' },
+  echo:    { icon:'🔔', name:'Echo Hall',      how:'Listen first. Then read it back with the same voice and feeling.' },
+  speed:   { icon:'⚡', name:'Speed Run',      how:'Read a story you already beat, smooth and steady. Beat your best speed!' },
+  treasure:{ icon:'💰', name:'Treasure Floor', how:'Read the story and answer 2 questions to win a treasure chest!' },
+  guardian:{ icon:'🛡️', name:'Guardian Floor', how:'Read 3 short passages well in a row to defeat the guardian.' }
+};
+function towerStartStep(){ const lv = K.level || 1;
+  return TK === 'daughter' ? (lv <= 2 ? 1 : lv <= 4 ? 2 : lv <= 6 ? 3 : lv <= 7 ? 4 : 5) : (lv <= 5 ? 1 : lv <= 7 ? 2 : lv <= 9 ? 3 : lv <= 11 ? 4 : 5); }
+function towerState(){
+  const T = K.tower = K.tower || {}, D = { floor:1, best:0, diff:0, up:0, down:0, day:null, used:0, stars:{}, seen:[], cleared:[], wpm:{}, items:[], cape:null, log:[] };
+  Object.keys(D).forEach(k => { if (T[k] === undefined) T[k] = D[k]; });
+  if (!T.diff) T.diff = towerStartStep();
+  if (T.day !== todayStr()){ T.day = todayStr(); T.used = 0; }
+  return T;
+}
+function torchMax(){
+  const today = todayStr(), reads = (K.sessions || []).filter(s => s.mode === 'normal' && s.kind === 'story' && todayStr(new Date(s.date)) === today).length;
+  return Math.min(DB.towerCap || 10, 5 + reads);
+}
+const torchesLeft = () => isDev() ? 99 : Math.max(0, torchMax() - towerState().used);
+function floorType(n){
+  if (n % 10 === 0) return 'guardian';
+  if (n % 5 === 0) return 'treasure';
+  const r = n % 5;
+  if (r === 1 || r === 3) return 'story';
+  if (r === 2) return n % 4 === 2 ? 'riddle' : 'words';
+  return towerState().cleared.length >= 2 && n % 3 === 1 ? 'speed' : 'echo';
+}
+function towerPick(step, avoid = []){
+  const T = towerState(), ids = (TOWER_STEPS[TK] || {})[step] || [];
+  const fresh = ids.filter(id => !T.seen.includes(id) && !avoid.includes(id));
+  const id = shuffle(fresh.length ? fresh : ids.filter(i => !avoid.includes(i)))[0] || ids[0];
+  if (!T.seen.includes(id)) T.seen.push(id);
+  return TOWER_BY_ID[id];
+}
+const firstSentences = (text, n) => text.replace(/\n+/g, ' ').match(/[^.!?]+[.!?]+["”]?/g).slice(0, n).join(' ').trim();
+function guardianFor(n){ const bs = BOSSES[TK] || {}, keys = Object.keys(bs); return bs[keys[(Math.floor(n / 10) * 3 + 1) % keys.length]]; }
+function towerRead(src, extra, then){
+  let done = false; // the reader can report "done" twice (last word + mic stop); count it once
+  const pages = src.pages || storyPages(src.text);
+  beginRun({ kind: src.kind || 'story', level:K.level, title: src.title, emoji: src.emoji || '🗼', pages },
+    Object.assign({ mode:'tower', onStop: screenTower, onDone: (res, act) => { if (done) return; done = true; try { K.words = K.words || {}; trackWords(act); } catch(e){} then(res); } }, extra || {}));
+}
+function towerQuiz(qs, title, done){
+  let i = 0, right = 0;
+  const step = () => {
+    if (i >= qs.length) return done(right);
+    const [q, opts, ans] = qs[i], order = shuffle(opts.map((o, j) => j));
+    let locked = false;
+    const fb = el('div',{class:'tw-fb'});
+    const buttons = order.map(j => { const b = el('button',{class:'opt', onclick:()=>{
+      if (locked) return; locked = true;
+      const ok = j === ans; if (ok) right++;
+      b.classList.add(ok ? 'right' : 'wrong'); if (!ok) buttons[order.indexOf(ans)].classList.add('right');
+      beep(ok ? 'ok' : 'no'); trackQ(q, ok);
+      fb.textContent = ok ? '✨ Yes!' : 'The right answer is in green.';
+      setTimeout(() => { i++; step(); }, ok ? 900 : 1800);
+    }}, opts[j]); return b; });
+    show(el('div',{class:'screen'},
+      el('div',{class:'topbar'}, el('button',{class:'btn ghost small', onclick:screenTower},'← Tower'), el('div',{class:'pageinfo'}, `${title} · Question ${i+1} of ${qs.length}`), el('div',{style:'width:80px'})),
+      el('div',{class:'card tw-q'}, el('h2',{class:'q-text'}, q, ' ', el('button',{class:'btn small blue', onclick:()=>say(q)},'🔊')), el('div',{class:'tw-opts'}, ...buttons), fb)));
+    say(q);
+  };
+  step();
+}
+function towerBegin(n){
+  const T = towerState(), type = floorType(n), F = FLOOR_TYPES[type];
+  if (!isDev()) T.used++;
+  save();
+  const label = `Floor ${n} · ${F.name}`;
+  const end = (acc, right = 0, total = 0, more = {}) => towerFinish(n, type, acc, right, total, more);
+  if (type === 'story' || type === 'treasure'){
+    const P = towerPick(T.diff);
+    return towerRead(P, {}, res => res.accuracy < .9 ? end(res.accuracy, 0, 0, { res, pid:P.id }) : towerQuiz(P.q, label, r => end(res.accuracy, r, P.q.length, { res, pid:P.id })));
+  }
+  if (type === 'riddle'){
+    const R = shuffle(TOWER_RIDDLES[TK])[0];
+    return towerRead({ title:'Riddle Room', emoji:'❓', text:R[0] }, {}, res => res.accuracy < .9 ? end(res.accuracy, 0, 0, { res }) : towerQuiz([R], label, r => end(res.accuracy, r, 1, { res })));
+  }
+  if (type === 'words'){
+    let ws = practiceWords(K).slice(0, 8);
+    if (ws.length < 8){ const pool = [...new Set(towerPick(T.diff).text.split(/\s+/).map(norm).filter(w => w.length >= 5))]; ws = ws.concat(shuffle(pool).filter(w => !ws.includes(w))).slice(0, 8); }
+    const pages = ws.map(w => ({ single:true, tokens:[{ disp:(K.words && K.words[w] && K.words[w].disp || w).toLowerCase(), n:w }] }));
+    return towerRead({ kind:'words', title:'Word Gate', emoji:'🚪', pages }, {}, res => end(res.accuracy, 0, 0, { res }));
+  }
+  if (type === 'echo'){
+    const P = towerPick(T.diff), text = firstSentences(P.text, 3);
+    towerRead({ title:'Echo Hall', emoji:'🔔', text }, { echo:true }, res => end(res.accuracy, 0, 0, { res }));
+    setTimeout(() => { try { readAlong(); } catch(e){} }, 500);
+    return;
+  }
+  if (type === 'speed'){
+    const id = shuffle(T.cleared.filter(i => TOWER_BY_ID[i] && TOWER_STEPS[TK] && Object.values(TOWER_STEPS[TK]).flat().includes(i)))[0];
+    const P = TOWER_BY_ID[id] || towerPick(T.diff);
+    return towerRead(P, {}, res => end(res.accuracy, 0, 0, { res, pid:P.id, wcpm:res.wcpm }));
+  }
+  if (type === 'guardian') return towerGuardian(n, 3, 0, []);
+}
+// guardian: 3 rounds; every round read at 90%+ is a hit
+function towerGuardian(n, hp, round, used){
+  const B = guardianFor(n), T = towerState();
+  if (hp <= 0) return towerFinish(n, 'guardian', 1, 0, 0, { guardian:B });
+  if (round >= 3) return towerFinish(n, 'guardian', 0, 0, 0, { guardian:B, hp });
+  const hearts = el('div',{class:'tw-hp'}, ...[0,1,2].map(i => el('span',{class: i < hp ? 'on' : ''}, '❤️')));
+  show(el('div',{class:'screen tw-guard'},
+    el('div',{class:'topbar'}, el('button',{class:'btn ghost small', onclick:screenTower},'← Tower'), el('div',{class:'pageinfo'}, `Floor ${n} · Guardian`), el('div',{style:'width:80px'})),
+    el('div',{class:'card center tw-gcard'},
+      el('div',{class:'tw-gart' + (round ? ' hit' : ''), html: bossArt(B, 190, TK)}),
+      el('h2',{}, B.name), hearts,
+      el('p',{class:'tw-taunt'}, round ? `Ouch! ${hp} hit${hp === 1 ? '' : 's'} to go!` : '“' + B.taunt + '”'),
+      el('p',{}, `Round ${round + 1} of 3. Read it well to strike!`),
+      el('button',{class:'btn green', onclick:()=>{
+        const P = towerPick(Math.max(1, T.diff), used), text = firstSentences(P.text, TK === 'son' ? 4 : 5);
+        towerRead({ title:`Strike ${round + 1}`, emoji:'⚔️', text }, {}, res => {
+          const hit = res.accuracy >= .9; beep(hit ? 'star' : 'no');
+          towerGuardian(n, hit ? hp - 1 : hp, round + 1, used.concat(P.id));
+        });
+      }}, '⚔️ Strike!'))));
+  say(round ? `${hp} more to go!` : B.taunt);
+}
+function towerFinish(n, type, acc, right, total, more){
+  const T = towerState(), res = more.res;
+  const pass = type === 'guardian' ? acc >= 1 : acc >= .9 && (!total || right >= Math.ceil(total / 2));
+  const stars = !pass ? 0 : type === 'guardian' ? 3 : acc >= .98 && right === total ? 3 : acc >= .95 ? 2 : 1;
+  // adapt difficulty: two great floors in a row = harder; two rough floors in a row = easier (one step at a time)
+  let moved = 0;
+  if (type !== 'guardian' && type !== 'words'){
+    if (acc >= .98 && (!total || right === total)){ T.up++; T.down = 0; if (T.up >= 2 && T.diff < 6){ T.diff++; T.up = 0; moved = 1; } }
+    else if (acc < .9){ T.down++; T.up = 0; if (T.down >= 2 && T.diff > 1){ T.diff--; T.down = 0; moved = -1; } }
+    else { T.up = 0; T.down = 0; }
+  }
+  T.log.unshift({ d: todayStr(), n, type, acc: Math.round(acc * 100), q: total ? right + '/' + total : null, wcpm: more.wcpm || null, step: T.diff, pass });
+  T.log = T.log.slice(0, 300);
+  const gains = [];
+  let speedBest = null;
+  if (pass){
+    if (more.pid && !T.cleared.includes(more.pid)) T.cleared.push(more.pid);
+    if (more.wcpm && more.pid){ const old = T.wpm[more.pid] || 0; speedBest = { old, now: more.wcpm }; if (more.wcpm > old) T.wpm[more.pid] = more.wcpm; }
+    T.stars[n] = Math.max(T.stars[n] || 0, stars);
+    const first = n >= T.floor;
+    if (first){ T.floor = n + 1; T.best = Math.max(T.best, n); }
+    const st = [0, 2, 3, 5][stars] + (speedBest && speedBest.now > speedBest.old && speedBest.old ? 3 : 0);
+    K.stars += st; gains.push(`⭐ +${st} stars`);
+    if (first && type === 'treasure'){ const C = chestState(), kind = n % 15 === 0 ? 'gold' : 'silver'; C[kind]++; gains.push(`🎁 A ${kind} treasure chest!`); }
+    if (first && type === 'guardian'){ const cape = TOWER_CAPES.find(c => c.floor === n);
+      if (cape && !T.items.includes(cape.id)){ T.items.push(cape.id); T.cape = cape.id; gains.push(`🦸 ${cape.name}! (You're wearing it now)`); }
+      addCosmic(2, `You beat the Floor ${n} guardian!`); }
+    if (first && n % 5 === 0) gains.push(`🚩 Checkpoint reached!`);
+  }
+  save();
+  const missed = res ? [...new Set(res.missed || [])].filter(w => !/^\d+$/.test(w)).slice(0, 10) : [];
+  const chips = missed.length ? el('div',{class:'tw-missed'}, el('p',{}, 'Tap a word to hear it:'), ...missed.map(w => el('button',{class:'chip', onclick:()=>say(w, { rate:.75 })}, (K.words && K.words[w] && K.words[w].disp) || w))) : null;
+  const accLine = type === 'guardian' ? (pass ? 'You defeated the guardian!' : `The guardian still has ${more.hp} ❤️ left. Read each passage carefully!`)
+    : `You read ${Math.round(acc * 100)}% of the words right${total ? ` and got ${right} of ${total} question${total > 1 ? 's' : ''}` : ''}.`;
+  const left = torchesLeft();
+  const s = el('div',{class:'screen tw-end'},
+    el('div',{class:'card center tw-endcard ' + (pass ? 'win' : 'lose')},
+      more.guardian ? el('div',{class:'tw-gart' + (pass ? ' beaten' : ''), html: bossArt(more.guardian, 150, TK)}) : null,
+      el('h1',{class:'title'}, pass ? `Floor ${n} cleared!` : 'So close!'),
+      pass ? el('div',{class:'tw-stars'}, ...[1,2,3].map(i => el('span',{class: i <= stars ? 'on' : ''}, '★'))) : null,
+      el('p',{}, accLine),
+      speedBest ? el('p',{class:'tw-speed'}, `⚡ ${speedBest.now} words a minute` + (speedBest.old ? (speedBest.now > speedBest.old ? ` · New best! (was ${speedBest.old})` : ` · Your best is ${speedBest.old}`) : ' · Your first time!')) : null,
+      moved > 0 ? el('p',{class:'tw-moved'}, '📈 Amazing reading! The next floors get a little harder.') : moved < 0 ? el('p',{class:'tw-moved'}, '🧭 The next floors will be a little easier. You\'ve got this!') : null,
+      gains.length ? el('div',{class:'tw-gains'}, ...gains.map(g => el('div',{}, g))) : null,
+      !pass && type !== 'guardian' ? el('p',{class:'muted'}, total && acc >= .9 ? 'You read it well! Get more questions right to clear the floor.' : 'Read 9 out of every 10 words right to clear the floor.') : null,
+      chips,
+      el('div',{class:'row center', style:'gap:10px;flex-wrap:wrap;margin-top:12px'},
+        pass && n < TOWER_TOP && left ? el('button',{class:'btn green', onclick:()=>towerIntro(n + 1)}, `Next floor ▶`) : null,
+        !pass && left ? el('button',{class:'btn', onclick:()=>towerIntro(n)}, `🔥 Try again`) : null,
+        el('button',{class:'btn ghost', onclick:screenTower}, '🗼 Back to tower')),
+      !left ? el('p',{class:'muted'}, 'Your torches are out for today. Read a story to light another one!') : null));
+  show(s);
+  if (pass){ beep('star'); confetti(stars * 30); say(type === 'guardian' ? 'You defeated the guardian!' : `Floor ${n} cleared!`); }
+  else say('So close! Try again.');
+}
+async function towerIntro(n){
+  const T = towerState(), type = floorType(n), F = FLOOR_TYPES[type];
+  if (n > T.floor){ say(`Clear floor ${T.floor} first!`); return; }
+  if (!torchesLeft()){ await modal(el('div',{}, el('div',{class:'big-e'},'🔥'), el('h2',{},'Out of torches'), el('p',{}, 'Each floor uses a torch. Read a story in your adventure to light another one! New torches come tomorrow.')), [['OK','',1]]); return; }
+  const B = type === 'guardian' ? guardianFor(n) : null;
+  const go = await modal(el('div',{class:'tw-intro'},
+      B ? el('div',{class:'tw-gart', html: bossArt(B, 130, TK)}) : el('div',{class:'big-e'}, F.icon),
+      el('h2',{}, `Floor ${n}: ${F.name}`), B ? el('p',{}, el('b',{}, B.name), ' guards this floor!') : null,
+      el('p',{}, F.how), el('p',{class:'muted'}, `🔥 ${isDev() ? '∞' : torchesLeft()} torch${torchesLeft() === 1 ? '' : 'es'} left today · this uses 1`)),
+    [['Not yet','gray',false],['Begin ▶','green',true]]);
+  say('');
+  if (go) towerBegin(n);
+}
+function screenTower(){
+  stopAll();
+  const T = towerState(); save();
+  const ph = dayPhase();
+  const col = el('div',{class:'tw-col'});
+  for (let n = 1; n <= TOWER_TOP; n++){
+    const type = floorType(n), F = FLOOR_TYPES[type], st = T.stars[n] || 0;
+    const state = n < T.floor ? 'done' : n === T.floor ? 'current' : 'locked';
+    const B = type === 'guardian' ? guardianFor(n) : null;
+    const node = el('button',{class:'tw-node ' + state + ' t-' + type, onclick:()=>{ beep('tap');
+        if (state === 'done') say(`Floor ${n}. You got ${st} star${st === 1 ? '' : 's'} here!`); else towerIntro(n); }},
+      el('span',{class:'tw-n'}, n), el('span',{class:'tw-i'}, state === 'locked' && type !== 'guardian' ? '🔒' : F.icon),
+      state === 'done' ? el('span',{class:'tw-s'}, '★'.repeat(st) + '☆'.repeat(3 - st)) : null);
+    const row = el('div',{class:'tw-floor ' + state + (n % 2 ? ' l' : ' r') + (n % 5 === 0 ? ' check' : ''), 'data-n': n},
+      el('div',{class:'tw-win'}), el('div',{class:'tw-win b'}), node,
+      B ? el('div',{class:'tw-guardian' + (state === 'done' ? ' beaten' : ''), html: bossArt(B, 74, TK)}) : null,
+      n % 5 === 0 && n % 10 !== 0 ? el('div',{class:'tw-flag'}, state === 'done' ? '🚩' : '🏳️') : null,
+      state === 'current' ? el('div',{class:'tw-me'}, heroNode(62, false)) : null);
+    col.append(row);
+  }
+  col.append(el('div',{class:'tw-crown'}, el('div',{class:'tw-banner'}, `${TOWER_SEASON.icon} ${TOWER_SEASON.name}`), el('div',{class:'tw-battle'})));
+  const sky = el('div',{class:'tw-sky ph-' + ph}, el('div',{class:'tw-stars-bg'}), col);
+  const cur = T.floor > TOWER_TOP ? null : T.floor;
+  const capes = T.items.length ? el('div',{class:'tw-capes'}, el('b',{}, 'Tower capes: '),
+    ...T.items.map(id => { const c = TOWER_CAPE_BY_ID[id]; return el('button',{class:'btn small' + (T.cape === id ? '' : ' ghost'), onclick:()=>{ T.cape = T.cape === id ? null : id; save(); screenTower(); }}, (T.cape === id ? '✓ ' : '') + c.name); })) : null;
+  const torches = torchesLeft();
+  show(el('div',{class:'screen tw-screen'},
+    el('div',{class:'topbar'}, homeBtn(), el('h1',{class:'title tw-title'}, '🗼 Tower of Tales'),
+      el('div',{class:'pill tw-torch'}, isDev() ? '🔥 ∞' : `🔥 ${torches} / ${torchMax()}`)),
+    el('p',{class:'subtitle center'}, cur ? `Floor ${cur} is waiting. Read out loud to climb!` : 'You reached the top! A new tower comes next season.'),
+    todBadgeInline(), sky, capes,
+    el('p',{class:'muted center tw-help'}, '🔥 5 torches a day, +1 for every story you read in your adventure. 🚩 Checkpoints every 5 floors. 🛡️ Guardians every 10.')));
+  const target = col.querySelector(`[data-n="${cur || TOWER_TOP}"]`);
+  if (target) setTimeout(() => target.scrollIntoView({ block:'center' }), 60);
+}
+function todBadgeInline(){ const b = todBadge(); b.classList.add('inline'); return b; }
+
+function mountEpicBg(){
+  const ph = dayPhase(), night = ph === 'night';
+  let bg = document.getElementById('epic-bg');
+  if (bg && bg.dataset.phase === ph) return;
+  if (bg) bg.remove();
+  bg = el('div',{id:'epic-bg', 'data-phase': ph, class: (night ? 'night ' : '') + 'ph-' + ph, html: titleSceneSVG(night)});
+  if (!night && PHASE[ph].tint) bg.append(el('div',{class:'tod-tint', style:`background:${PHASE[ph].tint};opacity:${PHASE[ph].tintOp}`}));
+  bg.append(el('div',{class:'eb-shade'}));
+  document.body.prepend(bg);
+}
+mountEpicBg(); setInterval(mountEpicBg, 10 * 60 * 1000);
 /* ---------------- boot ---------------- */
+showTitleScreen();
 window.addEventListener('pagehide', stopAll);
 document.addEventListener('visibilitychange', () => { if (document.hidden && recogOn) stopRecog(); });
 // ask the browser not to clear this app's saved data when the iPad is low on space
 try { navigator.storage && navigator.storage.persist && navigator.storage.persist(); } catch(e){}
 if (familyMode()){
   // show the cached profiles right away when this device already belongs to a family; sign-in is checked in the background
-  if (DB.family) bootLocal(); else { const s = el('div',{class:'screen center'}, el('h1',{class:'title center'}, '📚 Reading Quest'), el('p',{class:'subtitle center'}, 'Loading…')); show(s); }
+  if (DB.family) bootLocal(); else { const s = el('div',{class:'screen center'}, el('h1',{class:'title center'}, '📚 Storyborne'), el('p',{class:'subtitle center'}, 'Loading…')); show(s); }
   familyStart();
 } else { bootLocal(); cloudStart(); }
 watchForUpdates();

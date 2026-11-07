@@ -1,4 +1,4 @@
-/* Reading Quest stories: both kids' tracks, starter stories, phonics lessons and chapter books.
+/* Storyborne stories: both kids' tracks, starter stories, phonics lessons and chapter books.
    Loaded before app.js; its top-level consts are shared with app.js. */
 /* ============================================================
    SON'S TRACK — "Biscuit & the Pocket Pals"
@@ -3193,3 +3193,951 @@ Everyone gets home safe and dry. The kitten's family says thank you again and ag
 ];
 // Put Dokemon stories at the front of Miles's levels so they come up next
 DOKEMON.forEach(st => { const L = SON_TRACK.levels.find(l => l.n === st.level); if (L && L.stories) L.stories.unshift(st); });
+
+/* ============================================================
+   MILES — levels 9–12: "Max & the Doke Detectives" chapter mysteries (original).
+   Built to match early chapter-book mysteries (Guided Reading ~J → M):
+   longer stories, more characters, clues spread across pages, and
+   questions about evidence, inference, main idea and word meaning.
+   Cast: Max (trainer, keeps a Clue Notebook), his friend Nora, and the
+   Dokemon Sparko (electric), Embit (fire), Splashy (water), Leafo (grass),
+   Rumble (rock) and Flutterbit (flying).
+   ============================================================ */
+SON_TRACK.series.dokecase = { name: 'Doke Detectives', emoji: '🕵️' };
+SON_TRACK.levels.push(
+{ n: 9, title: 'Case Cracker', kind: 'story', stories: [
+{ level: 9, title: 'The Missing Doke-Pod', emoji: '📟', series: 'dokecase', text: `Max had a Doke-Pod. It was small and round and silver, and it could tell him the name of every Dokemon in the world. Max kept it in his front pocket every single day.
+
+On Monday morning, the Doke-Pod was gone.
+
+"It was here last night," Max said. He checked his pocket again. He looked under his bed and behind the couch. Sparko zipped around the room, sparks popping from his tail.
+
+"Let's be detectives," said Max. He opened his Clue Notebook. "First, where did I go yesterday?"
+
+Max wrote a list. He went to the park. He went to Nora's house. He ate dinner. He took a bath.
+
+"Clue number one," Max said. "When I took my bath, I put my clothes in the laundry basket."
+
+Max ran to the laundry room. The basket was empty! The washing machine was humming.
+
+"Oh no," said Max. "Mom is washing my pants!"
+
+Splashy hopped onto the machine and pressed her face to the round window. Round and round went the clothes. Then something silver flashed.
+
+Mom stopped the machine just in time. Max reached in and pulled out his Doke-Pod. It was wet and covered in bubbles.
+
+"Is it broken?" Max whispered.
+
+Sparko touched it with the very tip of his tail. Bzzt! The little screen lit up. "Hello, Max!" said the Doke-Pod.
+
+Max wrote one more line in his Clue Notebook: Always check your pockets. Case closed.`,
+  qs: [
+    ['What was Max looking for?', ['His Doke-Pod', 'His Clue Notebook', 'His shoes', 'Sparko'], 0],
+    ['Why did Max make a list of where he went?', ['To figure out where he might have lost it', 'To plan a party', 'To practice spelling', 'Because Mom asked him to'], 0],
+    ['Which clue helped Max solve the case?', ['He put his clothes in the laundry basket', 'Nora had a new toy', 'The park was muddy', 'Sparko was hungry'], 0],
+    ['What does "humming" mean in this story?', ['Making a low, steady sound', 'Singing a song with words', 'Shaking very hard', 'Standing still'], 0],
+    ['What lesson did Max learn?', ['Always check your pockets', 'Never take a bath', 'Washing machines are scary', 'Sparko is a bad helper'], 0]
+  ] },
+{ level: 9, title: 'Footprints in the Park', emoji: '👣', series: 'dokecase', text: `Nora ran up to Max at the park. "Someone dug up all of Mrs. Green's tulips!" she said. "There are holes everywhere."
+
+Mrs. Green stood by her flower bed with her hands on her hips. Brown dirt was scattered across the sidewalk.
+
+Max opened his Clue Notebook. "Let's look for clues," he said.
+
+Leafo walked slowly between the holes. She sniffed each one. Then she pointed with a leaf. In the soft dirt were footprints. They were small and round, with four little toes.
+
+"Those are not people prints," said Nora.
+
+"And they are not Dokemon prints, either," said Max. "Rumble has big flat feet. Splashy has webbed feet. These are different."
+
+Max wrote: Small prints. Four toes. Something that likes to dig.
+
+Then Flutterbit flew up into an oak tree. She chirped loudly. Max and Nora looked up. On a high branch sat a squirrel with very fat cheeks.
+
+"Clue number two," said Max. "Squirrels bury food in the ground. They dig holes to hide nuts."
+
+"But why would a squirrel dig up tulips?" asked Nora.
+
+Mrs. Green laughed. "Tulips grow from bulbs," she said. "Bulbs look a little bit like nuts! The squirrel must have thought my garden was a snack shop."
+
+The kids helped Mrs. Green plant the bulbs again. Then Rumble placed a ring of smooth stones around the flower bed, and Mrs. Green covered it with a wire net.
+
+"Now the squirrel will have to find another snack," said Max. He closed his notebook. Case closed.`,
+  qs: [
+    ['What problem did Mrs. Green have?', ['Someone dug up her tulips', 'Her cat was lost', 'Her tree fell down', 'Her house was painted'], 0],
+    ['How did Max know the prints were not from Rumble?', ['Rumble has big flat feet', 'Rumble was asleep', 'Rumble cannot walk', 'Rumble was at home'], 0],
+    ['Who helped find the squirrel?', ['Flutterbit', 'Splashy', 'Embit', 'Mrs. Green'], 0],
+    ['Why did the squirrel dig up the tulips?', ['The bulbs looked like nuts', 'It wanted flowers for its nest', 'It was angry at Mrs. Green', 'It was playing a game'], 0],
+    ['What is the main idea of this story?', ['Max uses clues to find out who dug up the garden', 'Nora learns to plant tulips', 'Squirrels are bad pets', 'Rumble finds pretty stones'], 0]
+  ] },
+{ level: 9, title: 'Who Took the Blue Ribbon?', emoji: '🎀', series: 'dokecase', text: `It was the day of the Town Pet Show. Max brushed Sparko's fur until it was fluffy. Nora painted Embit's claws bright orange.
+
+The judge was Mr. Pike. He held up a shiny blue ribbon. "This goes to the best pet in town!" he said. He set the ribbon on a table next to a plate of cookies.
+
+Then the wind blew. The tent flapped. When everyone looked back, the blue ribbon was gone!
+
+"Who took it?" cried Mr. Pike.
+
+Max opened his Clue Notebook. "Let's think," he said. "The ribbon was next to the cookies. Look! Some cookies are gone too."
+
+Nora pointed at the grass. There were crumbs. The crumbs made a line, like a little path.
+
+The friends followed the crumbs past the dog cages and past the fish tanks. The path ended at a big blue bush.
+
+"Blue ribbon, blue bush," said Nora. "That is tricky. You could hide something blue in there and nobody would see it."
+
+Embit made a tiny, gentle flame so they could see into the shadows. Inside the bush was a goat. It was chewing a cookie, and the blue ribbon was hanging from its mouth.
+
+"Billy the goat!" laughed Mr. Pike. "He got out of his pen again. Goats will eat almost anything."
+
+Max pulled the ribbon away very gently. It was a little wet and a little bent, but it was still blue.
+
+At the end of the show, Mr. Pike gave out the prize. And the winner was... Billy the goat, for the funniest pet in town!`,
+  qs: [
+    ['Where was the ribbon before it went missing?', ['On a table next to cookies', 'In Max\'s pocket', 'On Sparko\'s neck', 'In a fish tank'], 0],
+    ['What clue did Nora find in the grass?', ['A line of cookie crumbs', 'Goat hair', 'A blue feather', 'Muddy boots'], 0],
+    ['Why was the blue bush a good hiding place?', ['Something blue would be hard to see in it', 'It was very tall', 'It had flowers', 'It was next to the fish'], 0],
+    ['Why did the goat take the ribbon?', ['Goats will eat almost anything', 'It wanted to win', 'It was cold', 'Max gave it to him'], 0],
+    ['How do you think the story ending made people feel?', ['Happy and surprised', 'Angry', 'Scared', 'Bored'], 0]
+  ] },
+{ level: 9, title: 'The Squeaky Door', emoji: '🚪', series: 'dokecase', text: `Every night at the same time, something went SQUEAK in Max's house. It was a long, slow sound, like a door opening very carefully.
+
+"It's a ghost," whispered Nora when she slept over.
+
+"Detectives don't believe in ghosts," said Max. But he pulled his blanket up a little higher anyway.
+
+The next day, Max made a plan. He wrote in his Clue Notebook: What squeaks? When does it squeak? Who is awake?
+
+That night, Max set three traps. They were not mean traps. They were clue traps. He put flour on the kitchen floor. He tied a tiny bell to the pantry door. And he asked Sparko to stay awake and watch.
+
+At nine o'clock, SQUEAK! Then ding-ding went the little bell!
+
+Max and Nora tiptoed into the kitchen. Sparko's tail glowed like a flashlight. The pantry door was open a crack. On the floor were small white footprints in the flour. They led straight into the pantry.
+
+Max opened the door slowly. There sat Rumble, holding a bag of crackers with both hands. Crumbs covered his rocky face.
+
+"Rumble!" said Max. "You're the ghost?"
+
+Rumble looked down at his feet. He was a growing Dokemon, and growing Dokemon get very hungry at night.
+
+Max laughed. "You could just ask for a snack," he said. Then Dad oiled the pantry door so it would stop squeaking.
+
+The next night, Max left a small plate of crackers on the counter with a note: For Rumble. No ghosts allowed. Case closed.`,
+  qs: [
+    ['What sound did Max hear every night?', ['A squeak', 'A bark', 'A crash', 'A song'], 0],
+    ['Why did Max put flour on the kitchen floor?', ['To see footprints of whoever walked there', 'To bake bread', 'To clean the floor', 'To make it slippery'], 0],
+    ['What did the little bell tell Max?', ['The pantry door had opened', 'It was time for school', 'Nora was awake', 'Dinner was ready'], 0],
+    ['Why was Rumble in the pantry?', ['He was hungry at night', 'He was hiding from Nora', 'He was looking for Max', 'He was scared of the dark'], 0],
+    ['What does "tiptoed" mean?', ['Walked quietly on the front of your feet', 'Ran very fast', 'Jumped up and down', 'Crawled on your knees'], 0]
+  ] },
+{ level: 9, title: 'The Lunchbox Switch', emoji: '🍱', series: 'dokecase', text: `At school, Max opened his lunchbox. He expected a turkey sandwich and an apple. Instead, he found a pickle, a boiled egg, and a cupcake with green frosting.
+
+"This is not my lunch," said Max.
+
+Across the table, a boy named Theo was staring into his own lunchbox. "This isn't mine either," Theo said. "I have a turkey sandwich and an apple!"
+
+Max looked at the two lunchboxes. They were both red. They both had a white star on the lid. They looked exactly the same.
+
+"Clue number one," Max said. "Our lunchboxes match. Somebody mixed them up."
+
+"But who?" asked Theo.
+
+Max thought about the morning. All the kids put their lunchboxes on the long shelf by the door. Then Ms. Bell asked two helpers to carry them to the lunchroom.
+
+"Who were the helpers today?" Max asked.
+
+"You and me," said Theo slowly.
+
+Max laughed. "Then the detective solved a mystery about himself!"
+
+They traded lunchboxes. Max got his sandwich back, and Theo got his pickle and his cupcake.
+
+"How can we stop this from happening again?" asked Theo.
+
+Max opened his Clue Notebook and drew a picture. "We need a way to tell them apart," he said.
+
+The next day, Max's lunchbox had a lightning sticker, for Sparko. Theo's lunchbox had a frog sticker, because Theo loved frogs.
+
+"Good detectives don't just solve problems," Max said. "They stop problems from happening again."`,
+  qs: [
+    ['What was wrong with Max\'s lunch?', ['It was Theo\'s lunch, not his', 'It was empty', 'It was all cupcakes', 'It fell on the floor'], 0],
+    ['Why were the lunchboxes easy to mix up?', ['They looked exactly the same', 'They had no lids', 'They were in different rooms', 'Theo hid them'], 0],
+    ['Who mixed up the lunchboxes?', ['Max and Theo, the helpers', 'Ms. Bell', 'Sparko', 'A goat'], 0],
+    ['How did they stop it from happening again?', ['They put different stickers on the lunchboxes', 'They stopped bringing lunch', 'They used paper bags', 'They ate together'], 0],
+    ['What does Max mean by "good detectives stop problems from happening again"?', ['Finding a way so the problem does not come back', 'Detectives never have problems', 'Detectives should eat lunch', 'Only grown-ups solve problems'], 0]
+  ] }
+] },
+{ n: 10, title: 'Clue Hunter', kind: 'story', stories: [
+{ level: 10, title: 'The Aquarium Mystery', emoji: '🐠', series: 'dokecase', text: `Max's class took a field trip to the city aquarium. The biggest tank was as tall as a house. Sharks glided by, and silver fish swirled together like a shining cloud.
+
+In a smaller tank, a sign said: Meet Goldie, Our Rare Golden Puffer Fish! But the tank looked empty. There were rocks, a little treasure chest, and green plants waving in the water. There was no Goldie.
+
+A worker named Ms. Reyes rushed over. Her face was worried. "Goldie was here this morning," she said. "Now she's gone. Did somebody take her?"
+
+Max pulled out his Clue Notebook. "Can we help look?" he asked.
+
+First, Max checked the lid on top of the tank. It was locked tight. "Clue one," he wrote. "Nobody opened the tank from the top."
+
+Next, Splashy pressed her face against the glass. Water Dokemon can see well underwater. She pointed her flipper at the little treasure chest. Its lid was open just a crack.
+
+"Clue two," said Max. "Puffer fish get scared easily. When they're scared, they puff up big and round. Then they look for a safe place to hide."
+
+"But what scared her?" asked Nora.
+
+Max looked around. A boy from another class was tapping on the glass. Tap, tap, tap. Each tap made the water shiver.
+
+"Clue three," Max said quietly. "Loud tapping can scare fish."
+
+Ms. Reyes asked everyone to stop tapping. The room grew quiet. They waited. One minute. Two minutes. Then the lid of the treasure chest slowly lifted, and a little golden face peeked out.
+
+"Goldie!" everyone whispered.
+
+Ms. Reyes smiled. "Nobody stole her. She was hiding because she was frightened." She made a new sign for the tank: Please Don't Tap the Glass. Goldie Is Shy.`,
+  qs: [
+    ['Why did Ms. Reyes think someone took Goldie?', ['The tank looked empty', 'The lid was broken', 'She saw a thief', 'Goldie was in another tank'], 0],
+    ['What did the locked lid tell Max?', ['Nobody opened the tank from the top', 'Goldie was a fast swimmer', 'The tank was clean', 'Ms. Reyes lost the key'], 0],
+    ['What did Splashy notice?', ['The treasure chest lid was open a crack', 'A hole in the glass', 'A net on the floor', 'Food in the water'], 0],
+    ['What scared Goldie?', ['Someone tapping on the glass', 'A shark', 'Splashy', 'The lights'], 0],
+    ['What does "frightened" mean?', ['Scared', 'Hungry', 'Sleepy', 'Excited'], 0]
+  ] },
+{ level: 10, title: 'The Vanishing Snowman', emoji: '⛄', series: 'dokecase', text: `On Saturday, Max and Nora built the biggest snowman on their street. It had a carrot nose, a red scarf, two black buttons, and a tall stick hat. They named him Mr. Frost.
+
+On Sunday morning, Mr. Frost was gone. Only the carrot, the scarf, the buttons, and the stick hat lay in the yard, sitting in a puddle.
+
+"Somebody stole Mr. Frost!" cried Nora.
+
+Max kneeled by the puddle and opened his Clue Notebook. "Wait," he said. "A thief would take the whole snowman. But all the parts are still here. Only the snow is missing."
+
+Nora frowned. "Who steals only snow?"
+
+Max looked around the yard. The rest of the snow on the grass was still white and deep. Only the spot where Mr. Frost had stood was wet. Then he noticed something else. There was a black mark on the snow next to the puddle, like something had been burned.
+
+"Clue two," Max wrote. "A scorch mark."
+
+Just then, Embit came waddling out of the garage. He was yawning, and little puffs of smoke drifted from his nose.
+
+"Embit," Max said slowly, "where did you sleep last night?"
+
+Embit pointed with his tail. Right next to where Mr. Frost had stood was a pile of blankets. Embit had been cold, so he snuggled up to the biggest, roundest thing in the yard. All night long, his warm fire body had been melting Mr. Frost, one drip at a time.
+
+Nora laughed so hard she sat down in the snow. "The snowman thief was a sleepy fire Dokemon!"
+
+That afternoon, they built a brand-new snowman far away from the garage. Then Max made Embit a cozy bed by the fireplace, where melting things would not be a problem.`,
+  qs: [
+    ['What was left in the yard where Mr. Frost had been?', ['The carrot, scarf, buttons and hat in a puddle', 'Nothing at all', 'A new snowman', 'A sled'], 0],
+    ['Why did Max think a thief did NOT take Mr. Frost?', ['A thief would take the whole snowman, but the parts were still there', 'The gate was locked', 'There were no footprints', 'Nora was watching'], 0],
+    ['What did the scorch mark tell Max?', ['Something hot had been there', 'Someone painted the snow', 'A car drove by', 'It rained'], 0],
+    ['What really happened to Mr. Frost?', ['Embit melted him while sleeping next to him', 'Nora knocked him over', 'The wind blew him away', 'A neighbor took him'], 0],
+    ['What is the main idea of this story?', ['Max uses clues to learn the snowman melted, not that it was stolen', 'Building snowmen is hard', 'Embit hates snow', 'Nora is afraid of winter'], 0]
+  ] },
+{ level: 10, title: 'Midnight Music', emoji: '🎵', series: 'dokecase', text: `Mrs. Lopez lived next door to Max. One morning she knocked on his door, looking very tired.
+
+"Max," she said, "every night at midnight, I hear music in my house. Plink, plink, plink, like someone playing my piano. But when I turn on the lights, nobody is there!"
+
+Max grabbed his Clue Notebook. "We'll find out who your midnight musician is," he promised.
+
+Max and Nora went to Mrs. Lopez's house and looked at the piano. It was old and shiny and stood next to a big window. Max pressed one key. Plink. He pressed another. Plonk.
+
+"Clue one," Max said. "The piano works. Somebody, or something, is pressing the keys."
+
+Nora looked closely at the keys. "Max! Look at this." On the white keys were tiny dusty marks. Each mark was shaped like a little star.
+
+"Those are not fingerprints," said Max. "They're too small. They look more like tiny feet."
+
+Max looked up at the window. It was open just a little, to let in the cool night air. Outside, a tall tree stretched its branches right up to the glass.
+
+"Clue two," Max wrote. "The window is open, and a tree is close by. Something could climb in."
+
+That night, Max, Nora and Flutterbit hid behind the couch. The clock struck twelve. A small shadow slipped through the window and hopped onto the piano. Plink! Plonk! Plink!
+
+Max switched on his flashlight. Sitting on the keys was a raccoon with a stripy tail. It was chasing a moth that kept landing on the piano. Every time the raccoon jumped, its little star-shaped paws played a note.
+
+"The midnight musician!" laughed Mrs. Lopez.
+
+Flutterbit gently chased the moth out the window, and the raccoon followed it into the tree. Then Mrs. Lopez closed her window, and that night she finally slept.`,
+  qs: [
+    ['What was Mrs. Lopez\'s problem?', ['She heard piano music at midnight', 'Her piano was broken', 'She lost her cat', 'Her tree fell over'], 0],
+    ['What did the star-shaped marks on the keys show?', ['Tiny feet had walked on the piano', 'Someone spilled paint', 'The piano was new', 'Max was there before'], 0],
+    ['Why was the open window an important clue?', ['Something could climb in from the tree', 'It let in sunlight', 'It was broken', 'It was painted blue'], 0],
+    ['Why did the raccoon jump on the piano?', ['It was chasing a moth', 'It wanted to play music', 'It was looking for food', 'It was scared of Max'], 0],
+    ['How did the story end for Mrs. Lopez?', ['She closed the window and finally slept', 'She sold her piano', 'She kept the raccoon as a pet', 'She moved away'], 0]
+  ] },
+{ level: 10, title: 'The Lost Library Book', emoji: '📕', series: 'dokecase', text: `Max loved the library. His favorite book was called Dokemon of the Deep Sea. It had pictures of glowing jellyfish Dokemon and giant whale Dokemon that sang.
+
+But when Max went to check it out on Tuesday, the librarian, Mr. Chen, shook his head. "I'm sorry, Max. That book has been missing for a whole week. Nobody checked it out. It just disappeared."
+
+Max opened his Clue Notebook. "Can I look for it?" he asked.
+
+"Please do," said Mr. Chen.
+
+Max started with the empty space on the shelf. "Clue one," he wrote. "The book is big and blue. It would be hard to hide in a pocket."
+
+Next, he asked Mr. Chen, "Who comes to the library every day?"
+
+Mr. Chen thought. "Story time kids come on Mondays. Older kids come after school. And Mrs. Webb comes every morning to read the newspaper."
+
+Max checked the story time corner. There were pillows, puppets, and a big basket of picture books. No blue book.
+
+Then Leafo tugged on Max's sleeve. She pointed to the window by the reading tables. A row of plants sat in pots along the windowsill. One of the pots was sitting on something flat and blue.
+
+Max lifted the pot. Underneath was Dokemon of the Deep Sea! There was a round wet ring on the cover.
+
+"Clue two," Max said. "Someone used the book to hold up a plant pot."
+
+Mr. Chen laughed and slapped his forehead. "That was me! Last week the pot was wobbly, so I grabbed the nearest book to make it flat. Then I forgot all about it!"
+
+Mr. Chen dried the book carefully and checked it out to Max first. And Leafo, who knew all about plants, helped him find a proper little plate for the wobbly pot.`,
+  qs: [
+    ['What book was Max looking for?', ['Dokemon of the Deep Sea', 'The Clue Notebook', 'A cookbook', 'A book about trains'], 0],
+    ['Why did Max ask who comes to the library every day?', ['To think about who might have moved the book', 'To make new friends', 'To plan story time', 'To read the newspaper'], 0],
+    ['Where was the book found?', ['Under a plant pot by the window', 'In the story time basket', 'In Mrs. Webb\'s bag', 'On the top shelf'], 0],
+    ['What did the wet ring on the cover show?', ['A pot had been sitting on the book', 'Someone spilled juice', 'It rained inside', 'The book was new'], 0],
+    ['Why is it funny that Mr. Chen took the book?', ['He was the librarian who was worried it was missing', 'He hates books', 'He lives in the library', 'He is a Dokemon'], 0]
+  ] },
+{ level: 10, title: 'The Birthday Cake Mystery', emoji: '🎂', series: 'dokecase', text: `It was Nora's birthday party. In the middle of the table sat a beautiful cake with pink frosting and seven candles. Nora's dad said, "Nobody touch the cake until we sing!"
+
+Everyone went outside to play tag. When they came back in, someone had taken a big bite out of the cake! There was a deep scoop in the frosting, right next to the candles.
+
+"Who did this?" Nora cried.
+
+Max opened his Clue Notebook. "Let's look at the evidence," he said. "Evidence means the clues that prove what happened."
+
+Max looked closely at the cake. The bite was not shaped like teeth. It was a smooth, round scoop, like someone used a spoon. "Clue one," he wrote. "A spoon was used."
+
+He checked the kitchen. In the sink was one small spoon with pink frosting on it. "Clue two," he wrote. "The spoon is little, like a kid spoon."
+
+Then Max looked at the floor. There was a trail of pink frosting dots. They led out of the kitchen, down the hall, and under the door of the bathroom.
+
+Max knocked gently. "Hello?" he said.
+
+The door opened, and there stood Nora's little brother, Leo. He was only three. Pink frosting was smeared on his cheeks, his nose, and even his eyebrows.
+
+"I just wanted to taste it," Leo said in a tiny voice. "Everybody was outside, and I was hungry."
+
+Nora knelt down. She wasn't angry anymore. "Leo, you have to wait for the singing. But you can be my cake helper and blow out a candle with me."
+
+Nora's dad smoothed the frosting with a knife, and Rumble placed a big frosting flower right on top of the scoop. When they sang, nobody could even tell. Leo blew out the candles with his sister, and he smiled the biggest frosting smile in the world.`,
+  qs: [
+    ['What does "evidence" mean in this story?', ['Clues that prove what happened', 'A kind of cake', 'A birthday present', 'A party game'], 0],
+    ['What did the smooth, round scoop tell Max?', ['A spoon was used', 'A dog took a bite', 'The cake was old', 'The candles melted'], 0],
+    ['Why was the small spoon an important clue?', ['It showed a kid probably took the bite', 'It was dirty', 'It was Nora\'s favorite', 'It was gold'], 0],
+    ['How did Max find Leo?', ['He followed a trail of frosting dots', 'Leo called his name', 'Sparko smelled him', 'Nora told him'], 0],
+    ['How did Nora feel at the end?', ['Kind and not angry anymore', 'Still very angry', 'Scared of Leo', 'Bored at her party'], 0]
+  ] }
+] },
+{ n: 11, title: 'Mystery Master', kind: 'story', stories: [
+{ level: 11, title: 'The Zoo Train Mystery', emoji: '🚂', series: 'dokecase', text: `The little zoo train carried families around the whole zoo. It went past the lions, under the bird bridge, and through a tunnel near the bears. Max and Nora rode it every summer.
+
+But this Saturday, the train was not moving. The driver, a tall woman named Captain Rosa, was pacing back and forth.
+
+"The train key is missing," she explained. "I keep it on a hook inside the station. This morning the hook was empty, and nobody can drive the train without it."
+
+Max opened his Clue Notebook. "When did you see the key last?" he asked.
+
+"Last night when I locked up," Captain Rosa said. "I hung it on the hook myself."
+
+Max and Nora walked into the little wooden station. The hook was by an open window. Under the window was a bench, and on the bench were three things: a peanut shell, a gray feather, and a scratch in the paint.
+
+"Clue one," Max said, writing carefully. "The key was near an open window. Anybody, or anything, could reach it."
+
+"Clue two," said Nora. "The feather is gray. The scratch looks like it was made by a sharp claw."
+
+Max frowned. "And the peanut shell?"
+
+Captain Rosa looked a little embarrassed. "That's mine. I eat peanuts on my lunch break."
+
+Max thought hard. Which animal has gray feathers, sharp claws, and likes shiny things?
+
+Then Flutterbit chirped and flew to the top of the station roof. Max climbed onto the bench to look. Up on the roof, tucked against the chimney, was a messy nest made of sticks, string, and bits of foil. Sitting on the nest was a big gray crow.
+
+"Crows love shiny objects," Max said. "They pick them up and carry them home."
+
+Flutterbit fluttered up to the nest and politely chirped at the crow. The crow tilted its head, hopped aside, and there in the nest, along with a bottle cap, a button, and a spoon, was the silver train key.
+
+Flutterbit carried it down in her beak. Captain Rosa cheered and hurried to the engine. Toot, toot! The zoo train was moving again.
+
+"From now on," Captain Rosa said, "I will keep the key in my pocket, and I'll leave the crow a shiny bottle cap every morning so it doesn't need to borrow mine."`,
+  qs: [
+    ['Why couldn\'t the zoo train move?', ['The train key was missing', 'The tracks were broken', 'It ran out of gas', 'The driver was sick'], 0],
+    ['Which clue was NOT about the thief?', ['The peanut shell', 'The gray feather', 'The claw scratch', 'The open window'], 0],
+    ['Why did Max think about an animal that likes shiny things?', ['The key was silver and shiny', 'The crow was singing', 'Captain Rosa told him', 'The window was shiny'], 0],
+    ['What does "embarrassed" mean?', ['Feeling a little silly or shy because of something you did', 'Feeling very hungry', 'Feeling brave', 'Feeling sleepy'], 0],
+    ['What is the author\'s purpose in this story?', ['To entertain with a mystery that teaches how clues work together', 'To teach you how to drive a train', 'To tell you to stay away from zoos', 'To sell peanuts'], 0]
+  ] },
+{ level: 11, title: 'The Lighthouse Light', emoji: '🗼', series: 'dokecase', text: `On the rocky hill above the beach stood an old white lighthouse. Nobody had lived in it for fifty years. But for three nights in a row, people in town saw a light blinking at the very top.
+
+"It's haunted," said Theo at school. "My grandpa says the old lighthouse keeper still lives up there."
+
+Max did not believe in ghosts, but he did believe in mysteries. That afternoon, he and Nora climbed the path to the lighthouse with Sparko and Splashy.
+
+The door was locked with a rusty chain. "Clue one," Max wrote. "Nobody has gone in through the door. The chain is too rusty to open."
+
+They walked all the way around the bottom of the tower. On the far side, a small window near the top was broken. A little piece of glass was missing.
+
+"Clue two," said Nora. "Something could get in through that broken window. But it would have to fly or climb very high."
+
+Max sat on a rock and thought. "When does the light blink?" he asked.
+
+"Only at night," said Nora. "And only when the moon is out."
+
+Max wrote that down. Then he wrote a question: Does the light make its own glow, or is it reflecting something?
+
+When the sun went down, they hid behind a big rock and waited. The moon rose, round and bright. Soon, at the top of the lighthouse, a light began to blink. Flash. Dark. Flash. Dark.
+
+Sparko's ears twitched. He could feel that there was no electricity up there at all.
+
+"No electricity," Max whispered. "So it isn't a lamp."
+
+Max pointed his binoculars at the top window. There, perched on the railing, was a large white owl. Each time it turned its head, a shiny piece of mirror tied around an old weather vane caught the moonlight and flashed. The owl had built its nest right next to the mirror, and every time it moved, the vane spun and sparkled.
+
+"The ghost," said Nora, "is an owl and a mirror!"
+
+The next day, Max told the town council. Instead of fixing the window, they put up a sign: Home of the Lighthouse Owl. Please Do Not Disturb. And every night when the moon is full, the town looks up at the blinking light and waves.`,
+  qs: [
+    ['Why did people think the lighthouse was haunted?', ['A light blinked at the top at night', 'They heard singing', 'The door kept opening', 'Someone saw a ghost'], 0],
+    ['What did the rusty chain tell Max?', ['Nobody had gone in through the door', 'The lighthouse was new', 'Someone had the key', 'The door was painted'], 0],
+    ['Why was it important that the light only blinked when the moon was out?', ['It meant the light might be reflecting moonlight', 'Ghosts only come out then', 'The owl was asleep', 'The batteries ran out'], 0],
+    ['How did Sparko help?', ['He could tell there was no electricity', 'He flew to the top', 'He broke the chain', 'He scared the owl'], 0],
+    ['What can you infer about the town at the end?', ['They decided to protect the owl instead of chasing it away', 'They tore down the lighthouse', 'They were still scared', 'They never went to the beach again'], 0]
+  ] },
+{ level: 11, title: 'The Stolen Trophy', emoji: '🏆', series: 'dokecase', text: `The Dokemon Field Day trophy was gold and shaped like a lightning bolt. It sat in a glass case in the school hallway. On Friday morning, the case was empty.
+
+"The trophy is gone!" said the principal, Mr. Hart. "Field Day is tomorrow. What will we give the winners?"
+
+Max took out his Clue Notebook. "Mr. Hart, may Nora and I investigate?" he asked. Investigate means to look carefully for facts.
+
+"Please," said Mr. Hart.
+
+Max started with the glass case. The little door was closed, and the lock was not broken. "Clue one," Max wrote. "Whoever took the trophy opened the case with a key."
+
+"Who has a key?" Nora asked.
+
+"Only two people," said Mr. Hart. "Me, and our custodian, Mr. Gomez."
+
+Mr. Gomez was mopping the gym. He was a kind man who fixed everything at school. "I didn't take it," he said. "But I did see something strange last night. The lights in the art room were on late."
+
+The art room was at the end of the hall. On the floor near the door were tiny flecks of gold glitter. They sparkled in a line all the way to the art closet.
+
+"Clue two," said Max. "Gold glitter, like from a gold trophy, or like from gold paint."
+
+Max opened the art closet. Inside, on a table covered in newspaper, sat the lightning bolt trophy. But it looked different. It was shinier and brighter than before, and the names on the bottom had been painted in fresh gold letters.
+
+Just then, the art teacher, Ms. Kim, walked in. "Oh no, you found my surprise!" she said with a laugh. "The trophy was scratched and old, so I asked Mr. Hart for the key. I stayed late to fix it up for Field Day."
+
+Mr. Hart's face turned red. "I gave you the key a week ago, and I completely forgot," he said.
+
+Max closed his notebook. "So the trophy wasn't stolen. It was borrowed to make it better."
+
+At Field Day, the trophy sparkled in the sun. And when Max's team won the three-legged race, he held it up high and noticed that Ms. Kim had painted one more tiny thing on the bottom: a little magnifying glass, for the school's best detective.`,
+  qs: [
+    ['What does "investigate" mean?', ['To look carefully for facts', 'To run a race', 'To paint a picture', 'To lock a door'], 0],
+    ['Why did Max think a key was used?', ['The lock was not broken', 'He saw someone with a key', 'The case was smashed', 'Mr. Gomez told him'], 0],
+    ['Which clue led Max to the art room?', ['A line of gold glitter', 'Muddy footprints', 'A note on the door', 'The sound of music'], 0],
+    ['Why did Ms. Kim take the trophy?', ['To fix it up before Field Day', 'She wanted to keep it', 'She was playing a joke', 'It was hers'], 0],
+    ['What is the main idea of the story?', ['Max discovers the trophy was borrowed to be fixed, not stolen', 'Max wins Field Day', 'Mr. Gomez mops the gym', 'Art class is fun'], 0]
+  ] },
+{ level: 11, title: 'The Map in the Bottle', emoji: '🍾', series: 'dokecase', text: `While walking on the beach, Splashy dove into the waves and came back holding a green glass bottle. Inside was a rolled-up piece of paper.
+
+Max pulled out the cork and unrolled the paper. It was a map! It showed the beach, the old pier, three palm trees, and a big red X.
+
+"Treasure!" shouted Nora.
+
+"Maybe," said Max. He opened his Clue Notebook. "Good detectives ask questions before they start digging. Who made this map? And when?"
+
+Max looked at the paper carefully. "Clue one," he wrote. "The paper is not old and yellow. It's white and crisp. This map is new."
+
+Nora pointed to the bottom corner. "There's writing," she said. In wobbly letters, it said: Made by C.
+
+"Clue two," said Max. "The writer signed with only one letter, and the letters are wobbly. I think a little kid made this."
+
+They followed the map anyway. They walked past the old pier. They found the three palm trees. Then they counted twenty steps toward the water, just like the map said, and Rumble dug where the X should be.
+
+His rocky claws hit something hard. It was a small tin box. Inside were a seashell necklace, five shiny marbles, a drawing of a dog, and a note: If you found my treasure, you are my friend. Please come play at the blue house by the beach. Love, Clara.
+
+Nora looked at Max. "A treasure hunt for a friend," she said softly.
+
+They walked to the blue house and knocked. A girl about five years old opened the door. Her eyes went wide. "You found it!" she cried. "I made that map a week ago. We just moved here, and I don't know anybody."
+
+"Now you know us," said Max with a grin.
+
+That afternoon, Clara, Max, Nora and all the Dokemon built the biggest sandcastle on the beach. And before the sun went down, Clara made a brand-new map, this time with a red X marking her own front door.`,
+  qs: [
+    ['How did Max know the map was new?', ['The paper was white and crisp, not old and yellow', 'It had a date on it', 'Splashy told him', 'It smelled new'], 0],
+    ['What did the wobbly letters suggest?', ['A little kid probably made the map', 'A pirate made it', 'It was written in the rain', 'Max made it'], 0],
+    ['Why did Max say good detectives ask questions before digging?', ['To understand the clues before acting', 'Digging is not allowed', 'To waste time', 'Because Nora was tired'], 0],
+    ['Why did Clara make the treasure map?', ['She was new in town and wanted a friend', 'She was hiding from her mom', 'She wanted to trick people', 'She found real gold'], 0],
+    ['What does the ending tell you about Clara?', ['She found friends and felt welcome', 'She moved away again', 'She lost her treasure', 'She was angry'], 0]
+  ] },
+{ level: 11, title: 'The Fake Gold Coin', emoji: '🪙', series: 'dokecase', text: `The town museum had a special new display: the Dragon Coin, a gold coin more than three hundred years old. It had a dragon on one side and a crown on the other. People lined up all morning to see it.
+
+Max and Nora were near the front of the line when Sparko's ears suddenly shot straight up. His tail crackled.
+
+"What's wrong, Sparko?" Max whispered.
+
+Sparko stared at the coin in the glass case. Max had learned to trust Sparko's feelings. Electric Dokemon can sense metal, and Sparko seemed confused.
+
+Max looked closer. He opened his Clue Notebook and started writing.
+
+"Clue one," Max wrote. "The coin in the poster on the wall has a dragon with its tail curled to the left. The coin in the case has a tail curled to the right."
+
+Nora gasped. "They're different! Like a mirror picture."
+
+"Clue two," Max wrote. "Real gold doesn't make Sparko's tail crackle like that. He reacts to iron. Maybe this coin is just painted metal."
+
+Max found the museum director, Dr. Patel, and showed her his notebook. She looked at the poster. She looked at the coin. Her eyebrows went up.
+
+"You may be right," she said quietly. "Someone may have switched the real coin with a fake."
+
+"Who has been near the case today?" Max asked.
+
+Dr. Patel checked the visitor list. Only one person had asked to look at the coin up close: a man in a brown coat who said he was a coin expert. He had left just ten minutes ago.
+
+Flutterbit flew to the front window. A man in a brown coat was walking quickly toward the bus stop.
+
+The museum guard hurried outside and politely asked the man to wait. When Dr. Patel came out with Max's notebook, the man looked nervous. He reached into his pocket, sighed, and handed over a small velvet bag. Inside was the real Dragon Coin, with its tail curling to the left.
+
+Later, Dr. Patel shook Max's hand. "You noticed a tiny detail that grown-ups missed," she said.
+
+Max smiled. "That's the secret of detective work. The biggest mysteries are often solved by the smallest clues."`,
+  qs: [
+    ['What made Max first think something was wrong?', ['Sparko\'s ears went up and his tail crackled', 'The glass was broken', 'An alarm rang', 'Nora saw a thief'], 0],
+    ['What was different between the poster coin and the case coin?', ['The dragon\'s tail curled the other way', 'The color was blue', 'One was bigger', 'One had no crown'], 0],
+    ['Why was the visitor list important?', ['It showed who had been close to the coin', 'It listed the museum rules', 'It had a map', 'It showed the ticket price'], 0],
+    ['What can you infer about the man in the brown coat?', ['He switched the real coin with a fake one', 'He was a museum guard', 'He was Max\'s uncle', 'He lost his bus ticket'], 0],
+    ['What does Max mean by "the biggest mysteries are often solved by the smallest clues"?', ['Paying attention to tiny details can solve big problems', 'Only small mysteries matter', 'Clues are always small', 'Big people solve mysteries'], 0]
+  ] }
+] },
+{ n: 12, title: 'Legendary Detective', kind: 'story', stories: [
+{ level: 12, title: 'Night at the Museum', emoji: '🦕', series: 'dokecase', text: `Max's class got to do something amazing: a sleepover at the natural history museum. They unrolled their sleeping bags right under a giant dinosaur skeleton. Its long neck stretched toward the ceiling, and its tail curled around the room like a sleeping dragon.
+
+After lights out, Max heard a soft clicking sound. Click. Click. Click. It echoed through the dark hall.
+
+In the morning, a museum worker named Mr. Ford came running. "One of the dinosaur's toe bones is missing!" he said. "It's a small bone, but it's very important. Without it, we can't open the dinosaur room to visitors."
+
+Max sat up in his sleeping bag and reached for his Clue Notebook. "Mr. Ford, can we help?"
+
+Mr. Ford looked at all the sleepy kids and sighed. "Detectives in pajamas," he said. "Why not?"
+
+Max began by drawing the skeleton in his notebook. The missing bone came from the back left foot, which was only a few feet off the ground. "Clue one," he wrote. "A kid could reach that foot without climbing."
+
+Nora found the second clue. "Look," she said, pointing at the floor. "Under the foot there's a little pile of sand."
+
+Max scooped some up. It was not normal sand. It was soft and white, like the sand in the museum's dig pit, where kids could brush away sand to find fake fossils.
+
+"Clue two," Max wrote. "The sand came from the dig pit, so whoever took the bone was probably in the dig pit too."
+
+Then Max remembered the clicking sound. "Clue three," he said. "Clicking in the night. Like something tapping on the hard floor."
+
+The class walked to the dig pit. In the sand were dozens of small footprints. Most were kid shoes, from yesterday's activities. But some prints were different: tiny, with three long toes and a little point at the end.
+
+Max knelt and studied them. "Those aren't shoes," he said. "Those are claws, and I know whose they are."
+
+He turned around. Behind him stood Embit, looking guilty. Embit had been fascinated by the dinosaur all evening. He loved dinosaurs because they looked like giant fire Dokemon.
+
+"Embit," Max said gently, "did you take the dinosaur's toe?"
+
+Embit's tail drooped. He waddled to the corner of the dig pit, dug with his claws, click, click, click, and pulled out the toe bone. He had buried it, the way he'd seen the fossil hunters do in a video, because he wanted to discover a dinosaur bone of his own.
+
+Mr. Ford carefully put the bone back on the skeleton. Then he did something surprising. He gave Embit a real fossil, a tiny shell that was millions of years old.
+
+"Every scientist starts by being curious," Mr. Ford said. "Just remember: in a museum, we look with our eyes, not our claws."
+
+Max wrote the last line in his notebook: Curiosity is good. Asking first is better. Case closed.`,
+  qs: [
+    ['Why couldn\'t the museum open the dinosaur room?', ['A toe bone from the skeleton was missing', 'The dinosaur fell over', 'The lights were broken', 'The kids were still sleeping'], 0],
+    ['Why was the white sand an important clue?', ['It came from the dig pit, so the thief had been there', 'It was from the beach', 'It was very pretty', 'It showed it had rained'], 0],
+    ['What made the clicking sound in the night?', ['Embit\'s claws on the hard floor', 'The dinosaur moving', 'A clock', 'Mr. Ford\'s shoes'], 0],
+    ['Why did Embit take the bone?', ['He wanted to discover a dinosaur bone of his own', 'He was hungry', 'He wanted to break it', 'Max asked him to'], 0],
+    ['What does "fascinated" mean?', ['Very interested', 'Very tired', 'Very angry', 'Very cold'], 0]
+  ] },
+{ level: 12, title: 'The Missing Mascot', emoji: '🦅', series: 'dokecase', text: `Max's school mascot was an eagle named Captain Swoop. Not a real eagle, but a big fuzzy costume with golden wings, a yellow beak, and huge googly eyes. Every year, a fifth grader wore Captain Swoop at the big soccer game against the school across town, the Riverside Raccoons.
+
+Two days before the game, Captain Swoop disappeared from the gym closet.
+
+"The Raccoons stole him!" shouted Theo. "They want us to lose!"
+
+Soon everyone in the hallway was blaming Riverside. Some kids even wanted to make mean posters. But Max held up his Clue Notebook. "Wait," he said. "We don't have any evidence yet. Blaming someone without proof isn't fair."
+
+Mr. Hart, the principal, nodded. "Max is right. Let's find out what really happened."
+
+Max began at the gym closet. The door had been left unlocked, because the soccer balls were kept there and kids got them out at recess. "Clue one," he wrote. "Lots of people could have opened this closet."
+
+On the closet floor, Nora found three golden feathers and a long piece of yellow thread. "Clue two," she said. "The feathers came off the costume. It looks like it got ripped."
+
+Max followed a trail of golden fluff out the back door of the gym and across the playground. It ended at the school's little garden shed.
+
+Inside the shed, on a workbench, lay Captain Swoop. One wing had a long rip down the middle. Next to the costume was a sewing kit, a spool of yellow thread, and a note in careful handwriting:
+
+Dear Mr. Hart, I'm so sorry. I tripped while practicing my mascot dance, and the wing ripped. I was too embarrassed to tell anyone. I'm fixing it myself. I promise it will be ready. From, Ava, 5th grade.
+
+Max and Nora looked at each other. Ava was the fifth grader chosen to be Captain Swoop this year.
+
+"So the Raccoons didn't steal him," Nora said. "Ava was trying to fix him."
+
+They found Ava at lunch. Her eyes filled with tears when she saw the notebook. "Are you going to tell?" she whispered.
+
+"We think you should tell," said Max kindly. "But we can help."
+
+That afternoon, Ava told Mr. Hart everything. He wasn't angry at all. "Accidents happen," he said. "Telling the truth takes courage."
+
+Then everybody pitched in. Ava sewed, Nora held the wing steady, and Leafo used her vines like tiny fingers to tie off the knots. By the end of the day, Captain Swoop's wing looked as good as new.
+
+At the game, Captain Swoop danced the best dance anyone had ever seen. And when Theo saw a Riverside Raccoon kid sitting alone in the stands, he went over and said sorry for blaming their school, then shared his popcorn.`,
+  qs: [
+    ['Why did Max stop the kids from blaming the Riverside Raccoons?', ['They had no evidence yet, and blaming without proof is not fair', 'He liked the Raccoons better', 'The principal told him to', 'He already knew Ava did it'], 0],
+    ['Why was the unlocked closet an important clue?', ['It meant lots of people could have opened it', 'It meant nobody could get in', 'It had a hole', 'It was painted gold'], 0],
+    ['What did the golden feathers and thread suggest?', ['The costume had been ripped', 'A real eagle was there', 'Someone was knitting a hat', 'The costume was new'], 0],
+    ['Why did Ava hide the costume?', ['She was embarrassed that she ripped it and wanted to fix it', 'She wanted to keep it', 'She was on the Raccoons team', 'She hated soccer'], 0],
+    ['Which sentence best states the theme (big lesson)?', ['Find the facts before you blame someone, and telling the truth takes courage', 'Soccer is the best sport', 'Costumes are hard to sew', 'Eagles are better than raccoons'], 0]
+  ] },
+{ level: 12, title: 'The Silent Bell', emoji: '🔔', series: 'dokecase', text: `In the middle of town stood a tall clock tower with a huge brass bell. Every hour, the bell rang: BONG, BONG, BONG. People set their watches by it, the bakery opened when it rang seven times, and kids knew to go home for dinner when it rang six.
+
+One morning, the bell didn't ring at all.
+
+The clock's hands still moved. The gears still turned. But at eight o'clock there was only silence. People were late for work. The bakery didn't open. The whole town felt confused.
+
+The mayor, a cheerful woman named Mayor Bloom, asked Max to help. "Everyone says you're the best detective in town," she said.
+
+Max climbed the winding stairs of the clock tower with Nora, Rumble, and Sparko. At the top, the giant bell hung from a thick wooden beam. A metal hammer was supposed to swing and strike it every hour.
+
+"Clue one," Max wrote. "The hammer still moves. Listen." They waited until nine o'clock. Click, whirr, the hammer swung forward... and made a soft little thud instead of a bong.
+
+Max climbed closer. The hammer wasn't hitting the bell. It was hitting something soft that was stuffed between the hammer and the bell. It was a big, round lump of twigs, moss, and string.
+
+"Clue two," Max wrote. "A nest! Something built a nest right where the hammer hits."
+
+"But a nest would get knocked down after one or two bongs," said Nora. "Why didn't it?"
+
+Max looked closer. The nest was tied to the bell with dozens of strings, wound around and around very carefully. Birds can weave twigs, but they can't tie knots like that.
+
+"Clue three," Max said slowly. "Somebody helped build this nest. Somebody with hands."
+
+They went back down the stairs and asked around town. Max learned that the clock tower's caretaker, old Mr. Finch, had stopped climbing the stairs because his knees hurt. Someone else had been going up instead: his granddaughter, June.
+
+They found June at the library, reading a book about birds. When Max asked about the nest, she bit her lip.
+
+"A mother swallow was trying to build a nest by the bell," June explained. "But every hour, BONG, the noise knocked it down. She tried six times. I felt so sad for her that I tied her nest in place. I didn't think about the town needing the bell."
+
+Max nodded. "You were trying to help the bird. That was kind. But now the whole town has a problem."
+
+Nora had an idea. "What if there were a way to help the bird and the town?"
+
+Together, they explained everything to Mayor Bloom. With Mr. Finch's advice, Rumble carved a cozy stone shelf on the other side of the tower, out of the hammer's path but still sheltered from the wind. June carefully moved the nest, with the mother bird watching from a nearby ledge. Within an hour, the swallow hopped onto her new shelf and settled in.
+
+At ten o'clock, the hammer swung. BONG! BONG! BONG! The whole town cheered.
+
+Max wrote the final line in his notebook: The best solutions help everyone. Case closed.`,
+  qs: [
+    ['What problem did the town have?', ['The clock tower bell stopped ringing', 'The clock\'s hands stopped moving', 'The bakery burned down', 'The mayor was missing'], 0],
+    ['Why did Max decide that a person had helped build the nest?', ['The nest was tied with knots that birds cannot make', 'He saw footprints', 'June told him right away', 'The nest had a name tag'], 0],
+    ['Why did June tie the nest to the bell?', ['The bell kept knocking the swallow\'s nest down', 'She wanted the bell to be quiet', 'She was playing a trick', 'Mr. Finch told her to'], 0],
+    ['How was the problem finally solved?', ['The nest was moved to a stone shelf away from the hammer', 'The bell was taken down', 'The bird was sent away', 'The town bought a new clock'], 0],
+    ['What does Max mean by "the best solutions help everyone"?', ['A good answer can solve problems for both the town and the bird', 'Detectives always win', 'Birds should not live in towns', 'Everyone should ring bells'], 0]
+  ] },
+{ level: 12, title: 'The Rainbow Paint Mystery', emoji: '🌈', series: 'dokecase', text: `The town was getting ready for the Spring Art Walk. Along Main Street, artists set up easels and tables. The biggest project was a giant mural on the side of the library, a painting of a forest full of animals that Ms. Kim, the art teacher, had been working on for weeks.
+
+But on the morning of the Art Walk, people found something strange. Overnight, splashes of bright paint had appeared all over town. A red stripe ran across the bakery door. A blue swirl decorated the fire hydrant. Purple and green dots covered the sidewalk outside the toy store.
+
+"Vandals!" grumbled Mr. Pike, the shopkeeper. Vandals are people who damage property on purpose. "Somebody is trying to ruin the Art Walk!"
+
+Max wasn't so sure. He opened his Clue Notebook and walked down Main Street slowly, studying each splash.
+
+"Clue one," he wrote. "Every splash is low to the ground. None of them are higher than my knees."
+
+"Maybe the vandal is short," said Nora.
+
+"Maybe," said Max. "Or maybe it isn't a person at all."
+
+Max kept looking. At each splash, he noticed something else: little round smudges in the paint, as if something had stepped in it and walked away. The smudges were shaped like paws, four small pads and one bigger one.
+
+"Clue two," he wrote. "Paw prints, about the size of a small dog."
+
+Then Nora noticed something important. "Max," she said, "the paint colors are in the same order every time. Red, then orange, then yellow, then green, then blue, then purple. Like a rainbow."
+
+Max's eyes widened. "Clue three. Where in town is there paint in rainbow order?"
+
+They both said it at the same time: "Ms. Kim's paint table!"
+
+At the library, Ms. Kim's paint table was a mess. Six paint trays, lined up in rainbow order, had footprints running through every single one. And underneath the table, curled up on a drop cloth and covered in every color imaginable, was a small, scruffy dog.
+
+"That's Pickles," said Ms. Kim, hurrying over. "He's my neighbor's dog. He must have slipped out of his yard last night."
+
+Pickles wagged his rainbow tail. It was easy to imagine what happened: he ran through the paint trays, then trotted all over town, stopping to sniff the bakery door, the fire hydrant, and the toy store, leaving colorful splashes everywhere he went.
+
+Mr. Pike scratched his head. "So there were no vandals. Just a very colorful dog."
+
+The townspeople had been angry an hour earlier, but now they started to laugh. Then Ms. Kim had a wonderful idea. "Why don't we keep the paw prints?" she said. "Let's turn them into part of the Art Walk."
+
+Kids grabbed brushes and turned each splash into something new. The red stripe on the bakery door became a cherry. The blue swirl on the hydrant became a wave. The dots outside the toy store became a field of flowers.
+
+At the end of the day, a new sign was added to the Art Walk map: Follow the Pickles Trail. And Pickles, freshly washed, was the guest of honor.`,
+  qs: [
+    ['What does "vandals" mean?', ['People who damage property on purpose', 'People who paint murals', 'People who sell paint', 'People who walk dogs'], 0],
+    ['Why was it important that every splash was low to the ground?', ['It suggested the "vandal" might not be a tall person at all', 'It showed the paint was cheap', 'It meant it had rained', 'It proved Mr. Pike did it'], 0],
+    ['What did the rainbow order of the colors help Max figure out?', ['The paint came from Ms. Kim\'s paint table', 'A rainbow had appeared', 'Pickles liked red best', 'The bakery was painted first'], 0],
+    ['How did the townspeople\'s feelings change in the story?', ['They went from angry to laughing and creative', 'They went from happy to angry', 'They stayed angry', 'They were scared the whole time'], 0],
+    ['What is the author\'s purpose in having the town turn the splashes into art?', ['To show that a problem can become something good', 'To teach you to paint hydrants', 'To show dogs should not be pets', 'To explain how paint is made'], 0]
+  ] },
+{ level: 12, title: 'The Detective\'s Hardest Case', emoji: '🕵️', series: 'dokecase', text: `It started with a note slipped under Max's front door. The paper was folded into a tiny square, and on the outside, in neat block letters, it said: TO THE GREAT DETECTIVE.
+
+Max unfolded it. Inside was a riddle:
+
+I am kept in a box, but I am not a toy.
+I am given away, but I always come back.
+Find me where the stories sleep before the sun sets.
+
+Max read it three times. Then he called Nora. "We have a new case," he said, "and this time, the mystery came looking for us."
+
+They sat at Max's kitchen table and broke the riddle into pieces, the way good detectives do. Max wrote each line in his Clue Notebook.
+
+"Line one," said Max. "Kept in a box, but not a toy. That could be jewelry, or letters, or photos."
+
+"Line two," said Nora. "Given away but always comes back. Hmm. What do you give away that comes back?"
+
+Max tapped his pencil. "A library book! You borrow it, but you always bring it back."
+
+"And line three," said Nora, grinning. "Where the stories sleep. That's the library! Books sleep on the shelves."
+
+"Before the sun sets," Max added. "The library closes at five. We have to hurry!"
+
+They raced to the library with Sparko and Flutterbit. Mr. Chen, the librarian, smiled when he saw them, almost as if he'd been expecting them. "Looking for something?" he asked.
+
+Max thought about the first line again. Kept in a box. In a library, what is kept in a box? Then he remembered: the return box! The metal box by the door where people drop books after hours.
+
+Mr. Chen unlocked the return box. On top of the pile was a book Max knew very well: Dokemon of the Deep Sea. Tucked inside was another folded note.
+
+This one said: Detectives find answers. Friends find each other. Go to the place where you solved your very first case.
+
+Nora gasped. "Your first case! The missing Doke-Pod, in your laundry room!"
+
+They ran all the way back to Max's house, down the hallway, and opened the laundry room door.
+
+"SURPRISE!"
+
+The room was filled with people. Mom and Dad. Theo and Clara. Mrs. Green, Mrs. Lopez, Captain Rosa, Ms. Kim, and even Mayor Bloom. Balloons covered the ceiling, and a big banner read: HAPPY ONE-YEAR DETECTIVE ANNIVERSARY!
+
+Max was speechless. "You... you planned a mystery for me?"
+
+Mom laughed. "Every time you solved a case, someone in town was helped. We wanted to say thank you, so we made a mystery that only the best detective could solve."
+
+Then Nora handed Max a small wrapped box. Inside was a brand-new Clue Notebook with a gold cover. On the first page, everyone had written a message. Mrs. Green wrote, Thank you for saving my tulips. Clara wrote, Thank you for finding my treasure, and for being my friend.
+
+Max looked around at all the smiling faces. He realized this was the most important clue of all: a detective is never really solving mysteries alone.
+
+He opened his new notebook to the second page and wrote the first line: Case number one hundred. Solved with friends. Case closed.`,
+  qs: [
+    ['What was "kept in a box" at the library?', ['A library book in the return box', 'A toy', 'A gold coin', 'A birthday cake'], 0],
+    ['What did "where the stories sleep" mean?', ['The library, where books sit on shelves', 'Max\'s bedroom', 'A campfire', 'The museum'], 0],
+    ['Why did the town plan a mystery for Max?', ['To thank him for helping so many people', 'To trick him', 'Because they lost something', 'To make him late'], 0],
+    ['Why did the last clue send Max to the laundry room?', ['His very first case happened there', 'It was the biggest room', 'Mom was doing laundry', 'Sparko lived there'], 0],
+    ['What is the theme of this story?', ['A detective, and a person, is never truly alone when they have friends', 'Riddles are too hard', 'Libraries close early', 'Laundry is important'], 0]
+  ] }
+] }
+);
+SON_TRACK.rewards.push(
+  ['🔍','Clue Hound',null,9], ['🦉','Professor Hoot',null,10], ['🦅','Sky Sleuth',null,11], ['🏅','Legend Lion',null,12]
+);
+
+/* ============================================================
+   TOWER OF TALES — short read-aloud passages for the tower floors.
+   step 1 (easiest) → 6 (hardest), per track. Original characters only.
+   q: [question, [3 options], correctIndex]
+   ============================================================ */
+const TOWER_PASSAGES = {
+  son: {
+    1: [
+      { id:'s1a', title:'The Red Hat', emoji:'🎩', text:`Biscuit has a red hat. The wind is big. Up, up goes the hat!
+
+Biscuit runs and runs. The hat is in a tree. A bird sits on it. "Can I have my hat?" asks Biscuit. The bird hops off. Biscuit gets his hat.`,
+        q:[['Where did the hat land?',['🌳 In a tree','🛁 In a tub','🚗 In a car'],0],['Who sat on the hat?',['🐦 A bird','🐶 A dog','🐸 A frog'],0]] },
+      { id:'s1b', title:'Sparko Naps', emoji:'⚡', text:`Sparko is a little Dokemon. He likes to nap in the sun. Zap! A spark pops out of his tail.
+
+Max sees the spark. "Wake up, Sparko!" Sparko opens one eye. He yawns. Then he jumps up to play tag with Max.`,
+        q:[['What does Sparko like to do in the sun?',['😴 Nap','🏊 Swim','🎨 Paint'],0],['What game did they play?',['🏃 Tag','⚽ Soccer','🃏 Cards'],0]] },
+      { id:'s1c', title:'The Big Box', emoji:'📦', text:`A big box sits by the door. Biscuit looks at it. Is it a bed? Is it a car?
+
+Biscuit gets in the box. It is a ship! He sails to a far land. Then Mom calls, "Lunch time!" The ship is a box again.`,
+        q:[['What did the box turn into?',['🚢 A ship','🏠 A house','✈️ A plane'],0],['Why did the game stop?',['🥪 It was lunch time','🌧️ It rained','😴 It was bed time'],0]] },
+    ],
+    2: [
+      { id:'s2a', title:'The Lost Ball', emoji:'⚽', text:`Max kicked his ball too hard. It flew over the fence and into Mrs. Lin's yard.
+
+"Oh no," said Max. "Her dog is big." Sparko sat on his head. "Bzzt!" Max took a deep breath and knocked on the gate. Mrs. Lin smiled. Her big dog came out with the ball in his mouth. He wagged his tail and dropped it at Max's feet.`,
+        q:[['Why was Max worried?',['🐕 The dog was big','🌧️ It was raining','📚 He had homework'],0],['Who brought the ball back?',['🐕 The dog','🐱 A cat','👦 Max'],0]] },
+      { id:'s2b', title:'Band Practice', emoji:'🎸', text:`Biscuit and his pals have a band. Biscuit plays the drums. Pip plays the horn. They practice in the garage after school.
+
+Today the drums sound strange. Thump, clunk, thump. Biscuit looks inside the big drum. A tiny mouse waves at him! "I like your music," it squeaks. So the band lets the mouse shake the bells.`,
+        q:[['What was inside the drum?',['🐭 A mouse','🧦 A sock','🍎 An apple'],0],['What did the mouse get to play?',['🔔 The bells','🥁 The drums','🎺 The horn'],0]] },
+      { id:'s2c', title:'Snow Day', emoji:'❄️', text:`When Max woke up, the whole street was white. "Snow day!" he shouted.
+
+He put on his boots, his coat. Two pairs of socks. Sparko did not like the cold. His sparks made little puffs of steam. Max built a snowman with a stick nose. Then he made a tiny snow Sparko to stand next to it.`,
+        q:[['How did Max know it was a snow day?',['⬜ The street was white','📺 The TV said so','📞 Mom called'],0],['What did Max make next to the snowman?',['⚡ A tiny snow Sparko','🏰 A snow fort','🐶 A snow dog'],0]] },
+    ],
+    3: [
+      { id:'s3a', title:'The Muddy Footprints', emoji:'👣', text:`Someone had tracked mud across the kitchen floor. Mom was not happy. "Who did this?" she asked.
+
+Max looked closely at the footprints. They were small and round, with four little toes. "These are not people prints," he said. He followed them to the laundry basket. Inside, curled up on the clean towels, was a very muddy Biscuit.`,
+        q:[['What clue showed it was not a person?',['🐾 The prints had four little toes','👟 The prints were huge','🧦 There was a sock'],0],['Where was Biscuit hiding?',['🧺 In the laundry basket','🛏️ Under the bed','🚿 In the shower'],0]] },
+      { id:'s3b', title:'The Missing Cookie', emoji:'🍪', text:`Grandpa baked twelve cookies and set them on the window to cool. When he came back, there were only eleven.
+
+Max grabbed his notebook. He found crumbs on the windowsill and a blue feather on the floor. "The thief has wings," Max said. Outside, a blue jay sat on the fence. It had a cookie in its beak. It looked very proud.`,
+        q:[['How many cookies were left?',['1️⃣1️⃣ Eleven','🔟 Ten','1️⃣2️⃣ Twelve'],0],['Which clue told Max the thief could fly?',['🪶 A blue feather','👣 A footprint','🧤 A glove'],0]] },
+      { id:'s3c', title:'Sparko\'s Big Jump', emoji:'⚡', text:`At the Dokemon park there was a jumping contest. The other Dokemon were bigger and stronger than Sparko.
+
+"You can do it," Max whispered. Sparko crouched down low. He wiggled his tail until it glowed bright yellow. Then, ZAP, he pushed off the ground with a burst of sparks. He flew higher than anyone. The crowd cheered so loudly that Sparko's ears stood straight up.`,
+        q:[['What did Sparko do before he jumped?',['✨ Wiggled his tail until it glowed','🍎 Ate a snack','😴 Took a nap'],0],['How did the crowd react?',['📣 They cheered loudly','😢 They cried','🚶 They left'],0]] },
+    ],
+    4: [
+      { id:'s4a', title:'The Case of the Moving Gnome', emoji:'🧙', text:`Every morning, the garden gnome in Mr. Patel's yard was in a different spot. On Monday it was by the roses. On Tuesday it was next to the mailbox.
+
+Max decided to watch the yard after dinner. He hid behind the hedge with Sparko and a flashlight. Just before dark, a raccoon crept out. It pushed the gnome across the grass, sniffed underneath it. Gobbled up the bugs hiding there. "Case closed," Max whispered.`,
+        q:[['Why did the raccoon move the gnome?',['🐛 To eat the bugs under it','🎁 To steal it','🏠 To build a house'],0],['Where did Max hide?',['🌳 Behind the hedge','🏠 On the roof','🚗 In the car'],0]] },
+      { id:'s4b', title:'The Quiet Library', emoji:'📚', text:`The town library was always quiet. But today it was too quiet. The librarian, Ms. Ruiz, could not find her reading glasses anywhere.
+
+Max noticed that every book on the bottom shelf had been pushed in a little crooked. He knelt down and peeked behind them. There was a small gap behind the shelf. In it sat the glasses, next to three crayons and a squeaky toy. "I think a puppy has been hiding treasures here," Max said.`,
+        q:[['What clue did Max notice first?',['📚 The bottom books were crooked','🔦 A light was on','🚪 The door was open'],0],['Who probably hid the glasses?',['🐶 A puppy','👩 Ms. Ruiz','⚡ Sparko'],0]] },
+      { id:'s4c', title:'The Stormy Night', emoji:'⛈️', text:`Thunder rumbled over the house. The lights blinked off. Max's little sister started to cry.
+
+"Don't worry," Max said. "Sparko can help." Sparko curled his tail into a circle and made it glow like a soft night light. The room filled with a warm yellow color. Max told a story about a brave Dokemon who was not afraid of thunder. By the end, his sister was fast asleep.`,
+        q:[['How did Sparko help?',['💡 He glowed like a night light','🎵 He sang a song','🧸 He found a teddy bear'],0],['How did the story end?',['😴 His sister fell asleep','🌞 The sun came up','🚪 Mom came home'],0]] },
+    ],
+    5: [
+      { id:'s5a', title:'The Secret Code', emoji:'🔐', text:`A strange note was taped to Max's locker. It said: "Meet me where the books are tallest. 3 o'clock." There was no name at the bottom, only a drawing of a lightning bolt.
+
+Max thought about it all through math class. The tallest books in the school were the giant atlases in the library. At three o'clock he hurried there. His best friend Jada was waiting behind the atlas shelf, grinning. "Happy birthday, Detective," she said, holding out a cupcake with a lightning bolt on top.`,
+        q:[['Where did the note tell Max to go?',['📚 Where the books are tallest','🏫 The gym','🍎 The lunchroom'],0],['Why did Jada leave the note?',['🎂 To surprise Max for his birthday','😠 To trick him','📝 To give him homework'],0]] },
+      { id:'s5b', title:'The Vanishing Paint', emoji:'🎨', text:`The art room had six jars of paint on Friday. On Monday, the blue jar was completely empty. But nobody had painted anything blue.
+
+Max studied the room carefully. The window was open a crack. There were tiny blue footprints on the sill. They led outside to the bird bath, where the water had turned bright blue. A family of sparrows was splashing in it happily. Someone had left the lid off. The rain had washed the paint right out the window.`,
+        q:[['What happened to the blue paint?',['🌧️ Rain washed it out the window','🎨 A kid used it','🗑️ It was thrown away'],0],['Where did the blue water end up?',['🐦 In the bird bath','🚰 In the sink','🌊 In the ocean'],0]] },
+      { id:'s5c', title:'The Trail of Leaves', emoji:'🍂', text:`On a windy autumn afternoon, Sparko disappeared from the backyard. Max searched under the porch and behind the shed. But there was no sign of him.
+
+Then Max spotted something odd. A line of crispy leaves had small burn marks on them, as if each one had been touched by a tiny spark. Max followed the trail through the gate, across the park. Up the hill. At the very top, Sparko was chasing a bright orange kite that had broken free from its string.`,
+        q:[['What clue helped Max find Sparko?',['🍂 Leaves with tiny burn marks','👣 Muddy prints','📢 Barking'],0],['What was Sparko chasing?',['🪁 A kite','🦋 A butterfly','⚽ A ball'],0]] },
+    ],
+    6: [
+      { id:'s6a', title:'The Museum Mystery', emoji:'🏛️', text:`The class trip to the museum was going great. Then the guard made an announcement. A small golden statue was missing from the Egypt room! Everyone had to stay inside until it was found.
+
+Max closed his eyes and pictured the room. He remembered a cleaning cart parked next to the glass case. When he opened his eyes, the cart was rolling past the gift shop. Max walked over and politely asked the janitor to check the bucket. Tucked inside a folded rag was the statue. The janitor looked shocked. "It must have fallen in while I was dusting," he said.`,
+        q:[['What did Max remember about the Egypt room?',['🧹 A cleaning cart by the case','🐱 A cat statue','🚪 An open door'],0],['How did the statue go missing?',['🧽 It fell into the bucket while dusting','🦹 A thief grabbed it','🧒 A student broke it'],0]] },
+      { id:'s6b', title:'The Whistling Attic', emoji:'🏚️', text:`Every night at exactly nine o'clock, a high whistling sound drifted down from Grandma's attic. Grandma said the house was simply old and full of noises, but Max was not convinced.
+
+He climbed the narrow stairs with a flashlight and Sparko on his shoulder. The attic was dusty and cold. As the clock downstairs struck nine, the whistle began again. Max noticed that the round window was cracked. The evening wind was rushing through the gap. When the wind hit the crack, it whistled like a flute. Max taped the window shut. The house finally went silent.`,
+        q:[['What was making the whistling sound?',['🌬️ Wind through a cracked window','👻 A ghost','🐦 A bird'],0],['Why did it always start at nine o\'clock?',['🌙 The evening wind came then','⏰ An alarm was set','📺 A TV show started'],0]] },
+      { id:'s6c', title:'The Champion\'s Badge', emoji:'🏅', text:`The Dokemon Championship was only one day away, and Max's lucky badge had vanished from his backpack. Without it, he felt nervous and shaky.
+
+Max retraced every step he had taken that day. He had stopped at the bakery, the park. The bike shop. At the bike shop, the owner remembered seeing something shiny caught in the spokes of a wheel. Sure enough, the badge was hanging from the tire of the bike Max had test-ridden. Max thanked him, pinned the badge back on. Realized something important. The badge was a nice reminder. But the skill had been his own all along.`,
+        q:[['Where was the badge found?',['🚲 Caught in a bike wheel','🍞 In the bakery','🌳 Under a tree'],0],['What did Max realize at the end?',['💪 The skill was his own all along','🏅 He needed a new badge','🏃 He should quit'],0]] },
+    ],
+  },
+  daughter: {
+    1: [
+      { id:'d1a', title:'The Smallest Egg', emoji:'🥚', text:`In the dragon nest, there were five eggs. Four were big and red. One was small and gray.
+
+Wren picked up the small egg. It was warm. "Do not worry," she said. "I will keep you safe." That night, the small egg began to crack. Out came a tiny silver dragon. It sneezed a puff of blue smoke and licked Wren's nose.`,
+        q:[['What color was the small egg?',['⚪ Gray','🔴 Red','🟢 Green'],0],['What did the baby dragon sneeze?',['💨 Blue smoke','🔥 Big flames','💧 Water'],0]] },
+      { id:'d1b', title:'First Flight', emoji:'🪽', text:`Wren's dragon, Pebble, was ready to fly for the first time. He flapped his wings. He ran across the field. But he did not go up.
+
+"Try again," said Wren. Pebble flapped harder. A gust of wind came over the hill. Up he went! He did a wobbly loop in the sky. Then he landed in a big pile of hay.`,
+        q:[['What helped Pebble go up?',['🌬️ A gust of wind','🪜 A ladder','🎈 A balloon'],0],['Where did Pebble land?',['🌾 In a pile of hay','🌊 In a lake','🌳 In a tree'],0]] },
+      { id:'d1c', title:'The Lost Key', emoji:'🗝️', text:`The door to the dragon barn was locked. The key was gone. The dragons were hungry.
+
+Wren looked in her coat. She looked under the bench. Then she saw Pebble. He had a shiny thing in his mouth. "Pebble! You have the key!" Pebble dropped it in her hand. Wren opened the door. All the dragons cheered with happy roars.`,
+        q:[['Why did Wren need the key?',['🐉 To feed the hungry dragons','🏠 To go home','📚 To get a book'],0],['Who had the key?',['🐲 Pebble','🧙 The teacher','🐦 A bird'],0]] },
+    ],
+    2: [
+      { id:'d2a', title:'The Fire Lesson', emoji:'🔥', text:`At Ember Hollow Academy, the young dragons were learning to breathe fire. Pebble tried and tried. But only bubbles came out of his mouth.
+
+The other dragons laughed. Wren patted his neck. "Every dragon is different," she said. Later, the school's water well caught fire from a stray spark. The fire dragons could not help, but Pebble blew a stream of bubbles over the flames. The fire fizzled out. Nobody laughed at him again.`,
+        q:[['What came out when Pebble tried to breathe fire?',['🫧 Bubbles','🔥 Flames','❄️ Snow'],0],['How did Pebble save the day?',['🫧 He put out a fire with bubbles','🪽 He flew for help','🗣️ He yelled'],0]] },
+      { id:'d2b', title:'The Map in the Wall', emoji:'🗺️', text:`While cleaning the old classroom, Wren found a loose stone in the wall. She pulled it out. Behind it was a rolled-up map tied with a ribbon.
+
+The map showed the academy. But it had one extra room that Wren had never seen. It was marked with a small star under the library stairs. That afternoon, Wren and Pebble tapped on the wall under the stairs. It sounded hollow. They pushed. A hidden door creaked open.`,
+        q:[['Where did Wren find the map?',['🧱 Behind a loose stone','📚 In a book','🛏️ Under her bed'],0],['How did they know the wall was hollow?',['👂 It sounded hollow when they tapped','👀 They saw a crack','🔑 They had a key'],0]] },
+      { id:'d2c', title:'The Night Watch', emoji:'🌙', text:`Wren had been chosen to stand night watch on the castle tower. She was proud. But also a little scared of the dark.
+
+Pebble curled up beside her, warm as a fireplace. The stars came out one by one. Around midnight, Wren heard a soft flapping sound. A lost baby owl landed on the wall, shivering. Wren tucked it under her cloak until morning, when its mother swooped down to bring it home.`,
+        q:[['How did Wren feel about the night watch?',['😊😨 Proud but a little scared','😴 Sleepy and bored','😠 Angry'],0],['What landed on the wall?',['🦉 A baby owl','🐉 A dragon','🦇 A bat'],0]] },
+    ],
+    3: [
+      { id:'d3a', title:'The Frozen Lake', emoji:'🧊', text:`The winter had been so cold that the lake beside Ember Hollow froze solid. The headmaster announced a skating day. Everyone rushed outside.
+
+Wren noticed that the ice near the old dock looked darker than the rest. She remembered that dark ice was thinner and more dangerous. Just then, a younger student skated toward the dock. "Stop!" Wren shouted. Pebble flew over and landed in front of the boy, spreading his wings like a wall. A moment later, a crack zigzagged across the dark ice right where he would have been.`,
+        q:[['Why was the dark ice dangerous?',['🧊 It was thinner','🔥 It was hot','💧 It was slippery'],0],['How did Pebble stop the boy?',['🪽 He spread his wings like a wall','🔥 He breathed fire','🎵 He sang'],0]] },
+      { id:'d3b', title:'The Borrowed Spell Book', emoji:'📕', text:`Wren borrowed a spell book from the library to study for her test. When she opened it at home, a folded letter slipped out. It was written by a student from one hundred years ago.
+
+The letter said: "If you find this, look for my dragon's scale under the third step of the tower." Wren's heart raced. The next morning, she counted the tower steps and lifted the third one. Underneath was a shimmering green scale and a tiny note that read, "Be kind to your dragon. It will always come back to you."`,
+        q:[['Who wrote the letter?',['📜 A student from long ago','🧙 Wren\'s teacher','🐉 Pebble'],0],['What message was under the step?',['💚 Be kind to your dragon','📚 Study hard','🏃 Run fast'],0]] },
+      { id:'d3c', title:'The Racing Contest', emoji:'🏁', text:`Every spring, the riders of Ember Hollow raced their dragons around three mountain peaks. Wren and Pebble had never won. Pebble was smaller than the other dragons.
+
+This year, Wren watched the weather. She learned that the wind blew hardest between the second and third peaks. It blew in the afternoon. During the race, the big dragons flew straight into the wind. Wren steered Pebble up high, where the wind pushed from behind. They zoomed past everyone. They crossed the finish line first!`,
+        q:[['Why had Wren never won before?',['🐲 Pebble was smaller','😴 She was late','🌧️ It always rained'],0],['What was Wren\'s secret this year?',['🌬️ She used the wind to push them','🍎 She fed Pebble apples','🗺️ She took a shortcut through a cave'],0]] },
+    ],
+    4: [
+      { id:'d4a', title:'The Whispering Cave', emoji:'🕳️', text:`Deep in the forest, there was a cave that the villagers called the Whispering Cave. They said strange voices floated out of it at night. No one dared to go near it.
+
+Wren wanted to know the truth. She and Pebble crept to the entrance with a lantern. Inside, the cave walls were covered in hundreds of tiny holes. When the night wind blew across the holes, it made soft sounds that echoed like whispers. Wren laughed with relief. The next day, she explained it to the villagers. They named the cave the Singing Cave instead.`,
+        q:[['What really made the whispering sound?',['🌬️ Wind blowing across tiny holes','👻 Ghosts','🦇 Bats talking'],0],['What did the villagers rename the cave?',['🎶 The Singing Cave','🌙 The Moon Cave','🐉 The Dragon Cave'],0]] },
+      { id:'d4b', title:'The Stolen Crown', emoji:'👑', text:`On the morning of the royal festival, the queen's crown disappeared from its velvet pillow. Guards searched the entire castle. But they found nothing.
+
+Wren noticed that the pillow had a few sparkling threads on it, like the shiny thread magpies collect for their nests. She remembered that a magpie family lived in the tall clock tower. Pebble flew her to the top. There, woven into a messy nest, was the golden crown surrounded by buttons and coins. Wren traded the magpies a bag of bright beads. They happily let her take the crown back.`,
+        q:[['What clue did Wren find on the pillow?',['✨ Sparkling threads','👣 A footprint','🧤 A glove'],0],['How did Wren get the crown back?',['📿 She traded beads with the magpies','⚔️ She fought the birds','🧙 She used a spell'],0]] },
+      { id:'d4c', title:'The Sick Dragon', emoji:'🤒', text:`One morning, Pebble would not eat his breakfast. His scales had turned pale. His tail drooped on the floor. Wren rushed him to the academy healer.
+
+The healer looked in Pebble's mouth and listened to his breathing. "He swallowed something that is stuck," she said. She mixed a warm drink of honey and mint. Pebble drank it slowly. A few minutes later, he gave a giant hiccup. Out flew Wren's missing silver bracelet. Pebble's scales turned bright again. He licked Wren's face as if to say sorry.`,
+        q:[['How did Wren know Pebble was sick?',['🍽️ He would not eat and his scales were pale','🤧 He sneezed fire','🗣️ He told her'],0],['What had Pebble swallowed?',['💍 Wren\'s silver bracelet','🪨 A rock','🔑 A key'],0]] },
+    ],
+    5: [
+      { id:'d5a', title:'The Ancient Library', emoji:'🏛️', text:`Under Ember Hollow Academy, there was an old library. Students were not allowed inside. The headmaster kept the only key on a chain around his neck.
+
+One evening, Wren heard Pebble growling at the library door. A thin line of purple light glowed under it. Wren ran to find the headmaster. He unlocked the door with a worried frown. Inside, one book had fallen open on the floor. Tiny purple sparks were floating out of its pages. "This is a book of storms," the headmaster said as he closed it. "If it had stayed open all night, lightning would have filled the castle." He thanked Wren and Pebble for being so alert.`,
+        q:[['What warned Wren something was wrong?',['🐲 Pebble growled at the door','🔔 A bell rang','📢 Someone screamed'],0],['What would have happened if the book stayed open?',['⚡ Lightning would fill the castle','📚 All the books would fly away','🌊 The castle would flood'],0]] },
+      { id:'d5b', title:'The Mountain Rescue', emoji:'🏔️', text:`A sudden snowstorm trapped a group of travelers on the side of Frostfang Mountain. The village sent a message to the academy asking for dragon riders to help.
+
+Wren knew Pebble could fly through narrow spaces that larger dragons could not reach. The wind was fierce. Snow stung her face. But she kept her eyes on the faint glow of the travelers' campfire. Pebble landed on a tiny ledge beside them. One by one, Wren carried the travelers down to safety. By sunrise, everyone was warm and fed in the village hall. The mayor gave Wren a medal shaped like a snowflake.`,
+        q:[['Why was Pebble good for this rescue?',['🐲 He could fit through narrow spaces','🔥 He breathed the hottest fire','💪 He was the strongest'],0],['What helped Wren find the travelers?',['🔥 The glow of their campfire','📢 Their shouting','🗺️ A map'],0]] },
+      { id:'d5c', title:'The Two Moons', emoji:'🌗', text:`According to an old legend, once every hundred years, two moons appear over the Silver Sea. The dragons of the deep ocean rise to the surface to sing. Most people believed it was only a story.
+
+Wren had calculated the dates in the old star charts. She was certain tonight was the night. She and Pebble flew to the cliffs above the sea and waited. Just after midnight, a second, paler moon rose beside the first. The water began to shimmer. Dozens of enormous sea dragons lifted their heads above the waves. Their song was so beautiful that Pebble hummed along, and Wren wrote down every note so the academy would believe her.`,
+        q:[['How did Wren know which night to go?',['⭐ She studied the old star charts','📰 It was in the news','🧙 A teacher told her'],0],['Why did Wren write down the notes?',['📝 So the academy would believe her','🎵 To sing in a concert','📚 For homework'],0]] },
+    ],
+    6: [
+      { id:'d6a', title:'The Dragon Council', emoji:'⚖️', text:`For the first time in fifty years, the Dragon Council called a meeting at Ember Hollow. The great dragons were arguing about whether humans should still be allowed to ride them.
+
+The eldest dragon, an enormous golden creature with cloudy eyes, asked whether any student could prove that riders truly cared for their dragons. Wren stepped forward nervously. She described how Pebble had saved the boy on the frozen lake and how she had sat with him all night when he was sick. Then Pebble spoke for the first time in front of the council. "She listens to me," he said simply. The golden dragon lowered its head. "Then the partnership continues," it declared. The council agreed.`,
+        q:[['What were the dragons arguing about?',['🧍🐉 Whether humans should still ride them','🍖 What to eat','🏔️ Where to live'],0],['What convinced the council?',['💬 Pebble said that Wren listens to him','🏅 Wren showed her medal','🔥 A fire contest'],0]] },
+      { id:'d6b', title:'The Shattered Compass', emoji:'🧭', text:`Wren's grandmother had given her a magic compass. It always pointed toward whatever its owner needed most. During a training flight, it slipped from her pocket. It shattered on the rocks below.
+
+Wren was heartbroken. She gathered every piece. For three evenings, she fit them back together while Pebble held the tiny parts steady in his claws. When the last piece clicked into place, the needle spun wildly. Then it stopped. It was pointing straight at Pebble. Wren laughed through her tears. The compass had been right all along. The thing she needed most was the friend who had helped her fix it.`,
+        q:[['What was special about the compass?',['🧭 It pointed to what the owner needed most','🌙 It glowed at night','🔊 It could talk'],0],['Why did the needle point at Pebble?',['💛 Pebble was what Wren needed most','🧲 Pebble had a magnet','🐲 Pebble was hungry'],0]] },
+      { id:'d6c', title:'The Last Exam', emoji:'🎓', text:`To finish the first year at Ember Hollow, every student had to pass a final test. They had to fly through the Maze of Mirrors without getting lost. The mirrors showed fake paths. Many riders flew in circles for hours.
+
+Before the test, Wren noticed something. The real paths had a soft breeze. The mirror paths had perfectly still air. She tied a thin ribbon to Pebble's horn. When the ribbon fluttered, they knew the path was real. Other students grew frustrated, but Wren and Pebble moved steadily through the maze. They burst into the sunlight in record time. The headmaster announced that Wren had earned the title of Junior Dragon Master.`,
+        q:[['How could Wren tell a real path from a mirror?',['🎀 The ribbon fluttered in the breeze','🔦 She used a light','🗺️ She had a map'],0],['What title did Wren earn?',['🎓 Junior Dragon Master','👑 Queen of Dragons','🏆 Fastest Flyer'],0]] },
+    ],
+  },
+};
+// Riddle floors: read the riddle out loud, then pick the answer.
+const TOWER_RIDDLES = {
+  son: [
+    ['I have a face and two hands, but no arms or legs. What am I?',['⏰ A clock','🧸 A teddy bear','🪞 A mirror'],0],
+    ['I am full of holes, but I can still hold water. What am I?',['🧽 A sponge','🪣 A bucket','🧦 A sock'],0],
+    ['The more you take, the more you leave behind. What are they?',['👣 Footsteps','🍪 Cookies','🎈 Balloons'],0],
+    ['I have keys, but I cannot open a door. What am I?',['🎹 A piano','🚪 A gate','🔒 A lock'],0],
+    ['I go up and down but never move. What am I?',['🪜 Stairs','🛗 An elevator','🎈 A balloon'],0],
+    ['What has to be broken before you can use it?',['🥚 An egg','📱 A phone','🪑 A chair'],0],
+  ],
+  daughter: [
+    ['I can fly without wings and cry without eyes. Wherever I go, darkness follows me. What am I?',['☁️ A cloud','🦇 A bat','🌙 The moon'],0],
+    ['I have cities but no houses, forests but no trees, and water but no fish. What am I?',['🗺️ A map','🌍 The world','📖 A book'],0],
+    ['What can you catch but never throw?',['🤧 A cold','⚾ A ball','🐟 A fish'],0],
+    ['I speak without a mouth and hear without ears. I come alive with the wind. What am I?',['🗣️ An echo','🎐 A wind chime','📻 A radio'],0],
+    ['The more of me there is, the less you can see. What am I?',['🌑 Darkness','🔊 Noise','💡 Light'],0],
+    ['I have a neck but no head, and I wear a cap. What am I?',['🍾 A bottle','🦒 A giraffe','🧢 A hat'],0],
+  ],
+};
+// difficulty steps, ordered by measured reading level (easiest first)
+const TOWER_STEPS = {
+  son:      { 1:['s1a','s1b','s1c'], 2:['s2a','s2b','s2c'], 3:['s3a','s3b','s3c'], 4:['s4a','s4b','s4c'], 5:['s5a','s5b','s5c'], 6:['s6a','s6b','s6c'] },
+  daughter: { 1:['d1a','d1c','d1b'], 2:['d2b','d4a','d2c'], 3:['d4c','d2a','d6b'], 4:['d3c','d3a','d3b'], 5:['d5a','d6c','d4b'], 6:['d5b','d6a','d5c'] }
+};
