@@ -332,7 +332,7 @@ let TK = null;                // whose reading track is in use ('son' or 'daught
 const isDev = () => kid === 'dev';
 let run = null;               // current passage run
 
-function kidName(k){ k = k || kid; if (k === 'dev') return DB.devName || (DB.plaza && DB.plaza.dev && DB.plaza.dev.name) || 'The Wizard';
+function kidName(k){ k = k || kid; if (typeof k === 'string' && k.startsWith('w:')) return (WORLD.peers[k] || {}).name || 'Friend'; if (k === 'dev') return DB.devName || (DB.plaza && DB.plaza.dev && DB.plaza.dev.name) || 'The Wizard';
   const P = (DB.players || {})[k]; return P ? P.name : (DB.names[k] || (DB.plaza && DB.plaza[k] && DB.plaza[k].name) || 'Friend'); }
 const playerOf = k => (DB.players || {})[k] || null;
 // reading track of a player: 'daughter' (Dragon Academy, ages 6-9) or 'son' (Biscuit & Pals, ages 4-6)
@@ -374,7 +374,7 @@ const CLOUD_TEXT = {
 };
 function cloudStatusNode(){ return el('div',{class:'cloud-status'}, CLOUD_TEXT[CLOUD.status] + ' · v' + APP_VERSION); }
 function setCloudStatus(s){ CLOUD.status = s; document.querySelectorAll('.cloud-status').forEach(n => n.textContent = CLOUD_TEXT[s] + ' · v' + APP_VERSION); }
-const settingsOf = d => ({ reportEmail:d.reportEmail || null, pin:d.pin, names:d.names, catName:d.catName || null, gifts:d.gifts || [], record:!!d.record, forceManual:!!d.forceManual, goalMin:d.goalMin || {}, players:d.players || {}, devName:d.devName || null, devTrack:d.devTrack || null });
+const settingsOf = d => ({ reportEmail:d.reportEmail || null, pin:d.pin, names:d.names, catName:d.catName || null, gifts:d.gifts || [], record:!!d.record, forceManual:!!d.forceManual, goalMin:d.goalMin || {}, players:d.players || {}, devName:d.devName || null, devTrack:d.devTrack || null, worldMode:d.worldMode || 'world' });
 const cloudBody = key => key === 'settings' ? settingsOf(DB) : DB.kids[key];
 // real progress only (never stars: a fresh device's one-time gift must not outrank the cloud copy)
 const kidScore = k => (k.sessions||[]).length + ((k.world && k.world.items) || []).length + (k.collection||[]).length + (k.placed ? k.level || 1 : 0);
@@ -591,7 +591,14 @@ async function fbLoad(){
     signOut: () => auth.signOut(au),
     db: uid => ({ doc: path => { const ref = fs.doc(db, 'families', uid, ...path.split('/'));
       return { set: v => fs.setDoc(ref, v),
-               onSnapshot: (cb, err) => fs.onSnapshot(ref, { includeMetadataChanges:true }, sn => cb({ exists: sn.exists(), data: () => sn.data(), metadata: sn.metadata }), err) }; } })
+               onSnapshot: (cb, err) => fs.onSnapshot(ref, { includeMetadataChanges:true }, sn => cb({ exists: sn.exists(), data: () => sn.data(), metadata: sn.metadata }), err) }; } }),
+    // the Big World: one small public doc per hero (world/{uid}_{playerId}) that every signed-in family can see
+    world: {
+      set: (id, v) => fs.setDoc(fs.doc(db, 'world', id), v),
+      remove: id => fs.deleteDoc(fs.doc(db, 'world', id)),
+      listen: (since, cb, err) => fs.onSnapshot(fs.query(fs.collection(db, 'world'), fs.where('ts', '>', since), fs.orderBy('ts', 'desc'), fs.limit(40)),
+        sn => cb(sn.docs.map(d => Object.assign({ id:d.id }, d.data()))), err)
+    }
   };
   return FB.mod;
 }
@@ -613,6 +620,8 @@ async function familyStart(){
     DB.family = u.uid; DB.familyEmail = u.email; save();
     CLOUD_TEXT.family = `☁️ Saved to ${u.email}'s family account · works on every device`;
     cloudConnect(F.db(u.uid), 'family');
+    if (FB.pendingWorld){ const w = FB.pendingWorld; FB.pendingWorld = null;   // the choice made on the sign-in screen wins over the saved one
+      setTimeout(() => setWorldMode(w), 2500); }
     if (first || fresh){ first = false; bootLocal(); }
   });
 }
@@ -634,11 +643,17 @@ function screenFamilyLogin(mode = 'in'){
     catch(e){ msg.textContent = fbErr(e); busy(false); }
   };
   pw.addEventListener('keydown', e => { if (e.key === 'Enter') go(); });
+  FB.pendingWorld = DB.worldMode || 'world';
+  const wopt = (v, icon, t, sub) => el('button',{class:'fl-wopt' + (FB.pendingWorld === v ? ' on' : ''), onclick:e => { FB.pendingWorld = v; e.currentTarget.parentNode.querySelectorAll('.fl-wopt').forEach(b => b.classList.toggle('on', b === e.currentTarget)); beep('tap'); }},
+    el('span',{class:'fl-wi'}, icon), el('span',{}, el('b',{}, t), el('small',{}, sub)));
+  const worldPick = el('div',{class:'fl-world'}, el('div',{class:'fl-wh'}, 'How do you want to play?'),
+    wopt('world', '🌍', 'Big World', 'See heroes from other families in Town Square, and wave hello'),
+    wopt('solo', '🏠', 'Just our family', 'Single player: only your own kids, nobody else sees you'));
   show(el('div',{class:'screen fl-screen'},
     el('div',{class:'fl-card card'},
       el('div',{class:'fl-logo'},'📚'), el('h1',{}, 'Reading Quest'),
       el('p',{class:'fl-sub'}, mode === 'up' ? 'Create a family account. A grown-up signs in once on each iPad. Then every kid taps their own hero.' : 'Grown-up sign in. You only do this once on each iPad.'),
-      email, pw,
+      email, pw, worldPick,
       el('button',{class:'btn big', onclick:go}, mode === 'up' ? '✨ Create family account' : '🔑 Sign in'),
       msg,
       el('div',{class:'fl-links'},
@@ -715,7 +730,11 @@ function screenPlayers(){
 function familyCard(){
   if (!familyMode()) return el('div',{class:'card fam-card'}, el('b',{}, '📱 Saved on this device'), el('p',{class:'muted', style:'margin:4px 0 0'}, 'Family accounts turn on once the Firebase setup is connected.'));
   if (!FB.user) return el('div',{class:'card fam-card'}, el('b',{}, '☁️ Not signed in'), el('button',{class:'btn small', onclick:()=>screenFamilyLogin('in')}, 'Sign in'));
-  return el('div',{class:'card fam-card'}, el('div',{}, el('b',{}, '☁️ Family account: ' + FB.user.email), el('div',{class:'muted'}, 'Progress saves to the cloud and shows up on every device you sign in on.')),
+  const wm = DB.worldMode || 'world';
+  return el('div',{class:'card fam-card'}, el('div',{}, el('b',{}, '☁️ Family account: ' + FB.user.email), el('div',{class:'muted'}, 'Progress saves to the cloud and shows up on every device you sign in on.'),
+      el('div',{class:'row', style:'gap:8px;margin-top:8px;flex-wrap:wrap'},
+        el('button',{class:'btn small' + (wm === 'world' ? '' : ' gray'), onclick:()=>{ setWorldMode('world'); screenPlayers(); }}, '🌍 Big World' + (wm === 'world' ? ' ✓' : '')),
+        el('button',{class:'btn small' + (wm === 'solo' ? '' : ' gray'), onclick:()=>{ setWorldMode('solo'); screenPlayers(); }}, '🏠 Just our family' + (wm === 'solo' ? ' ✓' : '')))),
     el('button',{class:'btn small gray', onclick:async ()=>{ const ok = await modal(el('div',{}, el('h2',{},'Sign out of this iPad?'), el('p',{},'Everyone\'s progress stays safe in your family account. This iPad will ask for the grown-up sign-in again.')), [['Cancel','gray',false],['Sign out','',true]]);
       if (!ok) return; try { await FB.mod.signOut(); } catch(e){} localStorage.removeItem(STORE_KEY); location.reload(); }}, 'Sign out'));
 }
@@ -5076,6 +5095,57 @@ function zoomable({ view, content, W, H, start = 1, max = 2.5, fit = 'contain', 
   return { frame, get z(){ return z; }, set, fit:() => set(fitZ(), 0, 0), exitFull:() => { frame.classList.remove('zoom-full'); document.body.classList.remove('zoom-lock'); } };
 }
 
+/* ================= BIG WORLD =================
+   Families who choose "Big World" share a tiny public record per hero (first name, look, spot in town, last wave)
+   in world/{uid}_{playerId}. Nothing else is shared: no progress, no email, no messages. "Just our family" removes it. */
+const WORLD = { peers:{}, sub:null };
+const worldOn = () => familyMode() && !!(FB.user && FB.mod && FB.mod.world) && (DB.worldMode || 'world') === 'world';
+const myWid = k => FB.user ? 'w:' + FB.user.uid + '_' + (k || kid) : null;
+const isWorldId = k => typeof k === 'string' && k.startsWith('w:');
+function setWorldMode(m){
+  const was = DB.worldMode || 'world'; DB.worldMode = m; save(); try { cloudPush('settings'); } catch(e){}
+  if (m === 'solo'){ worldStop(); if (FB.user && FB.mod && FB.mod.world) playerIds(true).forEach(id => FB.mod.world.remove(FB.user.uid + '_' + id).catch(()=>{})); }
+  else if (was !== m) worldListen();
+}
+// only plain values (colors, ids, numbers) from other families are ever drawn
+const W_OK = /^[#\w .,%-]{0,40}$/;
+function worldClean(v, depth = 0){
+  if (depth > 4) return null;
+  if (typeof v === 'number') return isFinite(v) ? v : 0;
+  if (typeof v === 'boolean' || v === null) return v;
+  if (typeof v === 'string') return W_OK.test(v) ? v : null;
+  if (Array.isArray(v)) return v.slice(0, 30).map(x => worldClean(x, depth + 1));
+  if (typeof v === 'object'){ const o = {}; Object.keys(v).slice(0, 40).forEach(k => { if (/^\w{1,24}$/.test(k)){ const c = worldClean(v[k], depth + 1); if (c !== null) o[k] = c; } }); return o; }
+  return null;
+}
+function worldPublish(rec){
+  if (!worldOn() || isDev() || !DB.players[kid] || DB.players[kid].removed) return;
+  const pub = { x:rec.x, y:rec.y, here:!!rec.here, look:rec.look, emote:rec.emote || null, emoteTs:rec.emoteTs || 0, emoteTo:rec.emoteTo || 'all', level:K.level, track:trackOf(kid) };
+  FB.mod.world.set(FB.user.uid + '_' + kid, { uid:FB.user.uid, pid:kid, name:String(kidName()).slice(0, 20), json:JSON.stringify(pub).slice(0, 6000), ts:Date.now() }).catch(()=>{});
+}
+function worldListen(){
+  if (WORLD.sub || !worldOn()) return;
+  try {
+    WORLD.sub = FB.mod.world.listen(Date.now() - 14 * 86400000, docs => {
+      const seen = {};
+      docs.forEach(d => {
+        if (!d || d.uid === FB.user.uid || typeof d.json !== 'string') return;
+        let raw, r; try { raw = JSON.parse(d.json); r = worldClean(raw); } catch(e){ return; }
+        if (!r || !raw) return;
+        r.emote = PZ_EMOTES.some(([e]) => e === raw.emote) ? raw.emote : null;
+        r.emoteTo = /^(all|w:[\w-]{1,80})$/.test(raw.emoteTo || '') ? raw.emoteTo : 'all';
+        const k = 'w:' + d.id;
+        r.name = String(d.name || 'Friend').replace(/[^\p{L}\p{N} '-]/gu, '').slice(0, 20) || 'Friend';
+        r.ts = d.ts; r.world = true; seen[k] = 1;
+        const old = WORLD.peers[k]; WORLD.peers[k] = r;
+        if (PZ.onRemote && (!old || old.ts !== r.ts)) PZ.onRemote(r, k);
+      });
+      Object.keys(WORLD.peers).forEach(k => { if (!seen[k]) delete WORLD.peers[k]; });
+    }, () => { WORLD.sub = null; });
+  } catch(e){ WORLD.sub = null; }
+}
+function worldStop(){ try { WORLD.sub && WORLD.sub(); } catch(e){} WORLD.sub = null; WORLD.peers = {}; }
+
 /* ================= TOWN SQUARE (shared plaza) =================
    Both heroes live here. Tap the ground to walk, tap a building to go in, tap your brother or sister
    to wave or high-five. With cloud save on (the Claude link), each kid's spot and waves are shared
@@ -5120,7 +5190,7 @@ const pzOthers = () => { const pl = DB.plaza || {};
   Object.keys(pl).forEach(id => { if (id !== kid && !ids.includes(id) && !(DB.players[id] && DB.players[id].removed)) ids.push(id); });
   return ids.slice(0, 8); };
 const pzDayIdx = () => Math.floor(Date.now() / 86400000);
-function pzRec(k){ DB.plaza = DB.plaza || {}; return DB.plaza[k] || null; }
+function pzRec(k){ if (isWorldId(k)) return WORLD.peers[k] || null; DB.plaza = DB.plaza || {}; return DB.plaza[k] || null; }
 function pzOnline(r){ return !!(r && r.here && Date.now() - r.ts < 75000); }
 function pzPush(extra = {}){
   DB.plaza = DB.plaza || {};
@@ -5129,8 +5199,10 @@ function pzPush(extra = {}){
   rec.sent = (rec.sent || []).slice(-8);
   DB.plaza[kid] = rec; K.plazaPos = { x:PZ.pos.x, y:PZ.pos.y }; save();
   if (CLOUD.on && CLOUD.db){ try { CLOUD.db.doc('rq/plaza_' + kid).set({ json:JSON.stringify(rec), ts:rec.ts }).catch(()=>{}); } catch(e){} }
+  worldPublish(rec);
 }
 function pzSubscribe(){
+  worldListen();
   if (PZ.sub || !CLOUD.on || !CLOUD.db) return;
   PZ.sub = true;
   [...new Set(['son','daughter','dev'].concat(Object.keys(DB.players || {})))].forEach(k => {
@@ -5267,15 +5339,20 @@ function screenTownSquare(){
   // everyone else in town: live if they're here now, otherwise napping at their last spot
   const others = pzOthers();
   const homeSpot = { son:{ x:900, y:720 }, daughter:{ x:680, y:720 }, dev:{ x:1000, y:520 } };
-  others.forEach((id, i) => { if (!homeSpot[id]) homeSpot[id] = { x: 560 + (i % 4) * 160, y: 860 + Math.floor(i / 4) * 90 }; });
+  const spotFor = (id, i) => homeSpot[id] || (homeSpot[id] = isWorldId(id) ? { x: 260 + (i * 197) % 1080, y: 640 + ((i * 131) % 380) } : { x: 560 + (i % 4) * 160, y: 860 + Math.floor(i / 4) * 90 });
+  others.forEach((id, i) => spotFor(id, i));
   const P = {};
-  others.forEach(k => {
-    const n = actor(pzHeroFor(k, 96), kidName(k), 'sib' + (k === 'dev' ? ' wizard' : ''));
-    P[k] = { k, n, pos: Object.assign({}, homeSpot[k]), seenEmote: 0 };
+  const addOther = (k, i) => {
+    if (P[k]) return;
+    const n = actor(pzHeroFor(k, 96), kidName(k), 'sib' + (k === 'dev' ? ' wizard' : '') + (isWorldId(k) ? ' worlder' : ''));
+    P[k] = { k, n, pos: Object.assign({}, spotFor(k, i)), seenEmote: 0 };
     world.append(n);
     n.onclick = e => { e.stopPropagation(); beep('tap'); tapOther(P[k]); };
-  });
-  const forMe = m => !m.to || m.to === 'all' || m.to === kid;
+  };
+  others.forEach(addOther);
+  const worldIds = () => Object.keys(WORLD.peers).sort((a, b) => WORLD.peers[b].ts - WORLD.peers[a].ts).slice(0, 16);
+  worldIds().forEach((k, i) => { addOther(k, i); others.push(k); });
+  const forMe = m => !m.to || m.to === 'all' || m.to === kid || m.to === myWid();
   const draw = (k, r) => {
     const o = P[k]; if (!o) return;
     const live = pzOnline(r), n = o.n, name = kidName(k);
@@ -5297,7 +5374,9 @@ function screenTownSquare(){
       K.plazaSeenBy[k] = Math.max(...fresh.map(m => m.ts)); save();
     }
   };
-  PZ.onRemote = (r, k) => { if (document.body.contains(world)) draw(k, r); };
+  PZ.onRemote = (r, k) => { if (!document.body.contains(world)) return;
+    if (!P[k] && isWorldId(k)){ if (Object.keys(P).filter(isWorldId).length >= 16) return; addOther(k, Object.keys(P).length); others.push(k); draw(k, r); updStatus(); return; }
+    draw(k, r); };
 
   // walking
   let walkT = null, walkId = 0;
@@ -5392,7 +5471,7 @@ function screenTownSquare(){
     const liveNear = targets.filter(k => pzOnline(pzRec(k)) && Math.hypot(PZ.pos.x - P[k].pos.x, PZ.pos.y - P[k].pos.y) < 220);
     if (em === '✋' && liveNear.length && K.pzHigh5 !== todayStr()){
       K.pzHigh5 = todayStr(); K.stars += 2; save(); setTimeout(() => { confetti(40); burst('HIGH FIVE!'); bubble(me, '+2⭐', true); say('Team high five! Two stars!'); }, 400);
-    } else if (to !== 'all' && !pzOnline(pzRec(to))) pzToast(`${em} sent! ${kidName(to)} will see it next time.`);
+    } else if (to !== 'all' && !pzOnline(pzRec(to))) pzToast(isWorldId(to) ? `${kidName(to)} is away right now. Try again when they're in town!` : `${em} sent! ${kidName(to)} will see it next time.`);
   }
   const bar = el('div',{class:'pz-bar'}, el('span',{class:'pz-bar-l'},'Say hi:'), ...PZ_EMOTES.map(([em, label]) => el('button',{class:'pz-em', title:label, onclick:() => emote(em, label)}, em)));
 
@@ -5402,8 +5481,14 @@ function screenTownSquare(){
     n.classList.toggle('flip', nx > n._x); n._x = nx; n._y = ny; n.style.left = nx + 'px'; n.style.top = ny + 'px'; n.style.zIndex = Math.round(ny); setTimeout(wander, 1400 + Math.random()*1600); };
   setTimeout(wander, 800);
 
-  const kidsNames = others.filter(k => k !== 'dev').map(k => kidName(k)).join(' and ');
-  const status = el('div',{class:'pz-status'}, CLOUD.on ? `☁️ Town is live. When ${kidsNames} opens Town Square, you'll see each other here.` : `📱 On this link, ${kidsNames} can only visit from this device. Use the Claude link to play together on different iPads.`);
+  const kidsNames = others.filter(k => k !== 'dev' && !isWorldId(k)).map(k => kidName(k)).join(' and ') || 'your family';
+  const status = el('div',{class:'pz-status'});
+  function updStatus(){ try {
+    const wn = others.filter(isWorldId).length;
+    status.textContent = worldOn() ? `🌍 Big World is on. ${wn ? wn + (wn === 1 ? ' hero' : ' heroes') + ' from other families ' + (wn === 1 ? 'is' : 'are') + ' in town. Tap one to wave!' : 'Heroes from other families will show up here when they play.'}`
+      : CLOUD.on ? `☁️ Town is live. When ${kidsNames} opens Town Square, you'll see each other here.` : `📱 On this link, ${kidsNames} can only visit from this device. Use the Claude link to play together on different iPads.`;
+  } catch(e){} }
+  updStatus();
   show(el('div',{class:'screen plaza-screen'},
     el('div',{class:'topbar'}, el('button',{class:'btn small', onclick:() => leave(() => screenHome())}, '← Back'), el('h1',{class:'title'}, '🏰 Storybrook Square'), el('div')),
     frame, status));
