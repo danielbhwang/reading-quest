@@ -4141,3 +4141,1340 @@ const TOWER_STEPS = {
   son:      { 1:['s1a','s1b','s1c'], 2:['s2a','s2b','s2c'], 3:['s3a','s3b','s3c'], 4:['s4a','s4b','s4c'], 5:['s5a','s5b','s5c'], 6:['s6a','s6b','s6c'] },
   daughter: { 1:['d1a','d1c','d1b'], 2:['d2b','d4a','d2c'], 3:['d4c','d2a','d6b'], 4:['d3c','d3a','d3b'], 5:['d5a','d6c','d4b'], 6:['d5b','d6a','d5c'] }
 };
+
+/* ============================================================
+   GIANNA — ranks 9–12: "Dragon Academy: The Sky Saga" (original).
+   Continues Wren & Pebble's story after Lord Vex's return.
+   Cast: Wren + Pebble (earth dragon), Mira + Ripple (water), Tobin + Blaze (fire),
+   Fen + Breeze (storm), Master Oona, Lord Vex, Thunder (Vex's lost wind dragon).
+   The Sunny Day Club: Rosie, Priya, Jules, Lena and little Daisy.
+   Built a step past rank 8: longer chapters, richer words, and questions
+   about inference, character change, cause and effect, and word meaning.
+   ============================================================ */
+DAUGHTER_TRACK.levels.push(
+{ n: 9, title: 'Sky Marshal', kind: 'story', stories: [
+{ title: 'A Feather on the Wind', emoji: '🪶', series: 'quest', text: `The first cold wind of autumn arrived at Skyfire Academy on a Tuesday, and it brought something with it.
+
+Wren was crossing the courtyard with Pebble when a long silver-blue feather spun down from the sky and landed at her feet. It was nearly as long as her arm, and its edges shimmered like the inside of a seashell.
+
+"That's not from a bird," Pebble said through their bond, his voice humming warmly in her mind. "No bird is that big."
+
+Wren carried the feather straight to the Hall of Records, where Lord Vex now spent his mornings sorting old scrolls. Ever since he had returned to the academy, he had worked quietly and patiently, as though he were trying to repair something that couldn't be seen.
+
+When Vex saw the feather, the scroll in his hands dropped to the floor.
+
+"Where did you find this?" he whispered.
+
+"It fell out of the sky," Wren said. "Do you know what it is?"
+
+Vex took the feather carefully, as if it might shatter. "Wind dragons have feathers along the edges of their wings," he said slowly. "And this pattern, with the silver tip and the three blue stripes, belonged to only one dragon I've ever known." He swallowed hard. "Thunder."
+
+Wren felt Pebble go very still beside her. Thunder was the wind dragon who had flown away from Vex long ago, when Vex had cared more about winning than about his partner.
+
+"But that was years ago," Wren said. "Could he still be nearby?"
+
+"Wind dragons live for centuries," Vex replied. "And a feather this fresh fell recently. The autumn wind blows from the north, past the Floating Islands." His hands were trembling. "He could be out there right now."
+
+That afternoon, Wren asked Master Oona for permission to search.
+
+Master Oona studied Wren over her spectacles for a long moment. "The Floating Islands are dangerous in autumn," she said. "The winds change direction without warning. You'll need a crew."
+
+Mira and Ripple volunteered immediately. Tobin and Blaze joined because, as Tobin said, "someone has to bring snacks." Fen and Breeze came because Breeze could feel the weather changing before anyone else.
+
+Then Wren turned to Lord Vex. "You should come too," she said.
+
+Vex shook his head. "Thunder may not want to see me. I hurt him badly."
+
+"Maybe," Wren agreed gently. "But if you never try, you'll never know."
+
+Vex looked down at the feather for a long time. Finally, he nodded once.
+
+That night, Wren couldn't sleep. She stood at her window, watching the northern sky. Far away, above the clouds, something long and silver flickered in the moonlight and then vanished.
+
+"Did you see that?" she whispered.
+
+"I saw it," Pebble said. "Tomorrow, we fly."`,
+  qs: [
+    ['Why did Lord Vex drop his scroll when he saw the feather?', ['He recognized it as one of Thunder\'s feathers', 'He was afraid of birds', 'The feather was very heavy', 'He thought Wren had stolen it'], 0],
+    ['What clue told Vex the feather fell recently?', ['It was fresh', 'It was covered in snow', 'It was wrapped in a scroll', 'It smelled like smoke'], 0],
+    ['Why did Master Oona say Wren needed a crew?', ['The winds near the Floating Islands change without warning', 'Wren was too young to fly alone', 'Pebble was sick', 'The islands were full of pirates'], 0],
+    ['What does "trembling" mean in this story?', ['Shaking slightly because of strong feelings', 'Laughing quietly', 'Standing perfectly still', 'Holding something tightly'], 0],
+    ['What does Wren\'s advice to Vex show about her?', ['She believes people should try to fix their mistakes', 'She wants to fly alone', 'She does not trust Vex', 'She thinks Thunder is dangerous'], 0]
+  ] },
+{ title: 'The Floating Islands', emoji: '🏝️', series: 'quest', text: `The crew left at sunrise, flying north in a long line. Breeze led the way, because a storm dragon can taste the wind the way other creatures taste soup.
+
+After two hours, the Floating Islands appeared through the clouds. There were dozens of them, some as small as a cottage and others as large as a village, drifting slowly through the sky like enormous green boats. Waterfalls poured off their edges and turned to mist before they reached the ground.
+
+"Wow," breathed Mira. Ripple splashed happily through a cloud.
+
+They landed on the largest island, where a small stone house stood beside a grove of twisted trees. An old woman with a long white braid was hanging laundry on a line. She didn't seem the least bit surprised to see six dragons land in her garden.
+
+"Visitors," she said. "How unusual. I'm Grandmother Willa, keeper of the islands. What brings young riders this far north?"
+
+Wren explained about the feather and Thunder. When she finished, Grandmother Willa's face grew serious.
+
+"A silver wind dragon has been seen around here," she said. "But you're not the only ones looking for wind dragons this season."
+
+"What do you mean?" asked Fen.
+
+Grandmother Willa pointed toward the horizon, where a dark shape hung in the clouds. At first, Wren thought it was another island. Then she noticed the masts, the patched sails, and the huge net dangling beneath it.
+
+"A sky ship," Tobin said. "I thought those were only in stories."
+
+"Sky pirates," said Grandmother Willa grimly. "Their captain is a woman called Gale. She captures wild wind dragons and sells them to people who want fast, obedient beasts." She shook her head. "Three wind dragons have disappeared since summer."
+
+Lord Vex had been silent the entire flight. Now his jaw tightened. "Obedient," he repeated quietly. "That's exactly what I once wanted Thunder to be."
+
+Wren glanced at him. He looked angry, but not at the pirates. He looked angry at his younger self.
+
+"We have to warn the wind dragons," said Mira. "Or find them before Gale does."
+
+"Wind dragons don't trust strangers," Grandmother Willa warned. "Especially not now. They hide in the high currents, where the air is too thin for most dragons to follow."
+
+Breeze rumbled, and Fen translated. "Breeze says she can fly in thin air. She was born in a storm, after all."
+
+"Then Breeze will scout," Wren decided. "The rest of us will find out where the pirates are going."
+
+That evening, the crew camped beneath the twisted trees. Grandmother Willa served them bowls of hot barley soup, and Blaze kept the fire burning brightly. Above them, the sky ship drifted closer, its lanterns glowing like hungry yellow eyes.
+
+Wren lay awake, listening to the wind. Somewhere up there, Thunder was hiding. She hoped they could reach him first.`,
+  qs: [
+    ['How are the Floating Islands described?', ['Like enormous green boats drifting through the sky', 'Like piles of rocks on the ground', 'Like icebergs in the sea', 'Like castles made of clouds'], 0],
+    ['Why does Captain Gale capture wind dragons?', ['To sell them to people who want fast, obedient beasts', 'To protect them from storms', 'To bring them home to the academy', 'To teach them to read'], 0],
+    ['Why did Lord Vex look angry?', ['He was angry at his younger self for wanting an obedient dragon', 'He was angry at Wren', 'He did not like the soup', 'He was tired from flying'], 0],
+    ['Why was Breeze chosen to scout?', ['She can fly in thin air because she was born in a storm', 'She is the biggest dragon', 'She can breathe fire', 'She knows Captain Gale'], 0],
+    ['What does the phrase "lanterns glowing like hungry yellow eyes" make the reader feel?', ['That the pirate ship is dangerous and watching them', 'That the ship is warm and friendly', 'That it is morning', 'That the pirates are asleep'], 0]
+  ] },
+{ title: 'Mira Reads the Wind', emoji: '🌬️', series: 'quest', text: `By morning, the sky ship had vanished into a wall of clouds, and Breeze returned from her scouting flight exhausted.
+
+"She found wind dragon tracks," Fen reported. "Trails of warm air that wind dragons leave behind. But the trails loop and twist everywhere. She couldn't follow them."
+
+Tobin groaned. "So we're stuck."
+
+Mira, however, was staring at the sky with a strange expression. She pulled a notebook from her bag and began scribbling furiously.
+
+"What are you doing?" Wren asked.
+
+"Ripple and I have been studying currents all year," Mira explained without looking up. "Water currents, mostly. But air moves the same way. It flows like an invisible river." She held up her notebook. On the page, she had drawn swirling arrows across a map of the islands. "Wind dragons don't fly randomly. They ride the strongest currents, the way fish swim downstream to save energy."
+
+Grandmother Willa leaned over the notebook and raised her eyebrows. "That's remarkable, child. The old island keepers knew the currents by heart, but nobody has written them down in a hundred years."
+
+Mira blushed. "I just noticed patterns."
+
+Wren grinned. Mira had always been the quiet one, the rider who double-checked everyone's saddle straps and remembered every lesson. Wren had sometimes worried that Mira felt overlooked next to louder friends like Tobin. Now Mira was the only one who knew what to do.
+
+"If the currents meet here," Mira continued, tapping a spot on her map, "then every wind dragon trail eventually passes the Needle." She pointed to a tall, thin island that rose above the others like a stone finger.
+
+"And so would anyone hunting them," said Lord Vex.
+
+They flew to the Needle, following Mira's directions exactly. Twice, Tobin wanted to take a shortcut through a cloud bank, and twice Mira said firmly, "No. The current there flows backward. We'd lose an hour." Both times, she was right.
+
+When they reached the Needle, they found it crowded with nests built from silver feathers and woven grass. Most were empty and cold. But in the highest nest, wedged into a crack in the rock, they found something that made Lord Vex fall to his knees.
+
+It was a small wooden carving of a dragon, worn smooth by time. Carved into its base were two words: VEX AND THUNDER.
+
+"I made this," Vex whispered. "When I was twelve. I gave it to Thunder on the day we bonded." His voice cracked. "He kept it. All these years, he kept it."
+
+Nobody spoke. Even Blaze lowered his head.
+
+Then Ripple suddenly hissed, and Mira grabbed Wren's arm. Far below, a shadow slid out of the clouds: the sky ship, with its enormous net dangling beneath it.
+
+Inside the net, something silver was struggling.
+
+"Thunder," Vex breathed.
+
+Mira snapped her notebook shut. "The ship is riding the eastern current," she said quickly. "It will pass the Broken Arch in one hour. If we leave right now, we can get there first."
+
+Wren looked at her friend with admiration. "Lead the way, Navigator."`,
+  qs: [
+    ['How did Mira figure out where the wind dragons fly?', ['She noticed that they ride air currents like fish swim downstream', 'She asked the pirates', 'She followed Blaze\'s smoke', 'She read an old letter'], 0],
+    ['Why did Mira refuse Tobin\'s shortcut?', ['The current there flowed backward and would slow them down', 'She was afraid of clouds', 'Tobin was lost', 'Ripple was too tired'], 0],
+    ['What did the wooden carving prove?', ['Thunder had kept Vex\'s gift all these years', 'Thunder hated Vex', 'The pirates had been to the nest', 'Mira had carved it'], 0],
+    ['How did Wren\'s feelings about Mira change in this story?', ['She saw that quiet Mira was the only one who knew what to do', 'She became jealous of Mira', 'She thought Mira was too bossy', 'She stopped trusting Mira'], 0],
+    ['What does "Navigator" mean when Wren calls Mira that?', ['The person who plans the route', 'The person who carries the food', 'The fastest flyer', 'The person who fixes saddles'], 0]
+  ] },
+{ title: 'The Broken Arch', emoji: '🌉', series: 'quest', text: `The Broken Arch was exactly what its name suggested: two enormous stone pillars that had once been joined by a bridge, with a jagged gap between them where the middle had crumbled away. The eastern current rushed through the gap like water through a pipe.
+
+"The ship has to pass through there," Mira said. "It's the only way through the current without tearing the sails."
+
+The crew hid behind the pillars and waited. Wren's heart pounded so loudly she was sure the pirates would hear it.
+
+"We need a plan," Tobin whispered. "We can't fight a whole pirate ship."
+
+"We don't need to fight it," Wren said slowly, thinking hard. "We only need to free Thunder." She turned to Pebble. "Can you move the stones in the arch?"
+
+Pebble's eyes glowed amber, the way they did whenever he used his earth magic. "A little. Not enough to break the ship. But enough to shake it."
+
+"Then here's what we'll do," Wren said, and explained.
+
+Ten minutes later, the sky ship glided toward the arch. It was even larger up close, with patched gray sails and a figurehead shaped like a screaming eagle. Pirates with long hooks lined the rails. At the wheel stood a tall woman in a coat covered with dragon scales, her silver hair whipping in the wind.
+
+"Captain Gale," whispered Lord Vex.
+
+As the ship entered the gap, Pebble pressed his claws against the stone. The pillars groaned. Pebbles and dust rained down onto the deck. The ship lurched sideways, and the pirates stumbled and shouted.
+
+"Now!" Wren called.
+
+Ripple sprayed a thick curtain of mist across the deck so the pirates couldn't see. Blaze dove beneath the ship, his warm breath creating an updraft that pushed the hull higher and higher until the net beneath it swung wildly. Fen and Breeze swooped down and slashed through the ropes with Breeze's lightning-sharp claws.
+
+The net tore open. Three wind dragons tumbled free, unfolding their feathered wings. Two of them fled instantly into the clouds.
+
+The third, the silver one, hesitated in midair.
+
+Thunder was enormous, even larger than Breeze, with three blue stripes on every wing feather. He turned his great head and looked directly at Lord Vex, who hovered nearby on the back of Fen's dragon.
+
+Vex held up the wooden carving with shaking hands. "I'm sorry," he called across the wind. "I was wrong. I didn't deserve you then. I'm trying to deserve you now."
+
+For one long breath, Thunder stared at him. Then the wind dragon let out a low, sad cry and soared away into the clouds without looking back.
+
+Vex lowered the carving. His face was wet, but he didn't look broken. "He's free," he said quietly. "That matters more than what he thinks of me."
+
+Behind them, Captain Gale's voice rang out across the mist, cold as ice. "You've cost me three dragons, children. I won't forget it."
+
+The sky ship turned and disappeared into the clouds. Wren knew, deep in her bones, that they would see Captain Gale again.`,
+  qs: [
+    ['Why did the crew wait at the Broken Arch?', ['The ship had to pass through the gap in the current', 'It was the pirates\' home', 'It was the safest place to sleep', 'Thunder lived there'], 0],
+    ['What was Wren\'s main goal in her plan?', ['To free Thunder without fighting the whole ship', 'To capture Captain Gale', 'To steal the ship', 'To break the arch'], 0],
+    ['How did each dragon help free the wind dragons?', ['They each used their own special power as part of the team', 'They all breathed fire at once', 'Only Pebble did the work', 'They waited for Master Oona'], 0],
+    ['Why does Vex say "That matters more than what he thinks of me"?', ['He now cares more about Thunder\'s freedom than his own feelings', 'He is angry at Thunder', 'He wants the carving back', 'He wants to chase the pirates'], 0],
+    ['What does "lurched" mean in this story?', ['Moved suddenly and unsteadily', 'Floated gently', 'Stopped completely', 'Turned around slowly'], 0]
+  ] },
+{ title: 'The Bake Sale Mix-Up', emoji: '🧁', series: 'club', text: `The Sunny Day Club had a big goal: they wanted to raise enough money to buy a new bench for the bus stop on Maple Street, where Mrs. Abernathy waited every morning with her bad knee.
+
+"A bake sale," Priya announced at the meeting. "Everyone loves a bake sale."
+
+So on Friday night, the club gathered in Rosie's kitchen. Jules made lemon bars. Lena made chocolate chip cookies. Priya made her famous banana bread. Rosie was in charge of the cupcakes, and Daisy, who was five, was in charge of sprinkles.
+
+It was a cheerful, messy evening. Flour drifted across the counters like snow. Daisy put sprinkles on everything, including, at one point, the cat.
+
+On Saturday morning, they set up a table at the farmers' market. Their sign was covered in glitter. Their treats looked beautiful. The first customer, a tall man with a fishing hat, bought two of Rosie's cupcakes and took a big bite.
+
+His face scrunched up. He coughed. He made a sound like a surprised goose.
+
+"Is something wrong?" Rosie asked nervously.
+
+"It's very... salty," the man said politely, setting the cupcake down.
+
+Rosie tasted one. It was horrible. It tasted like the ocean. Her stomach dropped as she realized what had happened: the sugar and salt were kept in identical jars, and she had grabbed the wrong one.
+
+Her face turned bright red. Her first thought was to hide the cupcakes under the table and pretend nothing had happened. Nobody needed to know. Besides, Daisy had decorated them so nicely.
+
+But then she looked at the man in the fishing hat, who had paid good money for something terrible.
+
+Rosie took a deep breath. "I'm really sorry," she said. "I used salt instead of sugar by mistake. Here's your money back, and please take a lemon bar instead. They're delicious."
+
+The man laughed. "Honestly? That's the most honest thing I've heard all week." He took the lemon bar and dropped the refund into the donation jar anyway.
+
+Rosie made a new sign in big letters: OOPS CUPCAKES - THEY TASTE LIKE THE SEA - FREE TO ANYONE BRAVE. Then she set them at the end of the table.
+
+To everyone's surprise, the Oops Cupcakes became the most popular thing at the market. Kids dared each other to try them. Grown-ups laughed and took pictures of the sign. And almost everyone who stopped for a free salty cupcake ended up buying a cookie or a slice of banana bread afterward.
+
+By noon, the club had sold out of everything. They had raised enough money for the bench and some extra for a small plaque.
+
+That afternoon, Priya opened the club notebook and wrote down the lesson of the day: When you make a mistake, say so. People trust you more, not less.
+
+Underneath it, in crayon, Daisy added one more rule: Label the jars.`,
+  qs: [
+    ['Why did the club hold a bake sale?', ['To buy a new bench for Mrs. Abernathy\'s bus stop', 'To buy a new tree house', 'To pay for a trip', 'To buy toys for Daisy'], 0],
+    ['What caused the cupcakes to taste salty?', ['The sugar and salt were in identical jars', 'Daisy added salt on purpose', 'The oven was too hot', 'Lena changed the recipe'], 0],
+    ['What was Rosie\'s first idea, and what did she do instead?', ['She wanted to hide the mistake, but she told the truth', 'She wanted to quit, but she kept selling', 'She wanted to blame Daisy, but she blamed Jules', 'She wanted to cry, but she laughed'], 0],
+    ['Why did the Oops Cupcakes help the sale?', ['They made people curious and they stayed to buy other treats', 'They were secretly delicious', 'They were very expensive', 'They were the only treats left'], 0],
+    ['What is the main lesson of the story?', ['Being honest about mistakes builds trust', 'Never bake anything', 'Always sell cupcakes first', 'Little sisters should stay home'], 0]
+  ] }
+] },
+{ n: 10, title: 'Storm Warden', kind: 'story', stories: [
+{ title: 'The Silver Shadow', emoji: '🌫️', series: 'quest', text: `For two weeks after Wren's escape from the sky ship, nothing unusual happened at Skyfire Academy. Classes continued. The autumn leaves turned gold and red. Lord Vex returned to his scrolls and said very little about Thunder.
+
+But Wren noticed things.
+
+She noticed that every morning, at exactly the same time, a long silver shadow passed over the academy's highest tower. She noticed that the shadow always circled twice before vanishing north. And she noticed that every morning, at exactly that time, Lord Vex was standing on the tower balcony, looking up.
+
+"Thunder is visiting," Pebble said through their bond one morning as they watched from the courtyard. "He's checking on Vex."
+
+"Then why doesn't he land?" Wren asked.
+
+"Trust doesn't grow in a day," Pebble replied. "You know that. You once told me the same thing about seeds."
+
+Wren smiled. She had said that, years ago, when Pebble was a tiny dragon afraid of the dark.
+
+That afternoon, she found Lord Vex in the Hall of Records, carefully copying an old map. "Thunder comes every morning," she said. "Have you tried calling him?"
+
+Vex shook his head without looking up. "When we were young, I always called him. I called him when I wanted to race, when I wanted to show off, when I wanted to win. I never once waited for him to come to me." He set down his pen. "So now I wait."
+
+"Every day?"
+
+"Every day," Vex said. "For as long as it takes."
+
+Wren thought about that for a long time afterward. It seemed like the hardest thing in the world: to want something badly and still be patient.
+
+The next morning, she woke before dawn and climbed the tower stairs. Vex was already there, wrapped in a gray cloak, holding a basket of fresh mountain berries. Wind dragons, Wren had learned from the library, loved mountain berries more than anything.
+
+"May I wait with you?" she asked.
+
+Vex nodded, and they sat together in silence as the sky turned from black to purple to pink.
+
+At sunrise, the silver shadow appeared. Thunder circled once. Twice. Then, for the first time, he flew lower. He passed so close that the wind from his wings blew Wren's hair across her face, and she saw his enormous blue eyes fix on the basket.
+
+Vex didn't move. He didn't call out. He simply set the basket on the stone railing and stepped back.
+
+Thunder hovered. He looked at the berries, and then at Vex, for a long, long time.
+
+Then he snatched the basket in his claws and flew away.
+
+Wren expected Vex to look disappointed. Instead, he was smiling, the first real smile she had ever seen on his face.
+
+"He took it," Vex said softly. "Tomorrow, I'll bring two baskets."
+
+Far away, beyond the northern mountains, dark clouds were gathering, but neither of them noticed.`,
+  qs: [
+    ['What did Wren notice every morning?', ['A silver shadow circled the tower while Vex watched', 'Pirates landed in the courtyard', 'Pebble flew away', 'Leaves fell from the sky'], 0],
+    ['How has Vex changed from when he was young?', ['He used to call Thunder whenever he wanted something; now he waits patiently', 'He used to be patient; now he is impatient', 'He used to love dragons; now he hates them', 'He has not changed at all'], 0],
+    ['Why did Vex bring mountain berries?', ['Wind dragons love mountain berries more than anything', 'He was hungry', 'Wren asked him to', 'Berries keep pirates away'], 0],
+    ['Why was Vex smiling even though Thunder flew away?', ['Taking the basket was a small step toward trust', 'He was glad Thunder left', 'He had played a trick on Thunder', 'He was thinking about breakfast'], 0],
+    ['What does the last sentence hint will happen next?', ['A storm or danger is coming', 'Thunder will move into the academy', 'Winter is over', 'Vex will leave the academy'], 0]
+  ] },
+{ title: 'The Pirates Strike Back', emoji: '🏴‍☠️', series: 'quest', text: `The storm arrived on the night of the Harvest Lantern Festival.
+
+Skyfire Academy glowed with hundreds of paper lanterns, and students and dragons filled the courtyard, eating honey cakes and roasted chestnuts. Wren and Pebble were watching Tobin attempt to juggle flaming torches, which Master Oona had specifically forbidden, when Breeze suddenly lifted her head and roared.
+
+Fen grabbed Wren's arm. "Breeze says something unnatural is coming. The wind is wrong."
+
+A moment later, the lanterns began to swing violently. Thick black clouds rolled over the mountains much faster than any normal storm, and in their center glowed a sickly green light.
+
+"That's not weather," said Lord Vex, appearing beside them. "That's a machine."
+
+Out of the clouds burst Captain Gale's sky ship, but it had changed. Iron plates covered its hull, and enormous metal fans spun at its sides, churning the air into a howling wind. Bolts of green lightning crackled from a tall iron mast in the center of the deck.
+
+"She built a storm engine," Vex shouted over the wind. "She's using it to drive the wind dragons out of hiding!"
+
+Lanterns tore loose and spun into the dark. Students screamed and scattered. The hatchery roof, where dozens of dragon eggs rested in warm sand, shuddered and began to crack.
+
+"The eggs!" cried Mira.
+
+Master Oona's voice rang out across the courtyard, calm and clear despite the chaos. "Riders! First-years to the Great Hall. Second-years, protect the hatchery. Wren, Mira, Tobin, Fen: you're with me."
+
+Pebble's earth magic flared as he pressed his claws to the ground. Stone pillars rose up around the hatchery like the fingers of a giant hand, bracing the roof. Ripple sprayed water over the burning lanterns. Blaze, for once, was not allowed to help, since fire was the last thing anyone needed.
+
+But the storm engine kept roaring, and the wind grew stronger and stronger.
+
+"We can't fight that wind," Tobin yelled. "It's too powerful!"
+
+Fen was staring at Breeze. "Maybe we don't have to fight it," she said slowly. "Breeze was born in a storm. She doesn't fight wind. She dances with it."
+
+Before anyone could stop her, Fen climbed onto Breeze's back, and the storm dragon launched herself straight into the hurricane. Instead of pushing against the wind, Breeze spun with it, riding the spiraling air higher and higher, closer and closer to the iron mast.
+
+Wren held her breath. Through the rain, she saw Breeze's tail crackle with her own blue lightning.
+
+"She's going to absorb the green lightning," Master Oona murmured. "Storm dragons can drink lightning. It's incredibly dangerous."
+
+Breeze reached the mast and wrapped her tail around it. Green lightning poured into her body. She glowed brighter and brighter until she looked like a falling star.
+
+Then the storm engine sputtered, coughed, and went silent.
+
+The wind died instantly. The clouds began to tear apart. On the deck of the sky ship, Captain Gale stared at her broken machine, her face twisted with fury.
+
+Breeze dropped out of the sky, exhausted, and Wren's heart stopped. But before Breeze could hit the ground, a huge silver shape swooped beneath her and caught her on its back.
+
+It was Thunder.`,
+  qs: [
+    ['What was causing the unnatural storm?', ['A storm engine on Captain Gale\'s ship', 'An angry wind dragon', 'A spell from Master Oona', 'The Harvest Lantern Festival'], 0],
+    ['Why was Blaze not allowed to help?', ['Fire was the last thing anyone needed in the storm', 'He was too small', 'He was asleep', 'Tobin was juggling'], 0],
+    ['What was Fen\'s idea for stopping the storm?', ['Let Breeze ride and dance with the wind instead of fighting it', 'Hide in the Great Hall', 'Ask the pirates to stop', 'Use Pebble\'s stone pillars'], 0],
+    ['How did Master Oona act during the chaos?', ['Calm and clear, giving everyone a job', 'Scared and confused', 'Angry at Tobin', 'She ran away'], 0],
+    ['Why is Thunder catching Breeze an important moment?', ['It shows Thunder is choosing to help the academy', 'It shows Thunder works for the pirates', 'It shows Breeze is a wind dragon', 'It shows the storm is starting again'], 0]
+  ] },
+{ title: 'The Lighthouse in the Clouds', emoji: '🔆', series: 'quest', text: `Captain Gale had escaped once again, limping away in her damaged ship. But she had left something behind: a burned scrap of map, caught on a broken lantern hook in the courtyard.
+
+Mira spread it across a table in the library. Most of the map was charred, but one shape was still visible. It was a tall tower drawn in the middle of a cloud, with a circle around it and a single word written beside it: BEACON.
+
+"The Sky Lighthouse," said Master Oona, who had come to look. "I haven't heard that name in forty years. Long ago, a great crystal lamp burned at its top. Its light guided wind dragons safely through storms. When the lamp went dark, the wind dragons scattered."
+
+"Why would Captain Gale want it?" asked Tobin.
+
+Lord Vex answered from the doorway. "Because whoever controls the beacon can call every wind dragon in the north." He looked grim. "If Gale relights it, she won't need nets. The dragons will fly straight to her."
+
+"Then we have to reach it first," Wren said.
+
+The lighthouse stood inside a permanent ring of clouds on the far side of the Floating Islands. Mira calculated the currents. Breeze, who had recovered after three days of sleep, scouted the route. And Thunder, to everyone's astonishment, flew alongside them the entire way, staying close to Vex but never quite close enough to touch.
+
+When they finally pushed through the clouds, the lighthouse rose before them: a slender white tower, cracked and covered in moss, with a dark glass dome at its peak.
+
+Inside, a spiral staircase wound up the walls. Faded paintings of dragons and riders decorated every step. At the very top, they found an enormous crystal sitting in an iron cradle. It was cloudy and gray, like a dead lightbulb.
+
+"How do we light it?" asked Fen.
+
+Wren noticed words carved in an old-fashioned style around the cradle. She read them aloud slowly:
+
+"No flame can wake me, nor lightning, nor sun. I shine for the bond of two hearts made one."
+
+Everyone was silent.
+
+"A bond," Mira said thoughtfully. "Not a rider alone. Not a dragon alone. A rider and dragon who truly trust each other."
+
+Everyone turned to look at Wren and Pebble. Wren stepped toward the crystal, but Pebble gently stopped her.
+
+"Not us," he said through their bond. "Look."
+
+Lord Vex was standing at the window. Outside, Thunder hovered in the air, his huge blue eyes fixed on the man who had once hurt him.
+
+Vex slowly opened the window and held out his hand. He didn't call. He didn't command. He simply waited.
+
+For a long, breathless moment, nothing happened. Then Thunder lowered his great silver head and pressed his forehead against Vex's palm.
+
+The crystal flared to life.
+
+Pure white light burst from the dome and swept across the clouds in a great slow circle. Far away, from every direction, came answering calls: dozens of wind dragons, rising from their hiding places, following the light home.
+
+Vex was laughing and crying at the same time. Thunder rumbled softly, a sound like distant, friendly thunder.
+
+"Now," said Master Oona quietly, "Captain Gale will have to face all of them."`,
+  qs: [
+    ['What was the purpose of the Sky Lighthouse long ago?', ['Its light guided wind dragons safely through storms', 'It was a prison for pirates', 'It stored dragon eggs', 'It was Master Oona\'s home'], 0],
+    ['Why did Captain Gale want the beacon?', ['It could call every wind dragon in the north to her', 'She wanted to live there', 'She needed the crystal to fix her ship', 'She wanted to read the paintings'], 0],
+    ['What did the carved words mean?', ['Only a true bond between a rider and dragon could light the crystal', 'The crystal needed fire', 'Lightning would wake the crystal', 'The sun had to shine on it'], 0],
+    ['Why did Pebble stop Wren from lighting the crystal?', ['He knew this moment belonged to Vex and Thunder', 'He was scared of the crystal', 'He thought it was a trap', 'He wanted to light it himself'], 0],
+    ['What does "astonishment" mean?', ['Great surprise', 'Great anger', 'Great sadness', 'Great boredom'], 0]
+  ] },
+{ title: 'Flying Together', emoji: '🐉', series: 'quest', text: `The beacon's light changed everything.
+
+Over the next week, wind dragons arrived at Skyfire Academy in twos and threes, gliding down from the north on their feathered wings. Some were young and curious. Others were old and wary, with scars along their wings from pirate nets. Master Oona opened the eastern meadow for them, and the students built shelters from branches and canvas.
+
+Thunder stayed too. He slept on the tower roof above Lord Vex's room, and every morning, the two of them shared breakfast on the balcony.
+
+But Vex still had not ridden him.
+
+"Why not?" Tobin asked one afternoon, as the friends watched Thunder soar gracefully over the meadow. "Thunder obviously likes him now."
+
+"Riding is different," Wren said. "Riding means trusting someone completely. Thunder has to decide when he's ready."
+
+Wren knew how strange it felt to watch someone you cared about wait for something so important. She found herself checking the balcony every morning, hoping.
+
+Then, on a gray Thursday, the academy's warning bell clanged.
+
+A first-year student named Ash had taken his young dragon, Sprig, out for a practice flight without permission. The weather had turned, and now Sprig was trapped on a narrow ledge halfway down the Shattered Cliffs, too frightened to fly in the gusting wind. Ash was clinging to his back.
+
+Wren and Pebble raced to the cliff edge with the others, but one look told them the problem. The cliff curved inward, and wild winds swirled in the gap.
+
+"No dragon can fly in there," Tobin said, his face pale. "The wind would smash them against the rocks."
+
+"No ordinary dragon," Lord Vex said quietly.
+
+He walked to the edge of the cliff and looked up. Thunder was circling above them, his blue eyes fixed on the trapped boy. Vex didn't call his name. He just looked at Thunder, and something passed between them.
+
+Thunder dove.
+
+He landed beside Vex with a gust that nearly knocked Wren over, and lowered one wing to the ground like a ramp. Vex hesitated for only a heartbeat. Then he climbed onto Thunder's back for the first time in more than twenty years.
+
+Together, they plunged over the cliff.
+
+Wren rushed to the edge. Below, Thunder was doing something she had never seen any dragon do: he was flying with the wind instead of against it, folding and unfolding his feathered wings in perfect rhythm with each gust. Vex leaned when Thunder leaned. They moved like one creature.
+
+They reached the ledge. Vex helped Ash and Sprig climb onto Thunder's back. Then Thunder rose up through the swirling winds, carrying all three of them to safety.
+
+When they landed, the whole academy cheered. Ash's parents hugged him and scolded him at the same time. Sprig licked everyone's faces.
+
+Lord Vex slid off Thunder's back, his legs shaking. He rested his hand on Thunder's neck, and the great wind dragon leaned into his touch.
+
+"Thank you," Vex whispered. "For coming back."
+
+Wren felt tears in her eyes. Beside her, Pebble hummed with quiet happiness.
+
+"You know what the best part is?" Pebble said through their bond. "Vex didn't ask Thunder to save the boy. Thunder chose to. And he chose Vex."`,
+  qs: [
+    ['Why had Vex not ridden Thunder yet?', ['Thunder had to decide when he was ready to trust completely', 'Vex was afraid of heights', 'Master Oona did not allow it', 'Thunder was injured'], 0],
+    ['Why couldn\'t ordinary dragons rescue Ash?', ['The wild winds in the curved cliff would smash them against the rocks', 'The cliff was too far away', 'Ash did not want to be rescued', 'It was too dark to see'], 0],
+    ['How was Thunder\'s way of flying special?', ['He flew with the wind instead of against it', 'He flew faster than lightning', 'He flew upside down', 'He did not use his wings'], 0],
+    ['What does Pebble say is the best part?', ['Thunder chose to help and chose Vex', 'Ash got in trouble', 'The wind stopped', 'Everyone cheered'], 0],
+    ['What does "wary" mean, as used to describe some old wind dragons?', ['Careful and not quick to trust', 'Very hungry', 'Extremely fast', 'Sleepy and slow'], 0]
+  ] },
+{ title: 'The Neighborhood News', emoji: '📰', series: 'club', text: `It was Jules who had the idea for the newspaper.
+
+"Everyone on Maple Street lives right next to each other," Jules said at the club meeting, "but nobody knows what's going on. Did you know Mr. Ortiz grew a tomato the size of a softball? Or that the Kim twins learned to ride bikes? Nobody knows!"
+
+So the Sunny Day Club started The Maple Street Messenger. Priya was the editor, which meant she checked everyone's spelling. Lena drew the pictures. Rosie interviewed neighbors. Jules wrote the headlines, and Daisy, who was now an official member, delivered papers in her red wagon.
+
+The first issue was a huge success. Neighbors stopped the club members on the sidewalk to talk about the articles. Mr. Ortiz framed his tomato story and hung it in his garage.
+
+For the second issue, Rosie wanted something bigger. "We need a mystery," she said. "Something exciting."
+
+That was when she noticed that Mrs. Abernathy's garden gnome had disappeared.
+
+Rosie investigated. She found muddy footprints near the garden. She learned that the Petersons' teenage son, Marcus, had been seen walking down the street late at night carrying something heavy. She wrote an article with the headline GNOME-NAPPED! IS MARCUS PETERSON THE THIEF?
+
+Priya read it and frowned. "Did you ask Marcus about it?"
+
+"No," Rosie admitted. "But the clues all fit."
+
+"Clues that fit aren't the same as facts," Priya said. "If we print this and we're wrong, it could really hurt him."
+
+Rosie was annoyed. She thought Priya was being too careful. But Jules agreed with Priya, and so did Lena. Even Daisy shook her head seriously.
+
+So, reluctantly, Rosie knocked on the Petersons' door.
+
+Marcus answered, looking confused. When Rosie asked about the gnome, his face turned red, and for a terrible moment Rosie thought she was right after all.
+
+Then he said, "Can you keep a secret? Just until Saturday?"
+
+He led her to the garage. There stood Mrs. Abernathy's gnome, but it looked completely different. Marcus had repaired its chipped nose, filled the crack in its hat, and painted it in bright new colors. Its cheeks were rosy, and its little shovel was shining gold.
+
+"She told me last month that the gnome belonged to her husband," Marcus explained quietly. "He passed away last year, and the gnome was falling apart. I wanted to fix it as a surprise for her birthday."
+
+Rosie felt her cheeks burn with shame. She had almost called a kind person a thief in front of the whole street.
+
+On Saturday, Marcus returned the gnome. Mrs. Abernathy cried happy tears and hugged him for a full minute.
+
+The second issue of The Maple Street Messenger had a new headline, written by Rosie herself: THE GNOME MYSTERY: A STORY OF KINDNESS.
+
+Underneath, in a small box, she added an editor's note: Check your facts before you share a story. The truth is usually better than the rumor.`,
+  qs: [
+    ['Why did Jules want to start a newspaper?', ['Neighbors lived close but did not know what was happening on their street', 'To earn money for toys', 'To become famous', 'Because school required it'], 0],
+    ['What mistake did Rosie almost make?', ['Accusing Marcus of stealing without checking the facts', 'Spelling words wrong', 'Losing the gnome', 'Forgetting to deliver papers'], 0],
+    ['What does Priya mean by "Clues that fit aren\'t the same as facts"?', ['Something can seem true without being proven true', 'Clues are always wrong', 'Facts are boring', 'Only grown-ups can find facts'], 0],
+    ['Why did Marcus take the gnome?', ['To repair it as a birthday surprise for Mrs. Abernathy', 'To keep it for himself', 'To sell it', 'Because it was ugly'], 0],
+    ['How did Rosie feel when she learned the truth?', ['Ashamed that she almost hurt a kind person', 'Proud that she solved the case', 'Angry at Priya', 'Bored with the newspaper'], 0]
+  ] }
+] }
+);
+
+
+DAUGHTER_TRACK.levels.push(
+{ n: 11, title: 'Dragon Sage', kind: 'story', stories: [
+{ title: 'The Eggs That Would Not Hatch', emoji: '🥚', series: 'quest', text: `Winter arrived at Skyfire Academy with a strange and worrying silence.
+
+Every year, the first snowfall woke the dragon eggs in the hatchery. Wren had seen it herself the year before: dozens of eggs rocking gently in the warm sand, cracking open one by one, while tiny dragons tumbled out sneezing and squeaking. It was the happiest day of the academy year.
+
+This year, the snow fell, and nothing happened.
+
+The eggs lay perfectly still. Day after day, the students checked them, warmed them, sang to them, and read them stories. Ripple misted them with warm water. Blaze breathed gentle heat across the sand. Nothing worked.
+
+Worse, the eggs were growing colder. Their bright colors, which usually shone like jewels, were fading to dull gray.
+
+"I don't understand it," Master Oona admitted one evening. Wren had never heard her sound uncertain before. "The sand is warm. The eggs are healthy. Something is missing, but I don't know what."
+
+Wren couldn't sleep that night. She wandered the dark corridors with Pebble, his scales glowing faintly to light their way. Without quite deciding to, they ended up in the hatchery.
+
+Moonlight streamed through the tall windows. Wren knelt beside the nearest egg, a pale gray one that should have been sapphire blue, and laid her hand on its shell.
+
+"It's so cold," she whispered.
+
+Pebble pressed his nose against the egg and closed his eyes. After a long moment, he spoke through their bond, his voice strange and faraway.
+
+"I can hear it," he said. "Very faintly. The dragon inside is asleep, but it's dreaming. It's dreaming about light."
+
+"Light?" Wren asked. "What kind of light?"
+
+"Starlight," Pebble said. "Not ordinary starlight. A warm, golden kind. It's the light it needs to wake up, and it can't find it."
+
+Wren thought hard. Every winter, the eggs had hatched under the same stars. What had changed?
+
+The next morning, she brought her question to the Hall of Records. Lord Vex listened carefully, then disappeared among the tallest shelves. He returned an hour later carrying a thick book bound in cracked blue leather.
+
+"The Chronicle of the First Riders," he said, blowing dust off the cover. "Almost nobody reads it anymore. It's written in an old style, and it's very long."
+
+Wren didn't care how long it was. She and Mira read it together for three days, sitting cross-legged on the library floor, while Pebble and Ripple dozed beside them.
+
+On the third night, Mira suddenly gasped and pointed to a faded painting. It showed a deep stone well high in the mountains, with golden light pouring upward from it into the night sky.
+
+Beneath it were the words: THE STAR WELL. FROM HERE, THE WARM LIGHT RISES, AND THE EGGS OF THE WORLD AWAKE.
+
+"Where is it?" asked Wren breathlessly.
+
+Mira turned the page. The map beneath the painting showed a long journey across a desert of glass to the highest peak of the Sundered Mountains.
+
+"Far," said Mira. "Very, very far."`,
+  qs: [
+    ['What usually happens when the first snow falls at the academy?', ['The dragon eggs wake up and hatch', 'The students go home', 'The dragons go to sleep', 'The hatchery closes'], 0],
+    ['What clues showed something was wrong with the eggs?', ['They stayed still and grew colder as their colors faded', 'They hatched too early', 'They rolled away', 'They became very heavy'], 0],
+    ['What did Pebble learn by listening to the egg?', ['The dragon inside was dreaming of a warm, golden starlight it needed', 'The dragon inside was hungry', 'The egg was empty', 'The egg wanted to be moved'], 0],
+    ['Why was it important that Wren and Mira read the old Chronicle?', ['It held the forgotten secret of the Star Well', 'It had pictures of pirates', 'Master Oona asked them to', 'It was the shortest book'], 0],
+    ['Why does the author mention that Master Oona sounded uncertain?', ['To show how serious and unusual the problem was', 'To show she was tired', 'To show she was angry', 'To make the story funny'], 0]
+  ] },
+{ title: 'The Glass Desert', emoji: '🏜️', series: 'quest', text: `Master Oona agreed to let them go, but only if Lord Vex and Thunder went with them. "Two Masters are better than one," she said, "and I must stay here to keep the eggs as warm as I can."
+
+So the crew set off at dawn: Wren and Pebble, Mira and Ripple, Tobin and Blaze, Fen and Breeze, and Lord Vex on Thunder's back, which still made everyone smile.
+
+For two days, they flew south over forests and frozen rivers. On the third day, the ground below them changed completely.
+
+The Glass Desert stretched to the horizon, a vast plain of glittering sand that had melted into smooth, shining sheets long ago. The sun bounced off it so fiercely that Wren had to squint, and the air shimmered with heat.
+
+"It's beautiful," breathed Fen. "And terrible."
+
+"Ancient dragons fought a great battle here," Lord Vex explained. "Their fire was so hot that it turned the sand to glass. Nothing has grown here since."
+
+The heat grew worse with every hour. Even high in the air, the reflected sunlight scorched them. Ripple, the water dragon, began to droop, her scales growing dry and dull. Mira shaded her with a cloak, but it wasn't enough.
+
+"We need to land and rest," Mira said anxiously. "Ripple can't take much more of this."
+
+But there was nowhere to land. The glass below was hot enough to burn a dragon's feet, and there was not a single tree, rock, or shadow for miles.
+
+Tobin, who usually made jokes when things got difficult, was quiet. Then he looked at Blaze, and a strange expression crossed his face.
+
+"Blaze," he said slowly, "you've always been able to make your fire hot. Can you make it cold?"
+
+Everyone stared at him.
+
+"That's ridiculous," said Fen. "Fire isn't cold."
+
+"Old Moss told me once that a fire dragon controls heat," Tobin insisted. "Not just fire. Heat. If he can push heat out, maybe he can pull it in."
+
+Blaze tilted his head. He had never tried such a thing. But he closed his eyes and took an enormous, slow breath, and as he did, the air around the whole crew suddenly cooled, as if a cloud had passed over the sun.
+
+"Blaze," Tobin whispered. "You're doing it!"
+
+Blaze breathed in again and again, pulling the heat from the air around them. Frost began to form along the edges of his scales. He looked surprised and very proud.
+
+Ripple perked up immediately. Mira hugged Tobin so hard he nearly fell off his saddle.
+
+"I've been studying fire dragons for thirty years," Lord Vex said, shaking his head in amazement, "and I've never seen anything like that."
+
+"Nobody ever asked Blaze to try," Tobin said, grinning. "Everybody thinks fire dragons can only do one thing."
+
+Wren thought about that as they flew on through the cool bubble of air Blaze had made. Tobin always acted like the class clown, the one who didn't take anything seriously. But he had understood his dragon in a way nobody else had.
+
+"People are like dragons," Pebble said through their bond, as if reading her thoughts. "Everyone can do more than one thing."
+
+By sunset, the Sundered Mountains rose before them, black and jagged against the orange sky.`,
+  qs: [
+    ['How was the Glass Desert formed?', ['Ancient dragons\' fire melted the sand into glass', 'A volcano covered it', 'Ice froze the sand', 'Wizards made it with spells'], 0],
+    ['Why was the desert especially dangerous for Ripple?', ['She is a water dragon and the heat dried her out', 'She was afraid of glass', 'She could not see', 'She was too heavy'], 0],
+    ['What was surprising about Tobin\'s idea?', ['He asked a fire dragon to pull in heat and make the air cold', 'He wanted to turn back', 'He wanted to walk across the glass', 'He wanted to race Thunder'], 0],
+    ['How did Wren\'s opinion of Tobin change?', ['She realized the class clown understood his dragon better than anyone', 'She thought he was being silly', 'She decided he was a bad rider', 'She stopped being his friend'], 0],
+    ['What does Pebble mean by "Everyone can do more than one thing"?', ['People have more abilities than others expect', 'Everyone should do two chores', 'Dragons can only do one thing', 'Doing many things is tiring'], 0]
+  ] },
+{ title: 'The Riddle Gate', emoji: '🚪', series: 'quest', text: `The path to the Star Well ended at a gate carved directly into the side of the mountain. It was taller than ten dragons stacked on top of one another, made of dark stone polished as smooth as glass. There was no handle, no keyhole, and no way to push it open.
+
+In the center of the gate, glowing words appeared as the crew approached:
+
+THREE QUESTIONS GUARD THE STAR WELL. ANSWER WITH WISDOM, NOT STRENGTH.
+
+Tobin rolled up his sleeves. "Blaze and I could probably melt it."
+
+"Answer with wisdom, not strength," Mira read again, pointedly.
+
+"Right," said Tobin. "Wisdom. I knew that."
+
+The words shimmered and changed:
+
+THE FIRST QUESTION. I HAVE CITIES BUT NO HOUSES, FORESTS BUT NO TREES, AND RIVERS BUT NO WATER. WHAT AM I?
+
+Everyone thought hard. Breeze grumbled. Thunder flicked his tail.
+
+Then Mira laughed. "A map! It has cities and forests and rivers drawn on it, but they aren't real."
+
+The first line of glowing words faded, and a deep click echoed inside the stone.
+
+THE SECOND QUESTION. WHAT GROWS STRONGER THE MORE YOU GIVE IT AWAY?
+
+This one was harder. They argued for nearly an hour. Fen suggested fire, because you can light many candles from one flame. Tobin suggested laughter. Lord Vex was silent, frowning in concentration.
+
+Wren looked at Pebble. She thought about the day they had first bonded, when Pebble had been a small, frightened dragon who couldn't fly. She thought about all the times she had trusted him, and all the times he had trusted her back, and how their bond had grown stronger each time.
+
+"Trust," Wren said slowly. "The more you give someone your trust, the stronger it grows between you."
+
+The words faded. Another click echoed, louder this time.
+
+Then the final question appeared. This time, the words glowed red.
+
+THE THIRD QUESTION IS FOR ONE OF YOU ALONE. WHO HERE HAS DONE THE GREATEST WRONG, AND WHAT HAVE THEY LEARNED?
+
+The crew went very quiet. Nobody looked at Lord Vex. Everyone knew.
+
+Vex dismounted from Thunder and walked slowly to the gate. He stood before it for a long time, his gray cloak stirring in the cold mountain wind.
+
+"I have," he said quietly. "I treated my dragon like a tool. I wanted power more than friendship. I hurt Thunder, and I hurt myself, and I spent years blaming everyone except the person who was truly responsible."
+
+His voice was steady, though his hands shook.
+
+"What I've learned," he continued, "is that you can't force anyone to trust you. You can only become someone worth trusting, one day at a time, and then wait. And I've learned that it's never too late to begin."
+
+For a long moment, nothing happened.
+
+Then the entire gate glowed gold from top to bottom. With a sound like a deep, slow breath, the enormous stone doors swung inward, revealing a tunnel lit by a soft golden shimmer.
+
+Thunder pressed his head against Vex's shoulder.
+
+Wren felt a lump in her throat. Of all three questions, she realized, the last one had been the hardest to answer, because it required a different kind of bravery.
+
+"Come on," Vex said, wiping his eyes and climbing back onto Thunder. "The Star Well is waiting."`,
+  qs: [
+    ['What did the gate mean by "Answer with wisdom, not strength"?', ['They had to solve riddles instead of using force', 'They had to be very strong', 'They had to fly over it', 'They had to wait for night'], 0],
+    ['What was the answer to the first riddle?', ['A map', 'A forest', 'A river', 'A city'], 0],
+    ['How did Wren figure out the second answer?', ['She thought about how her bond with Pebble grew stronger', 'She guessed randomly', 'Mira told her', 'She read it in a book'], 0],
+    ['Why was the third question the hardest?', ['It required the bravery to admit a mistake honestly', 'It was the longest riddle', 'Nobody knew the answer', 'It was written in another language'], 0],
+    ['What did Vex learn about trust?', ['You must become someone worth trusting and then wait', 'You can force someone to trust you', 'Trust does not matter', 'Only dragons can trust'], 0]
+  ] },
+{ title: 'Inside the Star Well', emoji: '✨', series: 'quest', text: `The tunnel spiraled upward through the heart of the mountain, its walls glittering with veins of golden crystal. The deeper they went, the warmer the air became, and the softer the light.
+
+At last, they emerged into an enormous round cavern open to the night sky. In its center was a well as wide as a lake, ringed with ancient carved stones. Wren rushed to its edge and looked down.
+
+She had expected to see golden light pouring upward, like the painting in the Chronicle. Instead, the well was dark. Far below, she could make out a faint golden glow, like a candle buried under a heavy blanket.
+
+"Something's blocking it," said Fen.
+
+They flew down carefully, the dragons' wings echoing against the curved walls. Halfway down, they found the problem.
+
+A huge, flat slab of black stone had wedged itself across the well, sealing it like a lid. And sitting on top of the slab, motionless in the gloom, was an enormous figure.
+
+At first, Wren thought it was a statue. It wore a crown of dark iron and a long robe that seemed made of shadows. Its face was a smooth mask with two empty holes for eyes.
+
+Then the eyes began to glow with pale blue light, and the figure slowly stood up.
+
+"Who disturbs the Hollow King?" it said. Its voice echoed like wind through an empty house.
+
+Pebble growled low in his throat. Wren swallowed hard and made herself step forward.
+
+"I'm Wren of Skyfire Academy," she said, her voice shaking only a little. "The dragon eggs in our hatchery can't wake up. They need the light from the Star Well. Please, will you let it shine again?"
+
+The Hollow King tilted its masked head. "Why should I? For a thousand years, riders came to this well. They took its light and flew home. Not one of them ever stayed. Not one of them ever thanked the well, or asked who guarded it, or wondered whether its guardian was lonely."
+
+"So you blocked it," Mira said slowly.
+
+"I sealed it," the Hollow King agreed. "If no one cares for me, why should I care for them?"
+
+Wren looked at the iron crown, the shadow robe, and the empty eyes. She thought she understood. The Hollow King was not exactly evil. It was something else, something sadder. It reminded her of Lord Vex when they had first met, so angry and so alone.
+
+"I'm sorry nobody thanked you," she said. "That wasn't fair."
+
+The Hollow King went very still.
+
+"But blocking the well isn't fair either," Wren continued gently. "Not to the baby dragons. They didn't do anything wrong."
+
+The King's eyes flared bright blue. "Words are easy, child. Many riders have spoken kindly to get what they wanted. Prove that you mean it."
+
+The shadows around its robe began to swirl and rise, filling the well with cold darkness. The dragons roared. Wren felt her heart pounding.
+
+"How?" she asked.
+
+The Hollow King lifted one shadowy hand and pointed at her.
+
+"Face me," it said. "Not with fire or claws. With the truth. If your words are honest, my shadows cannot touch you. If they are hollow, like me, you will be lost in the dark forever."
+
+Wren looked at Pebble. Pebble looked back, steady and warm.
+
+"We'll face you together," she said.`,
+  qs: [
+    ['What was blocking the Star Well?', ['A slab of black stone with the Hollow King sitting on it', 'A frozen lake', 'A pirate ship', 'A pile of eggs'], 0],
+    ['Why did the Hollow King seal the well?', ['For a thousand years no rider ever thanked it or cared that it was lonely', 'It wanted to steal the light', 'Captain Gale paid it', 'It was protecting the riders from danger'], 0],
+    ['Why did the Hollow King remind Wren of Lord Vex?', ['Both were angry and alone', 'Both wore crowns', 'Both had wind dragons', 'Both lived in libraries'], 0],
+    ['How must Wren prove her words?', ['By facing the Hollow King with the truth', 'By fighting with fire and claws', 'By giving it treasure', 'By leaving the well'], 0],
+    ['What does "hollow" mean when the King talks about "hollow" words?', ['Empty, without real meaning', 'Very loud', 'Very old', 'Written in gold'], 0]
+  ] },
+{ title: 'The Science Fair Secret', emoji: '🔬', series: 'club', text: `Priya had been working on her science fair project for six weeks. It was a solar oven made from a pizza box, aluminum foil, and plastic wrap, and it could melt chocolate and toast marshmallows using nothing but sunlight. She had tested it eleven times and recorded every temperature in a careful chart.
+
+The night before the fair, Priya was so excited she could barely eat dinner.
+
+The next morning, she discovered that her little brother Arjun had accidentally sat on the pizza box. The foil was crumpled. The plastic was torn. The whole oven was flattened like a pancake.
+
+Priya didn't cry. She just sat on her bedroom floor, staring at the ruined box, feeling completely empty.
+
+That was how the Sunny Day Club found her when they arrived to walk to school together.
+
+"Oh no," Rosie said.
+
+"It's fine," Priya said in a flat voice. "I'll just tell Mr. Harmon I don't have a project."
+
+The club members looked at each other. They all knew how hard Priya had worked. They also knew the fair started in exactly one hour and forty minutes.
+
+"We can rebuild it," Jules said.
+
+"We don't have time," Priya said. "And we don't have materials."
+
+"Actually," Lena said slowly, "my mom has foil. And Mr. Ortiz throws away pizza boxes every Friday."
+
+Daisy was already pulling on her coat. "I'll get the box!"
+
+What followed was the fastest, messiest, most frantic hour of the club's history. Rosie raced home for plastic wrap and tape. Lena and Jules smoothed foil with their hands. Daisy returned triumphantly with a slightly greasy pizza box from Mr. Ortiz. And Priya, slowly at first and then faster, began to rebuild.
+
+But something interesting happened as she worked. Because she had to build quickly, she couldn't copy her old design exactly. Instead, she noticed things. The old flap reflected sunlight at the wrong angle. The plastic had always sagged in the middle. This time, she propped the flap with a ruler so it caught more light, and she stretched the plastic tighter with an extra layer of tape.
+
+They arrived at the fair with four minutes to spare, out of breath and covered in tape.
+
+That afternoon, under the bright sun in the school courtyard, Priya's new solar oven melted chocolate in six minutes. Her old oven had taken eleven.
+
+When the judges asked about her project, Priya told them the truth: that her first oven had been destroyed, and that she had rebuilt it in an hour with help from her friends. Then she showed them her chart, with both sets of temperatures side by side.
+
+"So the accident actually made your design better," one judge said, impressed.
+
+"I guess it did," said Priya, surprised.
+
+She didn't win first place. She won second, behind a boy with a robot arm. But when the club walked home together, eating melted-chocolate graham crackers from the solar oven, Priya was smiling.
+
+"You know what the real experiment was?" she said. "Finding out what my friends would do when things went wrong."
+
+"And the result?" Rosie asked.
+
+Priya grinned. "Conclusion: they show up."`,
+  qs: [
+    ['What happened to Priya\'s solar oven?', ['Her little brother accidentally sat on it', 'It melted in the sun', 'The dog ate it', 'She forgot it at school'], 0],
+    ['How did Priya feel when she first saw the ruined oven?', ['Completely empty and ready to give up', 'Angry and loud', 'Excited to start over', 'Not bothered at all'], 0],
+    ['Why was the new oven better than the old one?', ['Building quickly made her notice and fix design problems', 'Her friends used better materials', 'The sun was hotter that day', 'The judges helped her'], 0],
+    ['What does "frantic" mean?', ['Wild and hurried because of pressure', 'Calm and slow', 'Quiet and sleepy', 'Bored and tired'], 0],
+    ['What does Priya mean by "Conclusion: they show up"?', ['Her friends help when things go wrong', 'Her friends always arrive late', 'The judges came to see her', 'Science fairs are easy'], 0]
+  ] }
+] },
+{ n: 12, title: 'Dragon Master', kind: 'story', stories: [
+{ title: 'Starlight Returns', emoji: '🌟', series: 'quest', text: `The journey home from the Sundered Mountains took four days, but it felt much shorter, because Wren carried something precious: hope.
+
+The Hollow King had kept his word. After the strange, silent challenge in the well, when Wren and Pebble had stood together in his shadows and spoken only the truth, the shadows had faded away. The black stone slab had crumbled. Golden light had burst upward from the Star Well so brightly that it lit the clouds for miles.
+
+The Hollow King had not vanished. Instead, he had removed his iron crown and set it gently on the edge of the well. Beneath it, his face was no longer an empty mask but an old, tired face with kind gray eyes.
+
+"Come back sometimes," he had said quietly. "Just to talk."
+
+"We will," Wren had promised. "I'll bring stories."
+
+Now, as the crew soared over the last ridge, Skyfire Academy came into view, and Wren gasped.
+
+The golden starlight had arrived before them. It was drifting down over the academy like snow made of light, settling softly on every rooftop and tower. Students were running into the courtyard, holding out their hands, laughing as the glowing flakes landed on their palms.
+
+"The hatchery!" Mira shouted.
+
+They landed in a rush and raced inside. The hatchery was glowing. Every egg had regained its color: sapphire blue, emerald green, ruby red, and dozens of shades Wren had no names for. They were rocking gently in the warm sand.
+
+Then, with a tiny crack, the first egg split open.
+
+A small purple dragon tumbled out, blinked at the light, and sneezed a puff of glittering smoke. The whole room cheered.
+
+Crack. Crack. Crack. One after another, the eggs opened. Baby dragons squeaked and stumbled and climbed over one another. Master Oona stood in the middle of it all, laughing and crying at the same time, a newborn dragon perched on her head like a hat.
+
+When she saw Wren, she made her way across the room and hugged her tightly.
+
+"You did it," she whispered. "All of you."
+
+That evening, the academy held a celebration in the Great Hall. Lord Vex told the story of the Glass Desert and the Riddle Gate, and everyone cheered for Tobin and Blaze's cold fire. Mira showed her map of the wind currents. Fen and Breeze performed a dance of lightning in the sky above the hall.
+
+But in the middle of the feast, something strange happened.
+
+The candles flickered. The windows darkened. Wren looked outside and frowned.
+
+It was evening, so the sky should have been turning from orange to purple. Instead, it was turning black, as if someone had pulled a curtain across the setting sun. The stars disappeared one by one.
+
+Master Oona hurried to the window, and her face went pale.
+
+"An eclipse," she whispered. "But there shouldn't be an eclipse for another hundred years."
+
+High above the academy, in the darkness where the sun should have been, two enormous violet eyes opened and looked down.`,
+  qs: [
+    ['How had the Hollow King changed?', ['He took off his crown, showed his kind face, and asked them to visit', 'He became more angry', 'He disappeared forever', 'He followed them home'], 0],
+    ['What did Wren promise the Hollow King?', ['To come back and bring stories', 'To give him treasure', 'To let him rule the academy', 'To never return'], 0],
+    ['How did the starlight help the eggs?', ['It gave them the warm light they needed to wake and hatch', 'It made them invisible', 'It made them colder', 'It turned them into stone'], 0],
+    ['Why was Master Oona surprised by the eclipse?', ['There should not be one for another hundred years', 'She had never seen the sun', 'She thought it was a party trick', 'It was too early in the morning'], 0],
+    ['What mood does the last sentence create?', ['Suspense and danger', 'Calm and peace', 'Silliness', 'Sadness about the past'], 0]
+  ] },
+{ title: 'The Night That Did Not End', emoji: '🌑', series: 'quest', text: `The darkness lasted all night, and when morning came, it did not end.
+
+The sun never rose. The sky stayed black, without a single star. A cold, unnatural wind swept across the mountains, and frost crept over every window of Skyfire Academy. The baby dragons, so newly hatched, huddled together in the hatchery, shivering.
+
+High in the sky, where the sun should have been, a vast shape lay curled around a dim circle of light. It was a dragon, so enormous that its body seemed to cover half the sky. Its scales were the deep violet of twilight, and its two great eyes glowed like dying stars.
+
+"Umbra," said Master Oona quietly, as the riders gathered in the cold courtyard. "The Twilight Queen."
+
+"I thought she was just a legend," said Tobin.
+
+"Most people do," Master Oona replied. "A thousand years ago, Umbra was the guardian of the night. Every evening, she spread her wings across the sky so the world could rest. Every morning, she folded them so the sun could shine. People sang songs to her and told stories about her. She was loved."
+
+"What happened?" asked Wren.
+
+Master Oona sighed. "People forgot. Over hundreds of years, they stopped singing her songs and telling her stories. They began to believe night just happened by itself. And Umbra fell asleep in the deep places of the sky, alone and forgotten."
+
+"So why is she awake now?" asked Fen.
+
+Lord Vex answered. "The Star Well. When its light burst out, it must have reached her and woken her up." He looked up at the enormous dragon. "And now she's angry."
+
+As if she had heard him, Umbra spoke. Her voice was not loud, but it filled the whole sky, cold and sorrowful.
+
+"I guarded your nights for a thousand years. I gave you darkness to rest and stars to dream by. And you forgot me. You forgot my name. You forgot my songs. So now I will keep the night forever, and you will know what it means to lose something you never valued."
+
+The courtyard was silent. Wren felt Pebble trembling beside her.
+
+"She's not exactly wrong," Mira whispered.
+
+"No," Wren said slowly. "She's not."
+
+It was the same story again, Wren realized. Lord Vex, the Hollow King, and now Umbra. Each of them had been hurt by being treated as unimportant, as if they didn't matter. And each of them had grown angry and lonely and cold.
+
+But Vex had changed. The Hollow King had changed. Maybe Umbra could change too.
+
+That night, Wren went to the library with a candle. She searched every shelf until she found what she was looking for: the oldest book in the academy, so ancient that its pages were made of thin, golden bark. Inside were songs, hundreds of them, written in a strange, beautiful language that almost nobody could read anymore.
+
+At the very bottom of the last page, in tiny letters, was a title: THE LULLABY OF UMBRA.
+
+Wren couldn't read the words. But Lord Vex could.
+
+"I studied the old language for ten years," he said quietly, when she showed him. "I never knew why I kept practicing. Maybe it was for this."`,
+  qs: [
+    ['Who is Umbra?', ['The ancient guardian of the night', 'A pirate captain', 'A baby dragon', 'Master Oona\'s dragon'], 0],
+    ['Why was Umbra angry?', ['People forgot her name, her songs, and her stories', 'Someone stole her treasure', 'The academy was too loud', 'She wanted to be the sun'], 0],
+    ['What pattern did Wren notice?', ['Vex, the Hollow King, and Umbra were all hurt by being treated as unimportant', 'All the villains wore crowns', 'All the villains were dragons', 'All the problems happened in winter'], 0],
+    ['Why was it important that Vex studied the old language?', ['He could read the forgotten lullaby to Umbra', 'He wanted to impress Master Oona', 'He needed it to fly Thunder', 'He used it to talk to pirates'], 0],
+    ['What does "sorrowful" mean?', ['Full of sadness', 'Full of joy', 'Full of anger', 'Full of energy'], 0]
+  ] },
+{ title: 'All the Riders Together', emoji: '🤝', series: 'quest', text: `To reach Umbra, someone would have to fly higher than any rider had ever flown, through freezing winds and darkness so thick it swallowed light.
+
+"It's impossible," said a fourth-year student at the emergency meeting in the Great Hall. "No dragon can fly that high in this cold. Their wings would freeze."
+
+The hall murmured in agreement. Wren felt her hope sinking.
+
+Then Tobin stood up. "Blaze can pull heat out of the air," he said. "What if he pushes it in instead? He could keep a bubble of warm air around everyone, the way he kept us cool in the desert."
+
+"And Breeze can feel the wind currents in the dark," Fen added, standing beside him. "She can find the smoothest path, even where nobody can see."
+
+"I mapped the high currents in the north," Mira said, rising too. "If we follow them, we'll save our strength."
+
+"Thunder has flown higher than any dragon alive," said Lord Vex. "He can carry the lullaby to Umbra's ear."
+
+One by one, more students stood up. Ash and his little dragon Sprig offered to carry lanterns, even though Sprig could barely fly yet. The wind dragons from the eastern meadow, the ones they had rescued from the pirates, stepped forward and spread their silver wings. Even old Grandmother Willa arrived from the Floating Islands with baskets of warm barley bread.
+
+Wren looked around the hall at all the faces. A year ago, none of this would have been possible. Tobin had been the class clown. Mira had been too shy to speak. Vex had been an enemy, and Thunder had been gone. Now they were all standing together.
+
+"We won't fight Umbra," Wren said, her voice ringing through the hall. "We'll fly up there together, all of us, and we'll give her back what she lost. Her song."
+
+They launched at midnight.
+
+It was the strangest, most beautiful flight of Wren's life. Dozens of dragons rose into the black sky in a great spiral, their lanterns glowing like a river of stars. Blaze flew at the center, wrapping them all in warmth. Breeze led the way, her lightning flickering softly to show the path. Mira called out the currents. The wind dragons formed a shield around the youngest riders.
+
+Higher and higher they climbed. The air grew so thin that Wren could barely breathe. Frost formed on Pebble's horns. Her fingers went numb on the saddle.
+
+"Keep going," Pebble said through their bond, though she could feel how tired he was. "We're almost there. I can feel her."
+
+Then, suddenly, they broke through the darkness and found themselves face to face with Umbra.
+
+She was even larger up close. Each of her violet eyes was as big as the academy's Great Hall. When she breathed, the cold rolled over them like an avalanche.
+
+"Why have you come?" she asked, and her voice made the air tremble. "To fight me? You cannot win."
+
+"We didn't come to fight," Wren called out, her voice tiny against the vastness of the sky. "We came to say we're sorry. And to remember you."
+
+Lord Vex guided Thunder forward until they were close to Umbra's enormous head. He unrolled the golden bark page with trembling hands.
+
+Then, in the old and beautiful language that no one had spoken in a thousand years, he began to sing.`,
+  qs: [
+    ['Why did people think reaching Umbra was impossible?', ['No dragon could fly that high in the cold without freezing', 'Umbra lived underground', 'Umbra was too far away to see', 'The pirates guarded the sky'], 0],
+    ['How did each rider contribute to the plan?', ['Each offered their own special skill', 'Everyone did the same job', 'Only Wren helped', 'They let Master Oona decide everything'], 0],
+    ['How had the characters changed over the year?', ['The shy, the silly, and even enemies became a united team', 'They became more selfish', 'They stopped being friends', 'They forgot about dragons'], 0],
+    ['Why did they choose not to fight Umbra?', ['They wanted to give back what she lost, her song', 'They were too tired', 'They did not have weapons', 'Umbra asked them not to'], 0],
+    ['What does "vastness" mean?', ['Great size that seems endless', 'Great noise', 'Great speed', 'Great darkness'], 0]
+  ] },
+{ title: 'Wren\'s Choice', emoji: '💜', series: 'quest', text: `Lord Vex's voice rose into the frozen sky. It was not a perfect voice. It cracked on the high notes and shook with cold. But the old words were beautiful, and as he sang them, something began to happen.
+
+Umbra's great violet eyes softened. The icy wind around her slowed.
+
+Vex sang about a dragon who spread her wings each night so that tired people could sleep. He sang about the stars she hung like lanterns, and the silver moon she carried on her back, and the gentle darkness she wrapped around the world like a blanket. Wren couldn't understand the words, but she could feel their meaning, warm and sad and full of love.
+
+When the song ended, there was a long silence.
+
+Then Umbra closed her eyes, and a single tear slid down her enormous cheek. It fell past the riders, glittering like a falling star.
+
+"I had forgotten," she whispered, "that anyone ever loved me."
+
+"We're sorry," Wren said. "We didn't know. But now we do, and we won't forget again."
+
+Umbra opened her eyes and looked at Wren for a long time. "Words are easy," she said, just as the Hollow King had. "In a hundred years, your people will forget me again."
+
+Wren knew this was the most important moment of her life. She felt Pebble steady beneath her, warm and solid as a mountain.
+
+"Then I'll make sure they don't," she said. "I'll write down your story, every word of it. I'll teach your song at Skyfire Academy, so every rider learns it on their first day. And every year, on the longest night of winter, we'll hold a festival in your honor. We'll sing to you, and light lanterns for you, and tell your story, so that no one will ever forget the guardian of the night again."
+
+The other riders called out in agreement. Mira promised to paint Umbra's picture in the Great Hall. Tobin promised to make the festival the best party the academy had ever seen. Even the youngest students, shivering in their saddles, shouted that they would remember.
+
+Umbra looked at all of them, at the river of lanterns stretching far below, at the tiny, brave riders who had flown higher than anyone ever had just to say they were sorry.
+
+"Very well," she said softly. "I will trust you."
+
+Slowly, gracefully, she began to unfold her enormous wings.
+
+As she moved, the dim circle of light behind her grew brighter. A golden rim appeared, then a sliver of blazing sun, then more and more, until warm morning light poured across the sky. The darkness melted away. The frost on the academy's windows turned to sparkling drops of water.
+
+Far below, Wren heard cheering, faint but joyful.
+
+Umbra settled into a long, graceful glide above them. "When evening comes," she said, "I will spread my wings once more, as I always have. But this time, I will be listening for your songs."
+
+The riders flew home through the golden morning, exhausted and freezing and happier than they had ever been.
+
+As they landed in the courtyard, Wren slid off Pebble's back and threw her arms around his neck.
+
+"We did it," she whispered.
+
+"No," Pebble said, his voice warm in her mind. "You did something harder than winning a fight. You made a promise. Now you have to keep it."
+
+Wren smiled. "I know," she said. "That's the best part."`,
+  qs: [
+    ['How did Umbra react to the song?', ['Her eyes softened and she cried because she remembered being loved', 'She laughed at it', 'She became angrier', 'She fell asleep immediately'], 0],
+    ['Why did Umbra doubt Wren at first?', ['She thought people would forget her again', 'She did not understand Wren\'s language', 'She thought Wren was a pirate', 'She was too tired to listen'], 0],
+    ['What promises did Wren make?', ['To write Umbra\'s story, teach her song, and hold a festival every year', 'To give Umbra gold', 'To leave the academy', 'To fight Umbra next year'], 0],
+    ['What does Pebble say is harder than winning a fight?', ['Making a promise and keeping it', 'Flying very high', 'Singing a song', 'Waking up early'], 0],
+    ['What is the main theme of this story?', ['Remembering and honoring others can heal hurt', 'Strength always wins', 'Night is scary', 'Dragons should not be trusted'], 0]
+  ] },
+{ title: 'The Last Day of Summer', emoji: '🌻', series: 'club', text: `On the last day of summer, the Sunny Day Club held its final meeting of the season in the tree house on Maple Street.
+
+It had been an amazing year. They had found lost pets, fixed a garden gnome, held a bake sale, started a newspaper, rescued a science fair project, and helped half the neighbors on the street. Their club notebook was stuffed so full that Priya had needed to start a second one.
+
+But today, nobody was celebrating. Today, they were saying goodbye.
+
+Jules's family was moving to another city, four hours away. Jules had told them three weeks ago, and they had all been pretending it wasn't really happening. Now the moving truck was parked outside Jules's house, and pretending didn't work anymore.
+
+They sat in a circle on the tree house floor, not saying much. Daisy leaned her head on Rosie's shoulder. Lena drew small, sad doodles in the margin of the notebook.
+
+"It won't be the same," Rosie said finally. "The Sunny Day Club was always five of us. Well, four, and then five when Daisy joined."
+
+"I know," Jules said quietly. "I keep thinking that if I leave, the club will just stop."
+
+Priya had been unusually quiet. Now she opened the very first notebook to the very first page. In her careful handwriting was the club's original rule, written two years ago: WE HELP PEOPLE ON OUR STREET.
+
+"Jules," she said slowly, "is there a street where you're moving?"
+
+Jules blinked. "Well, yes. Obviously."
+
+"And are there people on it?"
+
+"Probably," said Jules. "Why?"
+
+Priya smiled for the first time all morning. "Then the Sunny Day Club isn't stopping. It's starting a new chapter."
+
+Everyone looked at her.
+
+"Jules can start the Sunny Day Club, Second Street Branch," Priya explained, her voice growing excited. "Or whatever the street is called. Jules can help neighbors there, and we'll keep helping here. And we can write to each other every week about what we're doing. Like a newspaper between two clubs."
+
+Lena sat up straight. "I could design a logo for both clubs!"
+
+"We could video call during meetings," Rosie added.
+
+"I could send you sprinkles," said Daisy seriously, which made everyone laugh.
+
+Jules was smiling now, though their eyes were wet. "A Sunny Day Club in two places at once," they said. "That's even better than one."
+
+Before the moving truck left, the club gave Jules a gift: a brand-new notebook. On the first page, they had all signed their names, and underneath, in Priya's careful handwriting, they had copied the original rule: WE HELP PEOPLE ON OUR STREET.
+
+Below that, Rosie had added a second rule, written in big, bold letters: FRIENDS STAY FRIENDS, NO MATTER HOW FAR.
+
+As the truck pulled away, Jules leaned out of the window and waved until they turned the corner.
+
+That night, Priya opened the club notebook and wrote a heading on a fresh page: CHAPTER TWO.
+
+Then she smiled, closed the notebook, and turned out the light.`,
+  qs: [
+    ['Why was the last meeting of summer sad?', ['Jules was moving to another city', 'The tree house was falling down', 'The club was ending forever', 'Daisy was sick'], 0],
+    ['What was the club\'s original rule?', ['We help people on our street', 'We meet every day', 'Only four members allowed', 'No little sisters'], 0],
+    ['How did Priya use the original rule to solve the problem?', ['She realized Jules could help people on a new street and start a new branch', 'She changed the rule', 'She asked Jules not to move', 'She closed the club'], 0],
+    ['What does "starting a new chapter" mean in this story?', ['Beginning a new part of their story, not ending it', 'Writing a new book', 'Reading a different chapter', 'Moving to a new house'], 0],
+    ['What does Rosie\'s new rule teach?', ['Friendship can continue even across distance', 'Friends should never move', 'Clubs should stay small', 'Notebooks are important'], 0]
+  ] }
+] }
+);
+
+/* Academy Tales for ranks 9–12: standalone side adventures (her "Short Stories" card) */
+Object.assign(DAUGHTER_EXTRA, {
+  9: [
+    { title: 'The Dragon Who Collected Spoons', emoji: '🥄', series: 'quest', text: `For one whole week, spoons kept disappearing from the Skyfire Academy dining hall.
+
+At first, it was only a few. Then it was dozens. By Friday, the cooks were serving soup with forks, and everyone was grumpy.
+
+"Someone is stealing spoons," Tobin announced at breakfast, trying to eat porridge with a butter knife. "This is the greatest mystery of our time."
+
+Wren rolled her eyes, but she was curious too. That night, she and Pebble hid behind a curtain in the dining hall and waited.
+
+Just after midnight, the window creaked open. A young wind dragon, no bigger than a large dog, squeezed through. It had fluffy silver feathers and enormous, curious eyes. It hopped onto a table, grabbed a spoon in its beak, and admired its reflection with obvious delight.
+
+"It's a baby," Pebble whispered. "One of the young wind dragons from the meadow."
+
+The little dragon gathered six more spoons and slipped back out the window. Wren and Pebble followed it across the moonlit grounds to the old bell tower. There, tucked behind the bell, was a nest made entirely of spoons, hundreds of them, glittering in the moonlight like a pile of treasure.
+
+"Oh," said Wren softly. "It's not stealing. It's building a home."
+
+She remembered something from her lessons: young wind dragons decorate their first nests with shiny objects to feel safe. In the wild, they used ice crystals or polished stones. This little dragon had simply found the shiniest things it could.
+
+The next morning, Wren explained everything to the head cook, a large, stern woman named Mrs. Bramble. Wren expected her to be furious.
+
+Instead, Mrs. Bramble's face softened. "Poor little thing," she said. "Far from its family, trying to make a home." She thought for a moment. "We'll need our spoons back. But I have a box of old, dented ones in the storeroom. They're too battered to use, but they still shine."
+
+So that afternoon, Wren, Tobin, and Mrs. Bramble carried the dented spoons to the bell tower and carefully traded them, one by one, for the good ones. The little wind dragon watched suspiciously at first. Then it realized it was getting even more spoons than before, and it chirped with joy.
+
+By dinner, the dining hall had all its spoons back.
+
+And from then on, every time a spoon got bent, Mrs. Bramble set it aside in a special basket labeled FOR THE SPOON DRAGON.`,
+      qs: [['What was disappearing from the dining hall?', ['Spoons', 'Forks', 'Bowls', 'Bread'], 0], ['Why was the young wind dragon taking spoons?', ['It was decorating its first nest to feel safe', 'It was hungry', 'It wanted to annoy the cooks', 'It was playing a game'], 0], ['How did Wren\'s understanding of the "thief" change?', ['She realized it was not stealing but building a home', 'She decided it was a villain', 'She thought Tobin did it', 'She thought the cooks lost them'], 0], ['How did Mrs. Bramble react, surprisingly?', ['She felt sympathy and offered old spoons', 'She was furious', 'She chased the dragon away', 'She closed the dining hall'], 0], ['What does "battered" mean?', ['Damaged and dented from use', 'Brand new', 'Very shiny', 'Made of gold'], 0]] },
+    { title: 'Tobin\'s Terrible Poem', emoji: '📜', series: 'quest', text: `Mira's birthday was in three days, and Tobin had a problem.
+
+"I want to give her something special," he told Wren, pacing back and forth in the stables while Blaze watched him with amused eyes. "Something meaningful. Not just candy."
+
+"What about a poem?" Wren suggested. "Mira loves poetry."
+
+Tobin's eyes lit up. "A poem! Perfect! How hard can it be?"
+
+It turned out to be very hard.
+
+Tobin's first poem began: "Mira, Mira, you are very nice, your dragon Ripple is made of ice." Wren gently pointed out that Ripple was a water dragon, not an ice dragon. Tobin crumpled the page.
+
+His second poem rhymed "birthday" with "Thursday," even though Mira's birthday was on a Saturday. His third poem was eleven pages long and was mostly about Blaze.
+
+By the night before the party, Tobin had filled an entire wastebasket with crumpled pages, and he was miserable.
+
+"I'm just not good with words," he groaned. "I'm good at jokes and flying. That's all."
+
+Wren sat down beside him. "Tobin, forget about rhyming. What do you actually like about Mira?"
+
+Tobin thought about it. "She notices things nobody else notices. She remembers everything. She was the one who figured out the wind currents when the rest of us were stuck. And she's always the first one to check if you're okay when you fall."
+
+Wren smiled. "Write that."
+
+"But it doesn't rhyme," Tobin protested.
+
+"It doesn't need to," said Wren. "It needs to be true."
+
+The next day, at Mira's party, Tobin stood up nervously and unfolded a single sheet of paper. His hands were shaking a little.
+
+"Mira," he read, "you notice what nobody else notices. You remember what everyone else forgets. When the rest of us were lost in the sky, you were the one who found the way. And when any of us falls down, you're always the first one there to help us up. Happy birthday to the best navigator at Skyfire."
+
+The room was quiet. Then Mira burst into tears, the happy kind, and hugged him so hard that he nearly fell over.
+
+"That's the best present anyone has ever given me," she said.
+
+Later, Tobin found Wren by the punch bowl. "It didn't rhyme even once," he said, amazed.
+
+"I know," said Wren. "That's why it was perfect."`,
+      qs: [['What was Tobin\'s problem at the start?', ['He wanted to give Mira a meaningful birthday present', 'He forgot Mira\'s birthday', 'He lost his dragon', 'He was sick'], 0], ['Why did Tobin\'s first poems fail?', ['He focused on rhyming instead of saying what was true', 'He wrote in another language', 'He never finished one', 'Blaze ate them'], 0], ['What advice did Wren give?', ['Write what you actually like about Mira, even if it doesn\'t rhyme', 'Buy candy instead', 'Ask Mira what she wants', 'Copy a famous poem'], 0], ['How did Mira react to the poem?', ['She cried happy tears and hugged him', 'She laughed at him', 'She did not listen', 'She was confused'], 0], ['What does this story teach?', ['Honest words matter more than fancy ones', 'Poems must always rhyme', 'Gifts should be expensive', 'Never write poems for friends'], 0]] }
+  ],
+  10: [
+    { title: 'The Night the Hatchlings Escaped', emoji: '🐣', series: 'quest', text: `Every first-year at Skyfire Academy had to take a turn as Hatchery Watcher, and on a rainy Wednesday night, it was Wren's turn.
+
+"It's easy," Master Oona had said. "The baby dragons sleep all night. Just make sure the fire stays warm and the door stays closed."
+
+For the first two hours, it was easy. Six tiny hatchlings slept in a heap in their straw nest, snoring in little puffs of smoke. Wren read a book by the fire while Pebble dozed beside her.
+
+Then a gust of wind blew the door open with a bang.
+
+Six pairs of eyes snapped open. Six tiny dragons tumbled out of the nest. And before Wren could even stand up, all six of them had scampered out the door and into the dark, rainy night.
+
+"Oh no," Wren whispered. "Oh no, no, no."
+
+She grabbed a lantern and ran after them, with Pebble close behind.
+
+The hatchlings had scattered in six different directions. Wren found the first one in the kitchen, sitting inside a pot of cold soup. She found the second one in the music room, where it had climbed inside a tuba and was blowing smoke out of the end. The third was in the laundry, tangled in a bedsheet like a tiny ghost.
+
+"Three more," panted Pebble. "Where would baby dragons go on a cold night?"
+
+Wren stopped and thought. Baby dragons loved warmth more than anything. Where was the warmest place in the academy at night?
+
+"The bakery ovens!" she said.
+
+Sure enough, the last three hatchlings were curled up together on top of the big brick oven, where the bread was rising for the morning. They were covered in flour and looked extremely pleased with themselves.
+
+By the time Wren had carried all six back to the hatchery, cleaned off the soup, the flour, and the tuba smoke, and tucked them into their nest, the sun was rising.
+
+Master Oona appeared in the doorway, looking at the muddy floor, the soggy lantern, and Wren's flour-covered clothes.
+
+"Long night?" she asked.
+
+Wren sighed and told her everything. She expected to be in trouble.
+
+Instead, Master Oona laughed. "In my first year, I lost eleven hatchlings," she said. "It took me until lunchtime to find the last one. It was in the headmaster's bathtub."
+
+Wren laughed too, so hard that the hatchlings woke up and blinked at her.
+
+"Next time," Master Oona added, "lock the door."`,
+      qs: [['What was Wren\'s job for the night?', ['Hatchery Watcher', 'Kitchen helper', 'Night guard at the gate', 'Library keeper'], 0], ['What caused the hatchlings to escape?', ['A gust of wind blew the door open', 'Wren let them out', 'Pebble scared them', 'Tobin played a trick'], 0], ['How did Wren figure out where the last three hatchlings were?', ['She remembered that baby dragons love warmth', 'She heard them crying', 'Pebble smelled them', 'Master Oona told her'], 0], ['Why did Master Oona laugh instead of being angry?', ['She had made an even bigger mistake when she was young', 'She did not care about the hatchlings', 'She thought Wren was joking', 'She was too tired'], 0], ['What does "scampered" mean?', ['Ran quickly with small steps', 'Slept deeply', 'Flew high', 'Walked slowly'], 0]] },
+    { title: 'Master Oona\'s Secret', emoji: '🗝️', series: 'quest', text: `Everyone at Skyfire Academy knew that Master Oona was the greatest dragon rider in the kingdom. She had flown through hurricanes, crossed the Frozen Sea, and once raced a lightning bolt and won. Her dragon, an enormous golden creature named Sol, was so old and wise that even the other Masters bowed to him.
+
+So when Wren discovered Master Oona's secret, she could hardly believe it.
+
+It happened by accident. Wren had gone to the Hall of Records to return a book, and she found Lord Vex organizing a dusty box of old student reports. One of them had fallen open on the floor. Wren picked it up and saw the name at the top: OONA, FIRST YEAR.
+
+At the bottom of the page, in faded red ink, a teacher had written: Student refuses to fly above the tree line. Severe fear of heights. Recommend she consider leaving the academy.
+
+Wren stared at the words. Master Oona? Afraid of heights?
+
+"I shouldn't have read this," she said guiltily, handing it to Lord Vex.
+
+"Probably not," Vex agreed. "But perhaps you should ask her about it."
+
+Wren worried about it for two days. Finally, after an evening lesson, she gathered her courage and stayed behind.
+
+"Master Oona," she said nervously, "I accidentally saw your first-year report."
+
+Master Oona raised her eyebrows. For a moment, Wren was sure she was in trouble. Then the old teacher smiled.
+
+"Ah," she said. "So now you know."
+
+"Is it true? Were you really afraid of heights?"
+
+"Terribly," said Master Oona. "For my entire first year, I couldn't fly higher than the treetops without shaking so badly I almost fell off. Everyone said I should give up."
+
+"What changed?" Wren asked.
+
+Master Oona was quiet for a moment. "Sol did," she said. "One day, when I was too frightened to go higher, he said to me: 'You don't have to go all the way up today. Just one wingbeat higher than yesterday.' So that's what I did. One wingbeat higher every day. It took me two years to reach the clouds."
+
+She looked out the window, where Sol was sleeping in the sunlight.
+
+"I'm still a little afraid of heights, you know," she added quietly. "I just learned that being afraid and being brave can happen at the same time."
+
+Wren thought about all the things she was afraid of. Then she smiled.
+
+"One wingbeat higher," she repeated.
+
+"One wingbeat higher," said Master Oona.`,
+      qs: [['What did Wren discover about Master Oona?', ['She was once terribly afraid of heights', 'She was a pirate', 'She could not read', 'She did not like dragons'], 0], ['What did the teacher recommend in Oona\'s first-year report?', ['That she consider leaving the academy', 'That she become a teacher', 'That she get a bigger dragon', 'That she study more'], 0], ['What advice did Sol give Oona?', ['Go just one wingbeat higher than yesterday', 'Never look down', 'Close your eyes and fly fast', 'Give up and try something else'], 0], ['What does Master Oona mean when she says being afraid and brave can happen at the same time?', ['You can feel fear and still do the hard thing', 'Brave people are never afraid', 'Fear means you should stop', 'Only dragons are brave'], 0], ['Why did Lord Vex suggest Wren talk to Master Oona?', ['He thought the conversation might help Wren', 'He wanted Wren to get in trouble', 'He did not want the report', 'He wanted to leave'], 0]] }
+  ],
+  11: [
+    { title: 'Ripple and the Frozen Fountain', emoji: '⛲', series: 'quest', text: `In the middle of the academy's winter garden stood the Fountain of Riders, a tall stone sculpture of a dragon and rider spraying water into a wide pool. It had flowed every day for two hundred years, even in the coldest winters.
+
+Until one morning, it froze solid.
+
+The water hung in the air in frozen ribbons. The pool was a sheet of white ice. And trapped beneath the ice, swimming in slow, frightened circles, were the academy's twelve golden koi fish.
+
+"They'll run out of air," Mira said in alarm. "We have to break the ice."
+
+Tobin raised his hand. "Blaze could melt it!"
+
+"No!" said Mira and Wren together. Blaze's fire was so hot that it would boil the water and cook the fish instantly.
+
+Pebble tried to crack the ice with his earth magic, but the pool's stone sides were connected to the fountain, and he was afraid of breaking the ancient sculpture.
+
+Everyone turned to Ripple. Ripple, the water dragon, was looking at the frozen fountain with a very strange expression.
+
+"Ripple says the water is sad," Mira translated slowly. "She says it froze because something is blocking it, deep down in the pipes."
+
+Ripple dove into a small hole at the base of the fountain, where the pipes ran underground. For a long time, nothing happened. The friends waited anxiously, watching the koi swim slower and slower beneath the ice.
+
+Then there was a deep gurgle. A rumble. A loud pop.
+
+Warm water burst up from the fountain's top, spraying high into the air. It poured down over the frozen pool, and within moments, the ice began to crack and melt. The koi darted joyfully through the clearing water.
+
+Ripple emerged from the pipe, dripping and proud, holding something in her mouth. It was a wad of old leaves, twigs, and a single, very soggy mitten.
+
+"Somebody's mitten blocked the pipe," Mira said, laughing. "The water couldn't flow, so it froze."
+
+Tobin stared at the mitten. Then his face turned red. "That's mine," he admitted. "I lost it last week during the snowball fight."
+
+Everyone laughed, including Tobin.
+
+That evening, Mira wrote in her notebook about the day. Underneath, she added a thought: Sometimes the biggest problems come from the smallest things. And sometimes the best way to solve a problem isn't to fight it from the top, but to find where it starts.`,
+      qs: [['Why were the koi fish in danger?', ['They were trapped under the ice and could run out of air', 'They were too hot', 'Someone was trying to catch them', 'They were too hungry'], 0], ['Why couldn\'t Blaze melt the ice?', ['His fire would boil the water and hurt the fish', 'He was asleep', 'He was too small', 'He was afraid of ice'], 0], ['What did Ripple understand that the others didn\'t?', ['Something was blocking the water deep in the pipes', 'The fish wanted to stay frozen', 'The fountain was broken forever', 'Pebble should break the ice'], 0], ['What was causing the problem?', ['A wad of leaves, twigs, and Tobin\'s mitten in the pipe', 'A spell from the Hollow King', 'A crack in the pool', 'Too much snow'], 0], ['What does Mira mean by finding "where it starts"?', ['Solving the cause of a problem instead of just its effects', 'Starting every day early', 'Reading from the beginning', 'Finding the fountain\'s builder'], 0]] },
+    { title: 'The Map That Was Wrong', emoji: '🗺️', series: 'quest', text: `Ever since her wind current map had saved the day at the Floating Islands, Mira had become famous at Skyfire Academy. Students asked her for flying routes. Teachers asked her to explain currents in class. Even the fourth-years, who usually ignored the younger students, nodded at her respectfully in the hallways.
+
+Mira loved it. But secretly, it also made her nervous.
+
+"What if I make a mistake?" she confided to Wren one evening. "Everyone thinks my maps are perfect now."
+
+"Everyone makes mistakes," Wren said.
+
+"Not me," Mira said. "Not anymore. I can't."
+
+A week later, the fourth-years planned a long training flight to the Eagle Crags, using a new route Mira had mapped. She had worked on it for days. But on the morning of the flight, as she was checking her notes one last time, her stomach dropped.
+
+She had made an error. A big one. She had copied one of her measurements backward, and her map showed a calm current where there was actually a dangerous downdraft that could pull dragons toward the rocks.
+
+The fourth-years were already saddling up in the courtyard.
+
+Mira froze. If she told everyone, they would know her map was wrong. Everyone would see that she wasn't perfect after all. Maybe they would never trust her maps again.
+
+But if she said nothing, someone could get hurt.
+
+Wren found her standing in the hallway, pale and shaking. When Mira explained, Wren didn't tell her what to do. She just asked one question.
+
+"What would you want someone else to do, if they found a mistake in their map?"
+
+Mira closed her eyes. Then she ran.
+
+She burst into the courtyard just as the first dragons were lifting off. "Stop!" she shouted. "Please, stop! My map is wrong!"
+
+Every head turned toward her. Mira's face burned, but she kept going. She explained the error, pointed out the downdraft, and drew the correct route in the dirt with a stick.
+
+The courtyard was silent. Then the leader of the fourth-years, a tall girl named Sabine, walked over and studied the drawing.
+
+"You caught this yourself?" Sabine asked. "Before we left?"
+
+Mira nodded, waiting for her to be angry.
+
+Instead, Sabine smiled. "Then I trust your maps even more now," she said. "Anyone can make a mistake. A good navigator is someone who checks, and who tells the truth when she finds one."
+
+That night, Mira wrote a new rule on the first page of her map notebook: Being trustworthy is more important than being perfect.`,
+      qs: [['Why was Mira secretly nervous about being famous?', ['She was afraid people would stop trusting her if she made a mistake', 'She did not like attention', 'She wanted to quit flying', 'She thought her maps were boring'], 0], ['What mistake did Mira find?', ['She had copied a measurement backward and missed a dangerous downdraft', 'She drew the wrong mountain', 'She forgot the map at home', 'She spelled a word wrong'], 0], ['What question did Wren ask to help Mira decide?', ['What would you want someone else to do if they found a mistake?', 'Do you want to be famous?', 'Should we hide the map?', 'Are you sure it is wrong?'], 0], ['How did Sabine react?', ['She trusted Mira\'s maps even more for catching the mistake', 'She was furious', 'She laughed at Mira', 'She refused to fly ever again'], 0], ['What new rule did Mira write?', ['Being trustworthy is more important than being perfect', 'Never make maps again', 'Always fly alone', 'Fourth-years are always right'], 0]] }
+  ],
+  12: [
+    { title: 'Captain Gale\'s First Lesson', emoji: '🧭', series: 'quest', text: `Nobody at Skyfire Academy expected Captain Gale to actually show up.
+
+But on the first day of spring, she walked through the academy gates, without her coat of stolen dragon scales and without her sky ship. She carried only a small bag and wore a plain gray cloak. She looked much less frightening this way. She looked almost nervous.
+
+"Lord Vex said I could learn," she told Master Oona stiffly. "If the offer still stands."
+
+Master Oona studied her for a long time. "It stands," she said finally. "But you'll start where everyone starts. With the first-years."
+
+So Captain Gale, the most feared pirate in the northern skies, found herself sitting in a tiny wooden chair at the back of the beginner classroom, surrounded by eight-year-olds learning how to brush a dragon's scales.
+
+The first-years were terrified of her at first. They whispered and stared. One boy hid under his desk. But Gale ignored them and focused on her lessons, frowning in concentration as she practiced the gentle brushing strokes on a sleepy old dragon named Barnaby.
+
+She was terrible at it. She brushed too hard, and Barnaby grumbled. She tried to command him to lift his wing, and he simply rolled over and went back to sleep.
+
+"Dragons don't take orders," explained the first-year teacher patiently. "You have to ask."
+
+"Ask?" Gale repeated, as if the word were in a foreign language.
+
+Wren watched from the doorway with Lord Vex. "Do you think she'll stay?" she whispered.
+
+"I didn't think I would," said Vex. "But I did."
+
+Day after day, Gale returned to the beginner classroom. Slowly, the first-years stopped being afraid. A little girl named Pip began sitting next to her and correcting her brushing technique. "Softer," Pip would say. "Like you're petting a kitten."
+
+One afternoon, about a month later, Wren was passing the stables when she stopped in amazement.
+
+Captain Gale was sitting in the straw beside Barnaby, brushing his scales with long, gentle strokes. The old dragon's eyes were half-closed with happiness. And when Gale whispered, "Could you lift your wing, please?" Barnaby lifted it right away and rested it gently across her shoulders like a blanket.
+
+Gale's face changed completely. For the first time since Wren had known her, she smiled, not a cold, sharp smile, but a real one.
+
+"He listened," she said, astonished. "I asked, and he listened."
+
+"That's how it works," said Wren softly.
+
+Gale looked up at her. "I spent twenty years trying to force dragons to obey me," she said. "I never once tried asking." She shook her head slowly. "What a waste."
+
+"It's not a waste if you learned something," Wren said.
+
+Gale was quiet for a long moment. Then she nodded, and went back to brushing Barnaby's scales, very gently, one stroke at a time.`,
+      qs: [['How was Captain Gale different when she arrived?', ['She wore a plain cloak and looked nervous instead of frightening', 'She brought her pirate crew', 'She was riding Thunder', 'She was angry and loud'], 0], ['Why did Gale start with the first-years?', ['Master Oona said she must start where everyone starts', 'She was the youngest', 'She asked to teach them', 'She failed a test'], 0], ['What was the most important thing Gale had to learn?', ['Dragons don\'t take orders; you have to ask', 'How to fly faster', 'How to build machines', 'How to read maps'], 0], ['How did Pip help Gale?', ['She showed her how to brush gently, like petting a kitten', 'She hid under her desk', 'She told her to leave', 'She gave her a dragon'], 0], ['What does Wren mean by "It\'s not a waste if you learned something"?', ['Past mistakes can still lead to growth', 'Gale wasted her whole life', 'Learning is always a waste', 'Gale should go back to being a pirate'], 0]] },
+    { title: 'The Smallest Rider', emoji: '🌱', series: 'quest', text: `Ash was the smallest student at Skyfire Academy, and his dragon, Sprig, was the smallest dragon. Sprig was a green leaf dragon, no bigger than a house cat, with tiny wings that fluttered like a hummingbird's.
+
+Ever since the day Lord Vex and Thunder had rescued them from the Shattered Cliffs, Ash had been afraid to fly. He came to every flying lesson, but he always found an excuse to stay on the ground. Sprig had a cold. His saddle was loose. It looked like rain.
+
+Wren noticed, because she remembered feeling exactly the same way.
+
+One afternoon, she found Ash sitting alone by the pond, watching the older students soar overhead.
+
+"Mind if I sit?" she asked.
+
+Ash shrugged. Sprig crawled into his lap.
+
+"When I was a first-year," Wren said, "Pebble couldn't fly at all. His wings were too small. Everyone laughed at us. I used to sit right here and watch everybody else, wishing I could hide forever."
+
+Ash looked up, surprised. "But you're Wren. You helped save the whole sky."
+
+"I wasn't always," said Wren. "I had to start somewhere. Everybody does."
+
+Ash was quiet for a while. "I keep thinking about the cliffs," he finally said. "About falling. What if it happens again?"
+
+Wren nodded seriously. "It might. Flying always has some danger. But you know what Master Oona told me? You don't have to go all the way up today. Just one wingbeat higher than yesterday."
+
+Ash looked at Sprig. Sprig looked back at him with bright, hopeful eyes.
+
+"One wingbeat?" Ash said.
+
+"One wingbeat," said Wren.
+
+Ash climbed carefully onto Sprig's back. The little dragon's wings buzzed. Slowly, wobbling, they rose until Ash's feet were exactly one wingbeat off the grass. Then they landed.
+
+Ash was grinning. "That was so small," he said, laughing. "That barely counts."
+
+"It counts," said Wren.
+
+The next day, Ash flew two wingbeats high. The day after that, he flew to the top of the garden wall. By the end of the month, he and Sprig were zipping around the courtyard so fast that the older students had to duck.
+
+On the last day of spring, Ash found Wren in the courtyard. He was holding the hand of a tiny, nervous girl who had just arrived at the academy. Her dragon egg hadn't even hatched yet.
+
+"This is Lila," Ash said. "She's scared of heights."
+
+He winked at Wren. Then he knelt beside Lila and said, very seriously, "You don't have to go all the way up today. Just one wingbeat higher than yesterday."
+
+Wren smiled so widely that her cheeks hurt. Somewhere far above, she was sure, Master Oona's dragon Sol was smiling too.`,
+      qs: [['Why was Ash afraid to fly?', ['He remembered almost falling at the Shattered Cliffs', 'Sprig was too big', 'He did not like his saddle', 'Wren told him not to'], 0], ['Why did Wren understand Ash\'s feelings?', ['She had felt the same way when Pebble could not fly', 'She was afraid of ponds', 'She had never been afraid', 'Lord Vex told her'], 0], ['What advice did Wren pass on to Ash?', ['Just one wingbeat higher than yesterday', 'Fly as high as you can right away', 'Never look down', 'Stay on the ground'], 0], ['How did Ash improve?', ['Little by little, a bit higher every day', 'All at once in one big flight', 'By getting a bigger dragon', 'By watching others fly'], 0], ['What is meaningful about the ending?', ['Ash passes the same advice to someone new, continuing the chain of kindness', 'Ash quits the academy', 'Lila gets a bigger dragon than Ash', 'Wren becomes afraid again'], 0]] }
+  ]
+});
+for (const n of [9, 10, 11, 12]) DAUGHTER_TRACK.levels[n - 1].stories.push(...DAUGHTER_EXTRA[n]);

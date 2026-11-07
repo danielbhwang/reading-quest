@@ -1044,9 +1044,9 @@ function enterKid(k){
   setKid(k);
   if (k === 'dev') wizardSetup();
   // Biscuit & Pals grew from 8 to 12 levels: a reader who already beat the old final boss moves on to level 9
-  if (trackOf(k) === 'son' && K.placed && K.level === 8 && T.levels.length > 8 && (K.bossesBeaten || []).includes(8) && !K.grew12){
-    K.grew12 = true; K.level = 9; K.passStreak = 0; awardTrophiesUpTo(9); save();
-    setTimeout(() => { try { burst('NEW LEVELS!'); say('New mystery levels are open! Welcome to Case Cracker!'); } catch(e){} }, 900);
+  if (K.placed && K.level === 8 && T.levels.length > 8 && (K.bossesBeaten || []).includes(8) && !K.grew12){
+    K.grew12 = true; K.level = 9; K.passStreak = 0; awardTrophiesUpTo(9); awardChest('cosmic', 'Level up'); save();
+    setTimeout(() => { levelUpCinematic(9, { newLevels:true, cosmic:false }).then(() => screenHome()); }, 700);
   }
   // Gianna reads quietly, so she skips the read-aloud placement check (a grown-up can set her rank)
   if (!K.placed && trackOf(k) === 'daughter'){ K.placed = true; K.level = K.level || 1; awardTrophiesUpTo(K.level); save(); }
@@ -1288,7 +1288,7 @@ function spellWords(n = 5, minLen = 3){
    scored (4 or 5 right is a passing read). */
 function quietPool(){
   const lv = K.level;
-  return (lv > 1 ? DAUGHTER_EXTRA[lv - 1] || [] : []).concat(DAUGHTER_EXTRA[lv] || []);
+  return (DAUGHTER_EXTRA[lv] || []).concat(lv > 1 ? DAUGHTER_EXTRA[lv - 1] || [] : []); // her own rank's tales first
 }
 function nextQuietStory(){
   const pool = quietPool();
@@ -1321,7 +1321,11 @@ const BOOK_DEFS = [
   { id:'quest3', title:'Into the Whispering Woods',  emoji:'🌲', series:'quest', from:5 },
   { id:'club3',  title:'Mysteries on Maple Lane',    emoji:'🍅', series:'club',  from:5 },
   { id:'quest4', title:'The Storm Dragon',           emoji:'⛈️', series:'quest', from:7 },
-  { id:'club4',  title:'One Year of Sunshine',       emoji:'🎉', series:'club',  from:7 }
+  { id:'club4',  title:'One Year of Sunshine',       emoji:'🎉', series:'club',  from:7 },
+  { id:'quest5', title:'The Sky Pirates',            emoji:'🏴‍☠️', series:'quest', from:9, featured:true },
+  { id:'club5',  title:'The Maple Street Messenger', emoji:'📰', series:'club',  from:9 },
+  { id:'quest6', title:'The Twilight Queen',         emoji:'🌑', series:'quest', from:11, featured:true },
+  { id:'club6',  title:'Chapter Two',                emoji:'🌻', series:'club',  from:11 }
 ];
 const TALES = new Set(Object.values(DAUGHTER_EXTRA).flat());
 const BOOKS = BOOK_DEFS.map(b => Object.assign({}, b, {
@@ -1333,7 +1337,7 @@ function currentBook(){
   const open = BOOKS.filter(bookOpen);
   const atRank = b => b.from <= K.level && K.level <= b.from + 1;
   return BOOKS.find(b => b.id === K.currentBook && bookOpen(b))
-    || open.find(b => b.featured && !bookState(b.id).finished) // new books come up next
+    || open.filter(b => b.featured && !bookState(b.id).finished).sort((x, y) => y.from - x.from)[0] // the newest featured book comes up next
     || open.find(b => bookState(b.id).ch > 0)
     || open.find(b => atRank(b) && !bookState(b.id).finished)
     || open.find(b => !bookState(b.id).finished)
@@ -2403,15 +2407,8 @@ async function commitResults(stars, quiz){
   if (stars >= 2 && r.opts.mode === 'normal') awardChest(stars >= 3 ? 'silver' : 'wood', 'Great reading');
   if (levelUp) awardChest('cosmic', 'Level up');
   if (levelUp){
-    const newTrophies = awardTrophiesUpTo(K.level); save();
-    confetti(120); beep('level');
-    say(TK==='daughter' ? `Amazing! You reached rank ${K.level}!` : `Wow! You made it to level ${K.level}!`);
-    const tr = TROPHIES[TK][K.level-1];
-    await modal(el('div',{}, el('div',{class:'big-e'}, tr ? tr[0] : '🏆'),
-      el('h2',{}, (TK==='daughter' ? 'New Rank: ' : 'Level ') + K.level + '!'),
-      el('p',{}, (tr ? 'You won the ' + tr[1] + ' trophy! ' : '') + levelDef(K.level).title + ' unlocked.'),
-      K.level === AVATAR_UNLOCK_LEVEL ? el('p',{style:'font-weight:700;color:#7c3aed'}, '🎁 A new reading buddy is unlocked in the Star Shop!') : null,
-      legendaryAt(K.level) ? el('p',{style:'font-weight:700;color:#d97706'}, '✨ A legendary ' + (TK==='daughter'?'dragon':'Pocket Pal') + ' can now appear!') : null), [['Awesome! ▶','',1]]);
+    awardTrophiesUpTo(K.level); save();
+    await levelUpCinematic(K.level);
   }
   if (bossUnlocked){
     const B = bossFor(K.level); confetti(80); beep('level'); burst('BOSS!');
@@ -2770,7 +2767,7 @@ function screenShop(){
 
 /* ---------- trophies ---------- */
 const TROPHIES = {
-  daughter: [['🥉','Bronze Egg'],['📌','Apprentice Pin'],['🥈','Silver Wing'],['🛡️','Rider\'s Shield'],['🥇','Golden Saddle'],['🏅','Knight\'s Crest'],['🌟','Captain\'s Star'],['👑','Guardian Crown']],
+  daughter: [['🥉','Bronze Egg'],['📌','Apprentice Pin'],['🥈','Silver Wing'],['🛡️','Rider\'s Shield'],['🥇','Golden Saddle'],['🏅','Knight\'s Crest'],['🌟','Captain\'s Star'],['👑','Guardian Crown'],['🪽','Sky Marshal Wings'],['⚡','Storm Warden Seal'],['🔮','Sage\'s Orb'],['🐉','Dragon Master Medallion']],
   son: [['🔤','Letter Champ'],['🪄','Word Wizard'],['⭐','Sight Word Star'],['🦸','Sentence Hero'],['🧭','Story Explorer'],['📚','Big Reader'],['🔍','Junior Detective'],['🕵️','Super Sleuth'],['🗝️','Case Cracker'],['🔦','Clue Hunter'],['🎩','Mystery Master'],['🏆','Legendary Detective']]
 };
 function awardTrophiesUpTo(level){
@@ -3129,6 +3126,296 @@ const TOWN_SVG = {
   planter: svgItem(90, 60, `<rect x="6" y="28" width="78" height="30" rx="4" fill="#a16207" stroke="${TOWN_INK}" stroke-width="2"/>${[16,30,44,58,72].map((x,i) => `<circle cx="${x}" cy="24" r="9" fill="${['#f472b6','#facc15','#a78bfa','#fb7185','#f97316'][i]}" stroke="${TOWN_INK}" stroke-width="1.5"/>`).join('')}`),
   tacotruck: svgItem(180, 110, `<rect x="6" y="20" width="120" height="70" rx="8" fill="#facc15" stroke="${TOWN_INK}" stroke-width="3"/><path d="M126 40 h28 l18 22 v28 h-46z" fill="#facc15" stroke="${TOWN_INK}" stroke-width="3"/><path d="M134 46 h18 l12 16 h-30z" fill="#bae6fd" stroke="${TOWN_INK}" stroke-width="2"/><rect x="20" y="32" width="80" height="30" rx="4" fill="#fff" stroke="${TOWN_INK}" stroke-width="2"/><text x="60" y="54" text-anchor="middle" font-family="Lilita One,sans-serif" font-size="16" fill="#b91c1c">🌮 TACOS</text>${awning(16, 22, 92, '#ef4444', '#16a34a')}<circle cx="40" cy="92" r="12" fill="#1f2937" stroke="#6b7280" stroke-width="4"/><circle cx="146" cy="92" r="12" fill="#1f2937" stroke="#6b7280" stroke-width="4"/>`)
 };
+
+
+/* ================= MY WORLD ART =================
+   Hand-drawn items replace emoji: one consistent game-art style (dark outline, flat color,
+   soft shading and a highlight), and many have a little life (sway, spin, flicker, blink, bob).
+   1em = one emoji-sized item; each drawing sets its own width in em. */
+const WI = '#2b2135';
+const wO = (w = 3) => `stroke="${WI}" stroke-width="${w}" stroke-linejoin="round" stroke-linecap="round"`;
+const artItem = (vw, vh, em, body, cls = '') => `<svg class="wa ${cls}" viewBox="0 0 ${vw} ${vh}" style="width:${em}em;height:${(em * vh / vw).toFixed(2)}em;display:block;overflow:visible" xmlns="http://www.w3.org/2000/svg">${body}</svg>`;
+const hi = d => `<path d="${d}" fill="#fff" opacity=".38"/>`;
+const sh = d => `<path d="${d}" fill="#000" opacity=".15"/>`;
+const eyes2 = (x1, x2, y, r = 3.2) => `<g class="wa-blink"><circle cx="${x1}" cy="${y}" r="${r}" fill="${WI}"/><circle cx="${x2}" cy="${y}" r="${r}" fill="${WI}"/><circle cx="${x1 + 1}" cy="${y - 1.2}" r="${(r * .36).toFixed(1)}" fill="#fff"/><circle cx="${x2 + 1}" cy="${y - 1.2}" r="${(r * .36).toFixed(1)}" fill="#fff"/></g>`;
+const ground = (cx, y, rx) => `<ellipse cx="${cx}" cy="${y}" rx="${rx}" ry="${(rx * .16).toFixed(1)}" fill="#000" opacity=".18"/>`;
+const flag = (x, y, c) => `<path d="M${x} ${y} v-26" ${wO(2.5)}/><path class="wa-flag" d="M${x} ${y - 26} q10 -4 18 2 q-8 4 -18 8z" fill="${c}" ${wO(2)}/>`;
+const smoke = (x, y) => `<g class="wa-smoke"><circle cx="${x}" cy="${y}" r="6" fill="#e5e7eb" opacity=".9"/><circle cx="${x + 5}" cy="${y - 10}" r="8" fill="#f3f4f6" opacity=".8"/><circle cx="${x + 12}" cy="${y - 22}" r="10" fill="#f9fafb" opacity=".6"/></g>`;
+const win = (x, y, w, h, c = '#7dd3fc') => `<rect x="${x}" y="${y}" width="${w}" height="${h}" rx="3" fill="${c}" class="wa-win" ${wO(2.5)}/><path d="M${x + w / 2} ${y} v${h} M${x} ${y + h / 2} h${w}" stroke="${WI}" stroke-width="1.6"/><path d="M${x + 3} ${y + h - 4} l${w * .4} ${-h * .6}" stroke="#fff" stroke-width="2.5" opacity=".6"/>`;
+const sparkle = (x, y, s = 1, c = '#fff') => `<path class="wa-twinkle" d="M${x} ${y - 7 * s} l${2 * s} ${5 * s} ${5 * s} ${2 * s} -${5 * s} ${2 * s} -${2 * s} ${5 * s} -${2 * s} -${5 * s} -${5 * s} -${2 * s} ${5 * s} -${2 * s}z" fill="${c}"/>`;
+
+const WORLD_ART = {
+  /* ---------- nature ---------- */
+  tree: artItem(100, 124, 1.5, `${ground(50, 118, 34)}<path d="M42 118 q4 -30 2 -50 h12 q-2 20 2 50 q-8 4 -16 0z" fill="#8b5a2b" ${wO()}/><path d="M50 74 l-12 -12 M52 82 l12 -10" ${wO(2.5)}/>
+    <g class="wa-sway"><circle cx="30" cy="54" r="24" fill="#2f9e44" ${wO()}/><circle cx="70" cy="54" r="24" fill="#2f9e44" ${wO()}/><circle cx="50" cy="34" r="28" fill="#37b24d" ${wO()}/>
+    ${hi('M34 24 q14 -14 30 -4 q-14 -2 -30 10z')}<circle cx="30" cy="60" r="4.5" fill="#ef4444" ${wO(1.5)}/><circle cx="66" cy="44" r="4.5" fill="#ef4444" ${wO(1.5)}/><circle cx="48" cy="58" r="4.5" fill="#ef4444" ${wO(1.5)}/></g>`),
+  pine: artItem(90, 132, 1.3, `${ground(45, 126, 30)}<rect x="39" y="104" width="12" height="22" rx="2" fill="#7c4a1e" ${wO()}/>
+    <g class="wa-sway"><path d="M45 6 L72 46 H58 L80 76 H62 L86 108 H4 L28 76 H10 L32 46 H18Z" fill="#1f7a4d" ${wO()}/>${sh('M45 6 L72 46 H58 L80 76 H62 L86 108 H45Z')}
+    <path d="M45 6 l-8 12 q8 4 16 0z" fill="#fff" opacity=".85"/><path d="M28 76 q8 5 16 0 M18 46 q8 5 14 0 M52 76 q8 5 16 0" stroke="#e2f7ec" stroke-width="3" fill="none" opacity=".7"/></g>`),
+  palm: artItem(116, 134, 1.6, `${ground(60, 128, 30)}<path d="M54 128 q-4 -50 10 -86 l10 3 q-12 36 -8 83z" fill="#a0703c" ${wO()}/>${[56,72,88,104].map(y => `<path d="M${56 + (128 - y) * .14} ${y} l12 2" stroke="${WI}" stroke-width="2"/>`).join('')}
+    <g class="wa-sway"><path d="M68 40 q-34 -22 -62 4 q30 -8 62 0z" fill="#2fb34d" ${wO()}/><path d="M70 40 q30 -26 62 -2 q-32 -6 -62 6z" fill="#2fb34d" ${wO()}/><path d="M68 38 q-18 -34 -48 -30 q26 8 46 34z" fill="#37c25a" ${wO()}/><path d="M70 38 q14 -34 46 -32 q-24 10 -44 36z" fill="#37c25a" ${wO()}/><path d="M68 40 q-24 6 -38 38 q22 -22 40 -34z" fill="#28a043" ${wO()}/>
+    <circle cx="64" cy="46" r="6" fill="#6b4423" ${wO(2)}/><circle cx="74" cy="47" r="6" fill="#7c4f2a" ${wO(2)}/></g>`),
+  blossom: artItem(104, 116, 1.45, `${ground(52, 110, 34)}<path d="M46 110 q2 -26 -8 -42 l8 -4 q6 12 8 22 q4 -14 14 -22 l6 6 q-12 14 -12 40z" fill="#7a4a2a" ${wO()}/>
+    <g class="wa-sway"><circle cx="28" cy="50" r="22" fill="#f9a8d4" ${wO()}/><circle cx="76" cy="50" r="22" fill="#f9a8d4" ${wO()}/><circle cx="52" cy="32" r="27" fill="#fbcfe8" ${wO()}/>${hi('M36 20 q16 -12 32 -2 q-16 -2 -32 8z')}
+    ${[[30,44],[60,22],[76,54],[44,52],[66,40]].map(([x,y]) => `<g fill="#ec4899"><circle cx="${x}" cy="${y}" r="3"/><circle cx="${x+4}" cy="${y+2}" r="2.4"/><circle cx="${x-2}" cy="${y+4}" r="2.4"/></g>`).join('')}</g>
+    <path class="wa-petal" d="M80 70 q4 -4 6 0 q-2 4 -6 0z" fill="#f472b6"/><path class="wa-petal b" d="M20 74 q4 -4 6 0 q-2 4 -6 0z" fill="#f9a8d4"/>`),
+  sunflower: artItem(56, 120, .85, `${ground(28, 116, 16)}<path d="M28 116 V48" stroke="#3f9b3a" stroke-width="5"/><path d="M28 92 q-22 -4 -22 -18 q16 2 22 18z M28 78 q20 -6 22 -20 q-16 4 -22 20z" fill="#4cbb47" ${wO(2.5)}/>
+    <g class="wa-bob">${Array.from({ length:12 }, (_, i) => `<ellipse cx="28" cy="16" rx="6" ry="13" fill="#facc15" ${wO(2)} transform="rotate(${i * 30} 28 30)"/>`).join('')}<circle cx="28" cy="30" r="12" fill="#7c4a1e" ${wO(2.5)}/>
+    <path d="M22 28 q2 -2 4 0 M30 28 q2 -2 4 0" stroke="${WI}" stroke-width="1.8" fill="none"/><path d="M23 33 q5 4 10 0" stroke="${WI}" stroke-width="1.8" fill="none"/></g>`),
+  tulip: artItem(70, 80, .85, `${ground(35, 77, 26)}${[[16,'#f43f5e',40],[35,'#facc15',30],[54,'#a855f7',42]].map(([x,c,y]) => `<path d="M${x} 78 V${y}" stroke="#3f9b3a" stroke-width="4"/><g class="wa-bob"><path d="M${x - 10} ${y - 18} l5 6 5 -8 5 8 5 -6 q2 18 -10 20 q-12 -2 -10 -20z" fill="${c}" ${wO(2.2)}/>${hi(`M${x - 6} ${y - 10} q2 6 6 8 q-6 0 -6 -8z`)}</g>`).join('')}<path d="M24 78 q-14 -16 -8 -26 q6 10 8 26z M44 78 q14 -18 10 -28 q-8 10 -10 28z" fill="#4cbb47" ${wO(2)}/>`),
+  mushroom: artItem(76, 74, .95, `${ground(38, 70, 26)}<path d="M26 70 q-2 -16 2 -26 h20 q4 10 2 26z" fill="#fff7ed" ${wO()}/>${eyes2(32, 44, 54, 2.6)}<path d="M34 61 q4 3 8 0" stroke="${WI}" stroke-width="2" fill="none"/>
+    <path d="M4 46 q2 -40 34 -42 q32 2 34 42 q-34 8 -68 0z" fill="#ef4444" ${wO()}/>${sh('M38 4 q32 2 34 42 q-14 4 -34 4z')}<circle cx="22" cy="28" r="6" fill="#fff"/><circle cx="44" cy="16" r="5" fill="#fff"/><circle cx="56" cy="32" r="6" fill="#fff"/><circle cx="34" cy="38" r="3.5" fill="#fff"/>${hi('M14 26 q8 -16 22 -18 q-14 8 -22 18z')}`),
+  rock: artItem(84, 58, 1.1, `${ground(42, 54, 36)}<path d="M6 52 q-4 -22 14 -34 q14 -16 32 -10 q22 2 28 24 q4 16 -4 22z" fill="#94a3b8" ${wO()}/>${sh('M52 8 q22 2 28 24 q4 16 -4 22 h-24z')}${hi('M18 22 q10 -10 22 -10 q-10 6 -22 14z')}
+    <path d="M14 20 q10 -10 22 -6 q-8 4 -12 10 q-6 -2 -10 -4z" fill="#4ade80" ${wO(1.5)}/><path d="M40 30 l6 8 M58 24 l-4 10" stroke="#64748b" stroke-width="2"/>`),
+  mountain: artItem(210, 140, 2.9, `${ground(105, 136, 96)}<path d="M4 136 L70 34 L104 80 L142 14 L206 136Z" fill="#7c8db5" ${wO()}/>${sh('M142 14 L206 136 H150 L120 60Z')}${sh('M70 34 L104 80 L90 136 H60Z')}
+    <path d="M142 14 L162 50 L150 46 L142 56 L132 44 L122 50Z" fill="#fff" ${wO(2)}/><path d="M70 34 L84 56 L74 52 L66 60 L58 52Z" fill="#fff" ${wO(2)}/><path d="M30 136 l20 -30 l14 14 l14 -18 l20 34z" fill="#3fa34d" ${wO(2.5)}/>`),
+  volcano: artItem(180, 150, 2.6, `${ground(90, 146, 82)}<path d="M8 146 L66 44 h48 L172 146Z" fill="#6b4a3a" ${wO()}/>${sh('M90 44 h24 L172 146 H110Z')}
+    <path d="M66 44 q24 10 48 0 l-6 -6 q-18 6 -36 0z" fill="#f97316" ${wO(2.5)}/><path class="wa-glow" d="M72 46 q-4 24 -14 40 q10 -6 14 6 q6 -26 4 -46z M100 46 q8 28 24 42 q-14 -4 -16 6 q-6 -20 -8 -48z" fill="#fb923c" ${wO(2)}/><path d="M76 44 q14 6 28 0" stroke="#fde047" stroke-width="4" fill="none"/>
+    ${smoke(84, 30)}<g class="wa-smoke b"><circle cx="96" cy="26" r="7" fill="#d1d5db" opacity=".8"/><circle cx="100" cy="12" r="10" fill="#e5e7eb" opacity=".6"/></g>`),
+  rainbow: artItem(210, 116, 2.9, `${['#ef4444','#f97316','#facc15','#22c55e','#3b82f6','#8b5cf6'].map((c, i) => `<path d="M${20 + i * 9} 100 a${85 - i * 9} ${85 - i * 9} 0 0 1 ${170 - i * 18} 0" stroke="${c}" stroke-width="9.5" fill="none"/>`).join('')}
+    <path d="M15 100 a90 90 0 0 1 180 0 M66 100 a39 39 0 0 1 78 0" stroke="${WI}" stroke-width="2.5" fill="none"/>
+    <g class="wa-bob"><path d="M0 104 q0 -16 16 -14 q4 -14 20 -8 q14 -2 14 12 q10 4 4 14 h-48 q-8 -2 -6 -4z" fill="#fff" ${wO(2.5)}/></g><g class="wa-bob b"><path d="M156 104 q0 -16 16 -14 q4 -14 20 -8 q14 -2 14 12 q10 4 4 14 h-48 q-8 -2 -6 -4z" fill="#fff" ${wO(2.5)}/></g>`),
+  cloud: artItem(124, 72, 1.75, `<g class="wa-drift"><path d="M14 64 q-14 -2 -10 -18 q4 -14 20 -12 q2 -22 26 -24 q20 -2 28 16 q8 -10 22 -4 q16 8 10 24 q14 6 6 18z" fill="#fff" ${wO()}/>${sh('M14 64 h82 q14 0 10 -10 q-30 10 -92 4z')}${hi('M30 26 q8 -12 22 -10 q-12 4 -16 12z')}
+    ${eyes2(52, 70, 44, 3)}<path d="M56 52 q5 4 10 0" stroke="${WI}" stroke-width="2" fill="none"/><circle cx="46" cy="50" r="4" fill="#fbcfe8"/><circle cx="76" cy="50" r="4" fill="#fbcfe8"/></g>`),
+  sun: artItem(104, 104, 1.35, `<g class="wa-spin">${Array.from({ length:12 }, (_, i) => `<path d="M52 2 l6 16 h-12z" fill="${i % 2 ? '#fb923c' : '#facc15'}" ${wO(2)} transform="rotate(${i * 30} 52 52)"/>`).join('')}</g>
+    <circle cx="52" cy="52" r="30" fill="#fde047" ${wO()}/>${hi('M34 40 q8 -14 24 -14 q-16 6 -24 14z')}${eyes2(43, 61, 48, 3.4)}<path d="M42 60 q10 9 20 0" stroke="${WI}" stroke-width="2.5" fill="none"/><circle cx="36" cy="58" r="4.5" fill="#fb923c" opacity=".7"/><circle cx="68" cy="58" r="4.5" fill="#fb923c" opacity=".7"/>`),
+  moon: artItem(96, 96, 1.3, `<g class="wa-bob"><path d="M58 8 a40 40 0 1 0 32 58 a34 34 0 1 1 -32 -58z" fill="#fef3c7" ${wO()}/>${sh('M90 66 a40 40 0 0 1 -66 10 a34 34 0 0 0 66 -10z')}<circle cx="36" cy="40" r="5" fill="#fde68a"/><circle cx="46" cy="66" r="4" fill="#fde68a"/>
+    <path d="M30 54 q4 4 8 0" stroke="${WI}" stroke-width="2.2" fill="none"/><path d="M34 62 q6 4 10 0" stroke="${WI}" stroke-width="2" fill="none"/></g>${sparkle(82, 20, 1, '#fde047')}${sparkle(76, 84, .7, '#fde047')}`),
+  star: artItem(84, 84, 1.05, `<g class="wa-pulse"><path d="M42 4 l11 24 26 3 -19 18 5 26 -23 -13 -23 13 5 -26 -19 -18 26 -3z" fill="#facc15" ${wO()}/>${hi('M42 12 l7 16 -14 2z')}${eyes2(35, 49, 40, 3)}<path d="M37 49 q5 4 10 0" stroke="${WI}" stroke-width="2" fill="none"/></g>${sparkle(76, 12, .7)}${sparkle(8, 70, .6)}`),
+  crystal: artItem(84, 104, 1.15, `${ground(42, 100, 32)}<g class="wa-glow"><path d="M42 4 l14 30 -6 64 h-16 l-6 -64z" fill="#a78bfa" ${wO()}/><path d="M18 40 l12 18 -2 40 h-12 l-6 -40z" fill="#67e8f9" ${wO()}/><path d="M64 36 l12 22 -6 40 h-12 l-2 -40z" fill="#f0abfc" ${wO()}/>
+    ${hi('M42 4 l-6 30 4 60 -6 -64z')}${hi('M18 40 l-6 18 6 38 -2 -40z')}${hi('M64 36 l-6 22 4 38 -2 -40z')}</g>${sparkle(30, 20, .8)}${sparkle(70, 22, .6)}${sparkle(58, 80, .5)}`),
+
+  /* ---------- buildings ---------- */
+  house: artItem(130, 124, 1.25, `${ground(65, 120, 60)}<rect x="88" y="10" width="14" height="30" fill="#b45309" ${wO()}/>${smoke(95, 4)}<rect x="16" y="52" width="98" height="68" rx="3" fill="#fef3c7" ${wO()}/>${sh('M80 52 h34 v68 h-34z')}
+    <path d="M6 58 L65 14 L124 58Z" fill="#dc2626" ${wO()}/>${sh('M65 14 L124 58 H65Z')}<path d="M20 50 L65 18" stroke="#fff" stroke-width="3" opacity=".4"/>
+    ${win(24, 66, 22, 20, '#fde68a')}${win(84, 66, 22, 20, '#fde68a')}<path d="M54 120 v-32 a11 11 0 0 1 22 0 v32z" fill="#7c3aed" ${wO(2.5)}/><circle cx="71" cy="104" r="2.2" fill="#facc15"/>
+    <rect x="22" y="90" width="26" height="8" rx="2" fill="#8b5a2b" ${wO(2)}/>${[26,33,40,46].map((x,i) => `<circle cx="${x}" cy="88" r="3.5" fill="${['#f472b6','#facc15','#fb7185','#a78bfa'][i]}"/>`).join('')}`),
+  garden: artItem(146, 124, 1.4, `${ground(73, 120, 68)}<rect x="30" y="54" width="86" height="66" rx="3" fill="#fdf2f8" ${wO()}/><path d="M20 60 L73 18 L126 60Z" fill="#16a34a" ${wO()}/>${sh('M73 18 L126 60 H73Z')}${[30,40,50].map(y => `<path d="M${73 - (y - 18) * 1.26} ${y} H${73 + (y - 18) * 1.26}" stroke="#15803d" stroke-width="2"/>`).join('')}
+    ${win(40, 68, 20, 18, '#fde68a')}${win(86, 68, 20, 18, '#fde68a')}<path d="M62 120 v-28 a11 11 0 0 1 22 0 v28z" fill="#f472b6" ${wO(2.5)}/>
+    <path d="M2 120 V96 M14 120 V96 M26 120 V96 M120 120 V96 M132 120 V96 M144 120 V96 M0 104 h30 M118 104 h28" ${wO(2.5)} stroke="#fff"/><path d="M2 120 V96 M14 120 V96 M26 120 V96 M120 120 V96 M132 120 V96 M144 120 V96" stroke="${WI}" stroke-width="1" fill="none"/>
+    ${[[10,92,'#f43f5e'],[22,94,'#facc15'],[124,92,'#a855f7'],[138,94,'#f97316']].map(([x,y,c]) => `<g class="wa-bob"><circle cx="${x}" cy="${y}" r="5" fill="${c}" ${wO(1.5)}/><circle cx="${x}" cy="${y}" r="1.8" fill="#fde047"/></g>`).join('')}`),
+  hut: artItem(112, 100, 1.1, `${ground(56, 96, 50)}<path d="M18 96 V58 h76 v38z" fill="#d6a76a" ${wO()}/>${[30,46,62,78].map(x => `<path d="M${x} 60 v36" stroke="#a16207" stroke-width="2"/>`).join('')}
+    <path d="M4 64 Q56 -12 108 64 q-52 12 -104 0z" fill="#e8c46a" ${wO()}/>${[20,36,52,68,84].map(x => `<path d="M${x} ${62 - Math.sin((x - 4) / 104 * Math.PI) * 40} q-2 14 -4 26" stroke="#b7862d" stroke-width="2" fill="none"/>`).join('')}${sh('M56 2 Q90 20 108 64 q-24 6 -52 6z')}
+    <path d="M44 96 v-22 a12 12 0 0 1 24 0 v22z" fill="#5b3a1e" ${wO(2.5)}/>`),
+  tent: artItem(116, 96, 1.15, `${ground(58, 92, 54)}<path d="M8 92 L58 18 L108 92Z" fill="#fb923c" ${wO()}/><path d="M58 18 L34 92 M58 18 L82 92" stroke="#fde68a" stroke-width="8"/><path d="M8 92 L58 18 L108 92Z" fill="none" ${wO()}/>${sh('M58 18 L108 92 H58Z')}
+    <path d="M58 40 L46 92 h24z" fill="#7c2d12" ${wO(2.5)}/><path d="M58 40 L70 92 h-6 q-2 -26 -6 -52z" fill="#fde68a" ${wO(2)}/>${flag(58, 20, '#22c55e')}`),
+  school: artItem(176, 140, 1.65, `${ground(88, 136, 82)}<rect x="10" y="62" width="156" height="74" fill="#dc6a4a" ${wO()}/>${Array.from({ length:5 }, (_, r) => `<path d="M10 ${74 + r * 12} H166" stroke="#b8533a" stroke-width="1.5"/>`).join('')}<path d="M4 66 L88 36 L172 66Z" fill="#7f1d1d" ${wO()}/>
+    <rect x="70" y="10" width="36" height="40" fill="#f5e6c8" ${wO()}/><path d="M64 14 L88 -4 L112 14Z" fill="#7f1d1d" ${wO()}/><circle cx="88" cy="30" r="11" fill="#fff" ${wO(2)}/><path d="M88 30 V23 M88 30 l5 3" stroke="${WI}" stroke-width="2"/>
+    ${win(20, 78, 22, 20, '#fde68a')}${win(48, 78, 22, 20, '#fde68a')}${win(106, 78, 22, 20, '#fde68a')}${win(134, 78, 22, 20, '#fde68a')}<path d="M76 136 v-30 h24 v30z" fill="#1e3a8a" ${wO(2.5)}/><path d="M88 106 v30" stroke="${WI}" stroke-width="2"/>${flag(160, 64, '#3b82f6')}`),
+  hq: artItem(132, 176, 1.3, `${ground(66, 172, 60)}<rect x="22" y="40" width="88" height="132" rx="4" fill="#1e3a8a" ${wO()}/>${sh('M80 40 h30 v132 h-30z')}${Array.from({ length:5 }, (_, r) => [32, 58, 84].map(x => `<rect x="${x}" y="${86 + r * 16}" width="16" height="10" rx="2" fill="#fde68a" class="wa-win" ${wO(1.5)}/>`).join('')).join('')}
+    <path d="M66 46 l18 8 v14 q0 14 -18 20 q-18 -6 -18 -20 v-14z" fill="#facc15" ${wO(2.5)}/><path d="M66 56 l3 7 7 1 -5 5 1 7 -6 -3 -6 3 1 -7 -5 -5 7 -1z" fill="#dc2626"/>
+    <rect x="58" y="14" width="16" height="26" fill="#64748b" ${wO(2.5)}/><path d="M66 14 V0" ${wO(2.5)}/><circle class="wa-blinklight" cx="66" cy="0" r="4.5" fill="#ef4444" ${wO(1.5)}/>`),
+  tower: artItem(76, 176, .8, `${ground(38, 172, 30)}<rect x="14" y="62" width="48" height="110" fill="#a8a29e" ${wO()}/>${Array.from({ length:7 }, (_, r) => `<path d="M14 ${74 + r * 14} H62" stroke="#78716c" stroke-width="1.5"/><path d="M${r % 2 ? 26 : 38} ${62 + r * 14} v14" stroke="#78716c" stroke-width="1.5"/>`).join('')}${sh('M44 62 h18 v110 h-18z')}
+    <path d="M6 66 L38 4 L70 66Z" fill="#6d28d9" ${wO()}/>${sh('M38 4 L70 66 H38Z')}${flag(38, 6, '#facc15')}<rect x="28" y="84" width="20" height="26" rx="10" fill="#fde047" class="wa-win" ${wO(2.5)}/><path d="M28 172 v-22 a10 10 0 0 1 20 0 v22z" fill="#5b3a1e" ${wO(2.5)}/>`),
+  museum: artItem(176, 128, 1.65, `${ground(88, 124, 82)}<path d="M8 50 L88 10 L168 50Z" fill="#e7e5e4" ${wO()}/><circle cx="88" cy="36" r="8" fill="#facc15" ${wO(2)}/><rect x="10" y="50" width="156" height="12" fill="#d6d3d1" ${wO()}/>
+    ${[22,52,82,112,142].map(x => `<rect x="${x}" y="62" width="14" height="50" fill="#f5f5f4" ${wO(2.5)}/><path d="M${x + 4} 64 v46" stroke="#d6d3d1" stroke-width="2"/>`).join('')}<rect x="4" y="112" width="168" height="12" fill="#d6d3d1" ${wO()}/><path d="M74 112 v-30 a14 14 0 0 1 28 0 v30z" fill="#1e293b" ${wO(2.5)}/>`),
+  circus: artItem(156, 136, 1.45, `${ground(78, 132, 72)}<path d="M14 132 V74 h128 v58z" fill="#fff" ${wO()}/>${[30,46,62,78,94,110,126].map((x, i) => i % 2 ? '' : `<path d="M${x} 74 h16 v58 h-16z" fill="#ef4444"/>`).join('')}<path d="M14 132 V74 h128 v58z" fill="none" ${wO()}/>
+    <path d="M6 78 Q78 -14 150 78 q-72 12 -144 0z" fill="#ef4444" ${wO()}/><path d="M78 6 Q60 40 46 82 M78 6 Q96 40 110 82 M78 6 V86" stroke="#fff" stroke-width="8" fill="none"/><path d="M6 78 Q78 -14 150 78" fill="none" ${wO()}/>
+    <path d="M60 132 q18 -40 36 0z" fill="#7f1d1d" ${wO(2.5)}/>${flag(78, 8, '#facc15')}`),
+  factory: artItem(176, 134, 1.65, `${ground(88, 130, 82)}<rect x="122" y="14" width="22" height="70" fill="#64748b" ${wO()}/><path d="M122 26 h22 M122 36 h22" stroke="#ef4444" stroke-width="4"/>${smoke(133, 6)}
+    <path d="M8 130 V62 l36 -20 v20 l36 -20 v20 l36 -20 v20 h52 v68z" fill="#94a3b8" ${wO()}/>${sh('M116 62 h52 v68 h-52z')}
+    <g class="wa-spin"><circle cx="46" cy="94" r="18" fill="#facc15" ${wO(2.5)}/>${Array.from({ length:8 }, (_, i) => `<rect x="43" y="72" width="6" height="8" fill="#facc15" ${wO(2)} transform="rotate(${i * 45} 46 94)"/>`).join('')}<circle cx="46" cy="94" r="6" fill="#64748b" ${wO(2)}/></g>
+    <g class="wa-spin r"><circle cx="86" cy="104" r="12" fill="#22d3ee" ${wO(2.5)}/>${Array.from({ length:6 }, (_, i) => `<rect x="83.5" y="88" width="5" height="6" fill="#22d3ee" ${wO(1.8)} transform="rotate(${i * 60} 86 104)"/>`).join('')}<circle cx="86" cy="104" r="4" fill="#64748b"/></g>
+    ${win(120, 76, 18, 16, '#fde68a')}${win(144, 76, 18, 16, '#fde68a')}<rect x="126" y="104" width="30" height="26" fill="#475569" ${wO(2.5)}/>`),
+  castle: artItem(206, 176, 1.95, `${ground(103, 172, 98)}${[[8,60],[154,60]].map(([x,y]) => `<rect x="${x}" y="${y}" width="44" height="112" fill="#cbd5e1" ${wO()}/><path d="M${x - 4} ${y + 4} L${x + 22} ${y - 38} L${x + 48} ${y + 4}Z" fill="#3b82f6" ${wO()}/>${flag(x + 22, y - 36, '#ef4444')}<rect x="${x + 14}" y="${y + 24}" width="16" height="20" rx="8" fill="#fde68a" class="wa-win" ${wO(2)}/>`).join('')}
+    <rect x="44" y="84" width="118" height="88" fill="#e2e8f0" ${wO()}/>${[44,64,84,104,124,144].map(x => `<rect x="${x}" y="72" width="12" height="14" fill="#e2e8f0" ${wO(2.5)}/>`).join('')}${sh('M130 84 h32 v88 h-32z')}
+    <rect x="82" y="34" width="42" height="64" fill="#cbd5e1" ${wO()}/><path d="M76 38 L103 -8 L130 38Z" fill="#6d28d9" ${wO()}/>${flag(103, -6, '#facc15')}<rect x="95" y="52" width="16" height="22" rx="8" fill="#fde68a" class="wa-win" ${wO(2)}/>
+    <path d="M84 172 v-36 a19 19 0 0 1 38 0 v36z" fill="#5b3a1e" ${wO(2.5)}/><path d="M90 140 v32 M98 134 v38 M106 134 v38 M114 140 v32" stroke="#3b2410" stroke-width="2"/>`),
+  ufo: artItem(132, 116, 1.3, `<path class="wa-beam" d="M46 64 L22 116 h88 L86 64z" fill="#a7f3d0" opacity=".45"/><g class="wa-hover"><path d="M40 44 q0 -36 26 -36 q26 0 26 36z" fill="#bae6fd" ${wO()}/>${hi('M48 36 q2 -18 14 -22 q-8 10 -8 24z')}
+    <circle cx="66" cy="30" r="9" fill="#4ade80" ${wO(2)}/>${eyes2(63, 69, 29, 1.8)}<ellipse cx="66" cy="54" rx="62" ry="16" fill="#94a3b8" ${wO()}/>${sh('M4 54 q62 22 124 0 q-62 30 -124 0z')}<path d="M10 50 q56 -10 112 0" stroke="#fff" stroke-width="2.5" opacity=".6" fill="none"/>
+    ${[22,44,66,88,110].map((x, i) => `<circle class="wa-blinklight ${i % 2 ? 'b' : ''}" cx="${x}" cy="56" r="4.5" fill="${['#facc15','#f472b6','#22d3ee','#f472b6','#facc15'][i]}" ${wO(1.5)}/>`).join('')}</g>`)
+};
+
+Object.assign(WORLD_ART, {
+  /* ---------- animals (they also wander, from the world screen) ---------- */
+  trex: artItem(130, 112, 1.7, `${ground(62, 108, 46)}<path d="M18 70 q-18 -6 -16 -22 q14 10 30 8z" fill="#4ade80" ${wO()}/><path d="M24 72 q4 -30 34 -38 q26 -6 36 -24 q14 -12 28 0 q8 10 0 22 q-4 4 -14 4 q-6 18 -16 30 q-4 22 -22 32 q-28 8 -46 -26z" fill="#4ade80" ${wO()}/>
+    ${sh('M58 104 q18 -10 22 -32 q10 -12 16 -30 q-4 26 -14 38 q-6 18 -24 24z')}<path d="M44 70 q12 6 28 2" stroke="#86efac" stroke-width="6" fill="none"/><path d="M50 106 v-14 h12 v14z M70 104 v-14 h10 v14z" fill="#4ade80" ${wO(2.5)}/>
+    <path d="M86 50 q8 6 4 12 M80 54 q6 4 2 10" ${wO(2.5)}/>${eyes2(110, 110, 18, 3.4)}<path d="M100 34 l4 4 4 -4 4 4" stroke="#fff" stroke-width="2" fill="none"/><path d="M98 32 q10 4 22 0" stroke="${WI}" stroke-width="2.5" fill="none"/>${[40,52,64].map((x, i) => `<path d="M${x} ${44 - i * 4} l4 -8 4 8" fill="#16a34a" ${wO(1.5)}/>`).join('')}`),
+  dino: artItem(156, 112, 2, `${ground(76, 108, 58)}<path d="M8 76 q-8 -4 -4 -10 q22 0 34 -4z" fill="#60a5fa" ${wO()}/><path d="M30 66 q10 -26 50 -24 q22 2 30 -16 q4 -16 4 -18 q4 -8 14 -6 q12 2 12 12 q0 8 -10 8 q-2 20 -10 34 q-10 30 -40 32 q-38 4 -50 -22z" fill="#60a5fa" ${wO()}/>
+    ${sh('M70 92 q30 -2 40 -32 q8 -14 10 -34 q-4 32 -14 48 q-10 18 -36 18z')}<path d="M44 106 v-20 h14 v20z M88 106 v-20 h14 v20z" fill="#60a5fa" ${wO(2.5)}/>${[50,62,74,86].map(x => `<circle cx="${x}" cy="56" r="4" fill="#bfdbfe"/>`).join('')}${eyes2(132, 132, 8, 3)}<path d="M136 14 q-6 4 -10 2" stroke="${WI}" stroke-width="2" fill="none"/>`),
+  dragon: artItem(144, 124, 1.85, `${ground(70, 120, 46)}<g class="wa-wing"><path d="M58 52 q-30 -40 -56 -30 q16 6 12 16 q12 -4 16 8 q12 -6 18 10z" fill="#c084fc" ${wO()}/></g><g class="wa-wing r"><path d="M84 50 q30 -42 58 -32 q-16 6 -12 16 q-12 -2 -16 8 q-12 -6 -18 10z" fill="#c084fc" ${wO()}/></g>
+    <path d="M36 104 q-26 6 -30 -10 q10 4 22 -2z" fill="#7c3aed" ${wO()}/><ellipse cx="70" cy="86" rx="34" ry="28" fill="#8b5cf6" ${wO()}/><ellipse cx="70" cy="94" rx="20" ry="16" fill="#fde68a" ${wO(2)}/>${[86,94,102].map(y => `<path d="M54 ${y} q16 4 32 0" stroke="#f59e0b" stroke-width="1.5" fill="none"/>`).join('')}
+    <circle cx="70" cy="42" r="24" fill="#8b5cf6" ${wO()}/><path d="M54 24 l-6 -16 12 10 M86 24 l6 -16 -12 10" fill="#fde68a" ${wO(2)}/>${eyes2(62, 78, 40, 3.4)}<ellipse cx="70" cy="54" rx="10" ry="6" fill="#a78bfa" ${wO(2)}/><circle cx="66" cy="54" r="1.5" fill="${WI}"/><circle cx="74" cy="54" r="1.5" fill="${WI}"/>
+    <path d="M50 114 v-10 h12 v10z M80 114 v-10 h12 v10z" fill="#7c3aed" ${wO(2.5)}/>`),
+  unicorn: artItem(124, 116, 1.6, `${ground(60, 112, 48)}<path d="M14 66 q-12 10 -6 28 q8 -12 16 -14 q-6 18 4 26 q2 -16 10 -20z" fill="#f472b6" ${wO(2.5)}/><path d="M22 60 q2 -16 26 -18 h34 q20 0 22 18 q0 22 -22 24 h-36 q-24 -2 -24 -24z" fill="#fff" ${wO()}/>
+    ${[32,48,76,92].map(x => `<rect x="${x - 5}" y="80" width="11" height="30" rx="4" fill="#fff" ${wO(2.5)}/><rect x="${x - 5}" y="104" width="11" height="6" fill="#c4b5fd" ${wO(2)}/>`).join('')}${sh('M60 84 h22 q22 -2 22 -24 q-10 18 -44 20z')}
+    <path d="M84 46 q4 -26 20 -30 q16 -2 18 14 q2 12 -10 16 q-12 4 -18 18z" fill="#fff" ${wO()}/><path d="M108 16 l8 -18 2 20z" fill="#facc15" ${wO(2)}/><path d="M110 12 l6 -2 M111 6 l5 -2" stroke="#f59e0b" stroke-width="1.5"/>
+    <path d="M98 18 q-14 4 -14 22 q-6 -6 -4 -14 q-8 6 -8 16 q-4 -14 6 -26 q8 -6 20 2z" fill="#a78bfa" ${wO(2)}/><path d="M92 22 q-6 8 -6 18" stroke="#60a5fa" stroke-width="4" fill="none"/>${eyes2(110, 110, 26, 3)}<circle cx="116" cy="34" r="3" fill="#f9a8d4"/>`),
+  dolphin: artItem(124, 84, 1.55, `<g class="wa-jump"><path d="M8 58 q20 -48 76 -44 q24 2 34 18 q-14 -2 -22 4 q-10 22 -36 28 q-20 4 -36 -2 q-8 10 -18 10 q4 -8 2 -14z" fill="#38bdf8" ${wO()}/><path d="M14 60 q30 6 60 -6 q16 -6 22 -18" stroke="#e0f2fe" stroke-width="8" fill="none" opacity=".8"/>
+    <path d="M56 16 q4 -14 18 -14 q-6 8 -4 16z" fill="#0ea5e9" ${wO(2.5)}/><path d="M52 52 q8 14 20 8 q-8 -2 -12 -12z" fill="#0ea5e9" ${wO(2)}/>${eyes2(92, 92, 26, 3)}<path d="M108 34 q-6 4 -14 2" stroke="${WI}" stroke-width="2" fill="none"/></g>
+    <path class="wa-splash" d="M2 82 q10 -12 16 -2 q6 -12 14 0" stroke="#7dd3fc" stroke-width="3" fill="none"/>`),
+  butterfly: artItem(76, 64, .95, `<g class="wa-hover"><g class="wa-flap"><path d="M38 30 q-30 -40 -34 -10 q-2 18 34 14z" fill="#f472b6" ${wO(2.5)}/><path d="M38 34 q-26 4 -24 22 q10 8 24 -18z" fill="#c084fc" ${wO(2.5)}/><circle cx="18" cy="20" r="5" fill="#fde68a"/></g>
+    <g class="wa-flap r"><path d="M38 30 q30 -40 34 -10 q2 18 -34 14z" fill="#f472b6" ${wO(2.5)}/><path d="M38 34 q26 4 24 22 q-10 8 -24 -18z" fill="#c084fc" ${wO(2.5)}/><circle cx="58" cy="20" r="5" fill="#fde68a"/></g>
+    <ellipse cx="38" cy="36" rx="4" ry="16" fill="#3b2a35"/><path d="M36 22 q-6 -12 -10 -14 M40 22 q6 -12 10 -14" ${wO(2)}/></g>`),
+  bee: artItem(66, 54, .8, `<g class="wa-hover"><g class="wa-buzz"><ellipse cx="26" cy="12" rx="10" ry="12" fill="#e0f2fe" ${wO(2)} opacity=".9"/><ellipse cx="40" cy="12" rx="10" ry="12" fill="#e0f2fe" ${wO(2)} opacity=".9"/></g>
+    <ellipse cx="32" cy="34" rx="24" ry="16" fill="#facc15" ${wO()}/><path d="M24 20 q-4 14 0 28 M36 18 q-4 16 0 32" stroke="${WI}" stroke-width="5" fill="none"/><path d="M56 34 l8 0" ${wO(2.5)}/>${eyes2(14, 14, 30, 2.8)}<path d="M10 40 q4 3 8 0" stroke="${WI}" stroke-width="1.8" fill="none"/></g>`),
+  ladybug: artItem(66, 50, .8, `${ground(33, 46, 24)}<circle cx="12" cy="30" r="10" fill="${WI}"/>${eyes2(8, 14, 28, 2)}<path d="M8 22 l-4 -10 M14 22 l2 -10" ${wO(2)}/><path d="M14 44 q0 -38 26 -38 q24 0 24 38z" fill="#ef4444" ${wO()}/><path d="M40 6 v38" stroke="${WI}" stroke-width="2.5"/>
+    ${[[28,20],[52,20],[26,34],[54,34],[40,16]].map(([x,y]) => `<circle cx="${x}" cy="${y}" r="4" fill="${WI}"/>`).join('')}${hi('M22 14 q8 -8 14 -6 q-8 4 -14 10z')}`),
+  parrot: artItem(76, 100, 1.05, `${ground(40, 96, 22)}<path d="M30 94 q-8 -10 -2 -16 M44 94 q8 -10 2 -16" ${wO(2.5)}/><path d="M26 60 q-4 34 6 40 q6 -14 8 -2 q4 -12 8 4 q8 -10 2 -42z" fill="#2563eb" ${wO()}/>
+    <ellipse cx="38" cy="54" rx="20" ry="26" fill="#ef4444" ${wO()}/><path class="wa-flap" d="M48 44 q18 4 18 28 q-12 -4 -18 -8z" fill="#facc15" ${wO(2.5)}/><path d="M48 52 q10 4 12 16" stroke="#22c55e" stroke-width="4" fill="none"/>
+    <circle cx="36" cy="26" r="16" fill="#ef4444" ${wO()}/><path d="M22 24 q-14 2 -12 14 q6 -6 12 -6z" fill="#fde68a" ${wO(2.5)}/><circle cx="30" cy="22" r="6" fill="#fff" ${wO(2)}/><g class="wa-blink"><circle cx="30" cy="22" r="2.6" fill="${WI}"/></g>`),
+  penguin: artItem(66, 86, .95, `${ground(33, 82, 22)}<g class="wa-waddle"><ellipse cx="33" cy="48" rx="24" ry="32" fill="#1f2937" ${wO()}/><ellipse cx="33" cy="54" rx="16" ry="24" fill="#fff"/><path class="wa-flap" d="M10 44 q-10 14 -2 26 q6 -12 4 -22z" fill="#1f2937" ${wO(2.5)}/><path class="wa-flap r" d="M56 44 q10 14 2 26 q-6 -12 -4 -22z" fill="#1f2937" ${wO(2.5)}/>
+    ${eyes2(26, 40, 32, 3)}<path d="M28 40 l5 6 5 -6z" fill="#f97316" ${wO(1.5)}/><path d="M20 80 q4 -6 10 0z M36 80 q4 -6 10 0z" fill="#f97316" ${wO(2)}/><circle cx="21" cy="42" r="3" fill="#f9a8d4" opacity=".8"/><circle cx="45" cy="42" r="3" fill="#f9a8d4" opacity=".8"/></g>`),
+  panda: artItem(96, 94, 1.25, `${ground(48, 90, 34)}<ellipse cx="48" cy="66" rx="30" ry="24" fill="#fff" ${wO()}/><path d="M22 70 q-8 14 6 18 h12 v-14z M74 70 q8 14 -6 18 h-12 v-14z" fill="${WI}"/><path d="M26 50 q22 -10 44 0 v14 q-22 -6 -44 0z" fill="${WI}"/>
+    <circle cx="20" cy="18" r="11" fill="${WI}"/><circle cx="76" cy="18" r="11" fill="${WI}"/><circle cx="48" cy="34" r="28" fill="#fff" ${wO()}/><ellipse cx="36" cy="34" rx="8" ry="10" fill="${WI}" transform="rotate(-20 36 34)"/><ellipse cx="60" cy="34" rx="8" ry="10" fill="${WI}" transform="rotate(20 60 34)"/>
+    <g class="wa-blink"><circle cx="37" cy="33" r="3" fill="#fff"/><circle cx="59" cy="33" r="3" fill="#fff"/></g><ellipse cx="48" cy="44" rx="5" ry="3.5" fill="${WI}"/><path d="M42 50 q6 5 12 0" stroke="${WI}" stroke-width="2" fill="none"/><path d="M60 62 l18 -18 l4 4 -16 18z" fill="#4ade80" ${wO(2)}/>`),
+  lion: artItem(116, 102, 1.55, `${ground(58, 98, 46)}<path d="M96 66 q20 -4 16 -20 q-6 4 -10 0" ${wO(3)} stroke="#d97706"/><circle cx="110" cy="44" r="5" fill="#92400e"/><ellipse cx="66" cy="70" rx="34" ry="20" fill="#fbbf24" ${wO()}/>
+    ${[44,58,76,90].map(x => `<rect x="${x - 5}" y="80" width="11" height="16" rx="4" fill="#fbbf24" ${wO(2.5)}/>`).join('')}<g class="wa-bob">${Array.from({ length:12 }, (_, i) => `<ellipse cx="38" cy="22" rx="9" ry="14" fill="${i % 2 ? '#c2410c' : '#ea580c'}" ${wO(2)} transform="rotate(${i * 30} 38 42)"/>`).join('')}
+    <circle cx="38" cy="42" r="22" fill="#fcd34d" ${wO()}/>${eyes2(30, 46, 38, 3)}<path d="M34 46 h8 l-4 5z" fill="${WI}"/><path d="M32 52 q6 5 12 0" stroke="${WI}" stroke-width="2" fill="none"/><circle cx="24" cy="48" r="3.5" fill="#fb923c" opacity=".6"/><circle cx="52" cy="48" r="3.5" fill="#fb923c" opacity=".6"/></g>`),
+  elephant: artItem(136, 112, 1.75, `${ground(70, 108, 54)}<path d="M120 58 q14 6 10 18" ${wO(3)} stroke="#64748b"/><ellipse cx="78" cy="58" rx="46" ry="34" fill="#94a3b8" ${wO()}/>${sh('M78 92 q44 0 46 -34 q-6 26 -46 30z')}
+    ${[50,70,96,114].map(x => `<rect x="${x - 8}" y="78" width="16" height="28" rx="5" fill="#94a3b8" ${wO(2.5)}/>`).join('')}<path d="M34 34 q-30 -10 -28 18 q2 22 22 18z" fill="#cbd5e1" ${wO()}/>
+    <circle cx="40" cy="42" r="22" fill="#94a3b8" ${wO()}/><path class="wa-trunk" d="M24 50 q-8 20 -2 34 q4 6 8 0 q-4 -16 6 -28z" fill="#94a3b8" ${wO()}/><path d="M28 60 l-6 6 M28 70 l-6 3" stroke="#64748b" stroke-width="1.5"/>${eyes2(34, 50, 36, 3)}<path d="M50 52 q8 4 6 12 l-4 -2z" fill="#fff" ${wO(1.8)}/>`),
+  giraffe: artItem(96, 156, 1.35, `${ground(46, 152, 34)}<path d="M76 92 q14 0 12 18" ${wO(2.5)} stroke="#b45309"/><ellipse cx="50" cy="96" rx="32" ry="20" fill="#fcd34d" ${wO()}/>${[24,40,62,76].map(x => `<rect x="${x - 5}" y="104" width="10" height="46" rx="4" fill="#fcd34d" ${wO(2.5)}/>`).join('')}
+    <path d="M22 92 q-6 -40 2 -66 l18 0 q-4 30 6 64z" fill="#fcd34d" ${wO()}/>${[[30,40],[34,62],[28,80],[44,96],[60,90],[70,100],[28,108]].map(([x,y]) => `<path d="M${x} ${y} q5 -4 9 0 q2 6 -4 8 q-7 0 -5 -8z" fill="#c2410c"/>`).join('')}
+    <ellipse cx="34" cy="16" rx="18" ry="13" fill="#fcd34d" ${wO()}/><path d="M24 6 v-8 M38 4 v-8" ${wO(2.5)}/><circle cx="24" cy="-3" r="3.5" fill="#92400e"/><circle cx="38" cy="-5" r="3.5" fill="#92400e"/>${eyes2(28, 40, 14, 2.6)}<ellipse cx="16" cy="20" rx="5" ry="4" fill="#fde68a" ${wO(1.5)}/>`),
+
+  /* ---------- rides ---------- */
+  rocket: artItem(78, 160, .95, `<g class="wa-hover"><path class="wa-flame" d="M26 128 q13 40 26 0z" fill="#f97316"/><path class="wa-flame b" d="M32 128 q7 24 14 0z" fill="#fde047"/>
+    <path d="M14 104 l-12 26 h20z M64 104 l12 26 h-20z" fill="#ef4444" ${wO()}/><path d="M39 4 q28 30 24 100 q-2 22 -6 26 h-36 q-4 -4 -6 -26 q-4 -70 24 -100z" fill="#f1f5f9" ${wO()}/>${sh('M39 4 q28 30 24 100 q-2 22 -6 26 h-18z')}
+    <path d="M39 4 q14 14 20 34 h-40 q6 -20 20 -34z" fill="#ef4444" ${wO()}/><circle cx="39" cy="64" r="12" fill="#7dd3fc" ${wO()}/><path d="M33 60 q4 -6 10 -4" stroke="#fff" stroke-width="3" fill="none"/><rect x="31" y="98" width="16" height="22" rx="4" fill="#ef4444" ${wO(2)}/></g>`),
+  jet: artItem(170, 74, 2, `<g class="wa-hover"><path d="M8 40 q2 -14 30 -14 h90 q30 0 38 14 q-8 12 -38 12 h-90 q-28 0 -30 -12z" fill="#f8fafc" ${wO()}/>${sh('M8 40 q2 12 30 12 h90 q30 0 38 -12z')}<path d="M20 28 l-12 -24 h16 l24 22z" fill="#3b82f6" ${wO()}/>
+    <path d="M70 46 l-20 26 h20 l34 -24z" fill="#3b82f6" ${wO()}/>${[64,80,96,112].map(x => `<circle cx="${x}" cy="36" r="4.5" fill="#7dd3fc" ${wO(1.5)}/>`).join('')}<path d="M140 30 q14 2 22 10 h-18z" fill="#7dd3fc" ${wO(2)}/><path d="M38 34 h96" stroke="#ef4444" stroke-width="3"/></g>`),
+  heli: artItem(156, 96, 1.85, `<g class="wa-hover"><g class="wa-rotor"><path d="M10 10 h136" stroke="${WI}" stroke-width="5" stroke-linecap="round"/></g><path d="M78 10 v12" ${wO(3)}/>
+    <path d="M30 52 q0 -32 42 -32 q38 0 42 30 q2 26 -36 30 h-26 q-22 0 -22 -28z" fill="#f59e0b" ${wO()}/>${sh('M72 82 h6 q38 -4 36 -32 q-4 22 -42 24z')}<path d="M80 30 q26 2 30 22 h-30z" fill="#7dd3fc" ${wO(2.5)}/><path d="M86 34 q10 2 14 10" stroke="#fff" stroke-width="3" fill="none"/>
+    <path d="M30 50 h-26 l-4 -12 h6 l6 8 h18" fill="#f59e0b" ${wO(2.5)}/><g class="wa-rotor small"><path d="M4 30 v20" stroke="${WI}" stroke-width="4" stroke-linecap="round"/></g><path d="M44 86 v8 M96 84 v10 M32 94 h76" ${wO(3)}/></g>`),
+  car: artItem(136, 72, 1.65, `${ground(68, 68, 60)}<path d="M8 50 q0 -16 18 -18 l18 -20 h44 l22 20 q20 2 20 18 v8 h-122z" fill="#ef4444" ${wO()}/>${sh('M8 50 h122 v8 h-122z')}<path d="M48 16 h18 v18 h-34z M72 16 h14 l18 18 h-32z" fill="#bae6fd" ${wO(2.5)}/><path d="M52 18 l-8 14" stroke="#fff" stroke-width="3" opacity=".6"/>
+    ${[36,102].map(x => `<g class="wa-wheel"><circle cx="${x}" cy="58" r="12" fill="${WI}"/><circle cx="${x}" cy="58" r="5" fill="#cbd5e1"/><path d="M${x} 50 v16" stroke="#94a3b8" stroke-width="2"/></g>`).join('')}<rect x="122" y="42" width="8" height="5" rx="2" fill="#fde047"/>`),
+  racecar: artItem(156, 64, 1.85, `${ground(78, 60, 70)}<path d="M4 46 l8 -18 h28 l14 -12 h34 l20 14 h36 q8 0 10 8 v10 h-150z" fill="#2563eb" ${wO()}/><path d="M4 30 h-2 v-14 h18 v12" fill="#2563eb" ${wO(2.5)}/><path d="M60 18 h24 l12 10 h-44z" fill="#bae6fd" ${wO(2)}/>
+    <circle cx="74" cy="38" r="8" fill="#fff" ${wO(2)}/><text x="74" y="42" text-anchor="middle" font-family="Lilita One,sans-serif" font-size="11" fill="${WI}">7</text><path d="M20 40 h40 M96 40 h40" stroke="#facc15" stroke-width="4"/>
+    ${[32,122].map(x => `<g class="wa-wheel"><circle cx="${x}" cy="50" r="12" fill="${WI}"/><circle cx="${x}" cy="50" r="5" fill="#facc15"/></g>`).join('')}`),
+  train: artItem(226, 96, 2.7, `${ground(113, 92, 104)}<rect x="12" y="38" width="62" height="40" rx="4" fill="#ef4444" ${wO()}/><rect x="74" y="20" width="48" height="58" rx="4" fill="#ef4444" ${wO()}/><rect x="70" y="12" width="56" height="12" rx="3" fill="${WI}"/>${win(84, 30, 28, 20, '#fde68a')}
+    <rect x="24" y="16" width="14" height="24" fill="${WI}"/><path d="M20 16 h22 l-4 -8 h-14z" fill="${WI}"/>${smoke(31, 2)}<path d="M2 78 l10 -16 v16z" fill="#facc15" ${wO(2)}/><circle cx="16" cy="54" r="6" fill="#fde047" ${wO(2)}/>
+    <rect x="132" y="34" width="86" height="44" rx="4" fill="#22c55e" ${wO()}/>${win(142, 44, 20, 16, '#fde68a')}${win(168, 44, 20, 16, '#fde68a')}${win(194, 44, 16, 16, '#fde68a')}<path d="M122 66 h10" ${wO(3)}/>
+    ${[30,58,98,150,200].map(x => `<g class="wa-wheel"><circle cx="${x}" cy="80" r="10" fill="${WI}"/><circle cx="${x}" cy="80" r="4" fill="#cbd5e1"/></g>`).join('')}`),
+  ship: artItem(206, 136, 2.4, `<g class="wa-rock"><rect x="78" y="34" width="22" height="40" fill="#ef4444" ${wO()}/><path d="M78 42 h22" stroke="#fff" stroke-width="5"/>${smoke(89, 26)}<rect x="110" y="44" width="22" height="30" fill="#ef4444" ${wO()}/><path d="M110 52 h22" stroke="#fff" stroke-width="5"/>
+    <rect x="40" y="66" width="130" height="30" rx="3" fill="#f8fafc" ${wO()}/>${[54,72,90,108,126,144].map(x => `<circle cx="${x}" cy="80" r="4.5" fill="#7dd3fc" ${wO(1.5)}/>`).join('')}<path d="M6 92 h196 l-20 32 h-158z" fill="#1e3a8a" ${wO()}/><path d="M14 100 h180" stroke="#ef4444" stroke-width="5"/></g>
+    <path class="wa-wave" d="M0 130 q12 -8 24 0 t24 0 t24 0 t24 0 t24 0 t24 0 t24 0 t24 0 t24 0" stroke="#38bdf8" stroke-width="4" fill="none"/>`),
+  sailboat: artItem(116, 126, 1.35, `<g class="wa-rock"><path d="M58 8 v86" ${wO(3.5)}/><path d="M62 12 q40 34 42 76 h-42z" fill="#fff" ${wO()}/>${sh('M62 60 q20 6 42 28 h-42z')}<path d="M54 20 q-30 30 -38 68 h38z" fill="#fde68a" ${wO()}/>${flag(58, 10, '#ef4444')}
+    <path d="M6 92 h104 q-6 24 -22 26 h-62 q-16 -2 -20 -26z" fill="#b45309" ${wO()}/><path d="M12 100 h92" stroke="#fde68a" stroke-width="3"/></g><path class="wa-wave" d="M-4 122 q12 -8 24 0 t24 0 t24 0 t24 0 t24 0" stroke="#38bdf8" stroke-width="4" fill="none"/>`),
+  firetruck: artItem(176, 96, 2.1, `${ground(88, 92, 80)}<rect x="8" y="34" width="112" height="44" rx="4" fill="#dc2626" ${wO()}/><path d="M120 34 h26 l22 24 v20 h-48z" fill="#dc2626" ${wO()}/><path d="M126 40 h16 l16 18 h-32z" fill="#bae6fd" ${wO(2.5)}/>
+    <path d="M14 26 h100 M14 18 h100 M20 18 v8 M40 18 v8 M60 18 v8 M80 18 v8 M100 18 v8" ${wO(2.5)} stroke="#e5e7eb"/><rect x="128" y="24" width="18" height="10" rx="3" class="wa-siren" fill="#3b82f6" ${wO(2)}/>
+    <path d="M18 48 h92" stroke="#facc15" stroke-width="5"/><rect x="24" y="56" width="22" height="16" rx="2" fill="#fde68a" ${wO(2)}/>${[34,104,148].map(x => `<g class="wa-wheel"><circle cx="${x}" cy="80" r="12" fill="${WI}"/><circle cx="${x}" cy="80" r="5" fill="#cbd5e1"/></g>`).join('')}`),
+  scooter: artItem(84, 84, 1, `${ground(42, 80, 34)}<path d="M18 70 h44 l8 -6" ${wO(5)} stroke="#06b6d4"/><path d="M66 66 l-10 -56" ${wO(4)}/><path d="M48 10 h18" ${wO(5)} stroke="#f472b6"/>${[18,68].map(x => `<g class="wa-wheel"><circle cx="${x}" cy="72" r="9" fill="${WI}"/><circle cx="${x}" cy="72" r="3.5" fill="#f472b6"/></g>`).join('')}`)
+});
+
+Object.assign(WORLD_ART, {
+  /* ---------- fun ---------- */
+  ferris: artItem(156, 176, 2.2, `${ground(78, 172, 64)}<path d="M78 80 L30 172 M78 80 L126 172 M44 146 h68" ${wO(5)} stroke="#64748b"/><path d="M78 80 L30 172 M78 80 L126 172" fill="none" ${wO(2)}/>
+    <g class="wa-spin slow"><circle cx="78" cy="80" r="66" fill="none" stroke="#ec4899" stroke-width="6"/><circle cx="78" cy="80" r="66" fill="none" ${wO(2)}/><circle cx="78" cy="80" r="40" fill="none" stroke="#f9a8d4" stroke-width="3"/>
+    ${Array.from({ length:8 }, (_, i) => { const a = i * Math.PI / 4, x = 78 + Math.cos(a) * 66, y = 80 + Math.sin(a) * 66; return `<path d="M78 80 L${x.toFixed(1)} ${y.toFixed(1)}" stroke="#94a3b8" stroke-width="2.5"/><circle cx="${x.toFixed(1)}" cy="${y.toFixed(1)}" r="4" fill="#fde047"/>`; }).join('')}
+    ${Array.from({ length:8 }, (_, i) => { const a = i * Math.PI / 4, x = 78 + Math.cos(a) * 66, y = 80 + Math.sin(a) * 66; return `<g class="wa-gondola" style="transform-origin:${x.toFixed(1)}px ${y.toFixed(1)}px"><path d="M${(x - 9).toFixed(1)} ${(y + 4).toFixed(1)} h18 l-2 12 h-14z" fill="${['#ef4444','#3b82f6','#22c55e','#f59e0b'][i % 4]}" ${wO(2)}/></g>`; }).join('')}</g>
+    <circle cx="78" cy="80" r="8" fill="#facc15" ${wO(2.5)}/>`),
+  coaster: artItem(226, 136, 2.9, `${ground(113, 132, 106)}${[30,62,94,126,158,190].map(x => `<path d="M${x} 132 V${x < 110 ? 132 - (110 - Math.abs(x - 70)) * .9 : 70}" stroke="#94a3b8" stroke-width="5"/>`).join('')}
+    <path d="M4 120 Q40 120 60 40 Q74 0 90 40 Q104 90 130 70 Q160 30 180 70 Q196 104 222 104" fill="none" stroke="#ef4444" stroke-width="8"/><path d="M4 120 Q40 120 60 40 Q74 0 90 40 Q104 90 130 70 Q160 30 180 70 Q196 104 222 104" fill="none" ${wO(2)}/>
+    <g class="wa-coaster"><rect x="-14" y="-12" width="28" height="14" rx="4" fill="#facc15" ${wO(2.5)}/><circle cx="-6" cy="-14" r="4" fill="#fcd34d" ${wO(1.5)}/><circle cx="6" cy="-14" r="4" fill="#fcd34d" ${wO(1.5)}/></g>`),
+  carousel: artItem(156, 144, 2.1, `${ground(78, 140, 70)}<ellipse cx="78" cy="128" rx="70" ry="12" fill="#a855f7" ${wO()}/><rect x="74" y="34" width="8" height="94" fill="#facc15" ${wO(2)}/>
+    ${[22,54,102,134].map((x, i) => `<path d="M${x} 40 V120" stroke="#fde68a" stroke-width="3"/><g class="wa-carousel ${i % 2 ? 'b' : ''}"><path d="M${x - 14} 96 q2 -14 14 -14 q8 0 14 -6 l4 4 q-4 8 -2 16 q-14 6 -30 0z" fill="${['#fff','#f9a8d4','#bae6fd','#fde68a'][i]}" ${wO(2.5)}/><path d="M${x + 12} 78 q4 -4 6 0" stroke="#f472b6" stroke-width="3" fill="none"/></g>`).join('')}
+    <path d="M6 44 Q78 -10 150 44 q-72 10 -144 0z" fill="#ec4899" ${wO()}/>${[30,54,78,102,126].map((x, i) => `<path d="M${x} ${44 - (i === 2 ? 36 : i % 2 ? 26 : 12)} L${x - 12} 46 h24z" fill="#fff" opacity=".5"/>`).join('')}<path d="M6 44 Q78 -10 150 44" fill="none" ${wO()}/>
+    ${[14,34,54,78,102,122,142].map((x, i) => `<path d="M${x - 10} 44 q10 12 20 0" fill="${i % 2 ? '#fde68a' : '#f9a8d4'}" ${wO(2)}/>`).join('')}${flag(78, 10, '#22c55e')}`),
+  slide: artItem(136, 116, 1.8, `${ground(68, 112, 62)}<path d="M18 112 V30 M42 112 V30" ${wO(4)} stroke="#3b82f6"/><path d="M18 112 V30 M42 112 V30" fill="none" ${wO(1.5)}/>${[50,70,90].map(y => `<path d="M18 ${y} h24" ${wO(3)}/>`).join('')}<rect x="10" y="22" width="40" height="10" rx="3" fill="#facc15" ${wO(2.5)}/>
+    <path d="M44 28 q30 6 50 50 q14 30 38 32 l-4 8 q-30 -2 -44 -36 q-16 -38 -40 -44z" fill="#ef4444" ${wO()}/>${hi('M52 32 q24 8 38 40 q-18 -24 -38 -36z')}`),
+  fountain: artItem(136, 106, 1.8, `${ground(68, 102, 64)}<ellipse cx="68" cy="88" rx="62" ry="16" fill="#cbd5e1" ${wO()}/><ellipse cx="68" cy="84" rx="52" ry="10" fill="#38bdf8"/><path class="wa-ripple" d="M30 84 q38 8 76 0" stroke="#e0f2fe" stroke-width="3" fill="none"/>
+    <rect x="62" y="46" width="12" height="38" fill="#e2e8f0" ${wO(2.5)}/><ellipse cx="68" cy="48" rx="28" ry="8" fill="#e2e8f0" ${wO()}/><ellipse cx="68" cy="46" rx="22" ry="5" fill="#7dd3fc"/>
+    <g class="wa-water"><path d="M68 44 q-4 -30 0 -40 q4 10 0 40z" fill="#bae6fd"/><path d="M66 10 q-26 6 -30 36 M70 10 q26 6 30 36" stroke="#7dd3fc" stroke-width="4" fill="none" stroke-linecap="round"/><path d="M42 48 q-14 8 -20 34 M94 48 q14 8 20 34" stroke="#bae6fd" stroke-width="3.5" fill="none" stroke-linecap="round"/></g>`),
+  balloons: artItem(70, 120, .95, `<g class="wa-bob"><path d="M20 52 q8 30 16 68 M50 48 q-8 34 -14 72 M36 40 v80" stroke="#64748b" stroke-width="1.5" fill="none"/>
+    ${[[20,30,'#ef4444'],[50,26,'#3b82f6'],[36,16,'#facc15']].map(([x,y,c]) => `<ellipse cx="${x}" cy="${y}" rx="15" ry="18" fill="${c}" ${wO(2.5)}/><path d="M${x - 3} ${y + 18} h6 l-3 4z" fill="${c}" ${wO(1.5)}/>${hi(`M${x - 9} ${y - 6} q2 -8 9 -9 q-6 4 -7 11z`)}`).join('')}</g>`),
+  campfire: artItem(84, 76, 1.1, `${ground(42, 72, 38)}<path d="M8 70 l68 -14 M8 56 l68 14" ${wO(8)} stroke="#8b5a2b"/><path d="M8 70 l68 -14 M8 56 l68 14" fill="none" ${wO(2)}/>${[[10,62],[30,72],[54,72],[74,62]].map(([x,y]) => `<circle cx="${x}" cy="${y}" r="7" fill="#78716c" ${wO(2)}/>`).join('')}
+    <g class="wa-flame"><path d="M42 4 q24 22 16 46 q-4 10 -16 10 q-12 0 -16 -10 q-8 -24 16 -46z" fill="#f97316" ${wO(2.5)}/></g><g class="wa-flame b"><path d="M42 22 q14 14 8 28 q-3 6 -8 6 q-5 0 -8 -6 q-6 -14 8 -28z" fill="#fde047"/></g>
+    <circle class="wa-ember" cx="34" cy="10" r="2" fill="#fde047"/><circle class="wa-ember b" cx="52" cy="6" r="1.8" fill="#fb923c"/>`),
+  kite: artItem(80, 116, 1.05, `<g class="wa-kite"><path d="M40 2 L72 34 L40 74 L8 34Z" fill="#f43f5e" ${wO()}/><path d="M40 2 L40 74 M8 34 H72" stroke="${WI}" stroke-width="2"/><path d="M40 2 L72 34 L40 34Z" fill="#facc15"/><path d="M8 34 L40 74 L40 34Z" fill="#3b82f6"/><path d="M40 2 L72 34 L40 74 L8 34Z" fill="none" ${wO()}/>
+    <path d="M40 74 q-10 10 0 18 q10 8 0 18" stroke="${WI}" stroke-width="2" fill="none"/>${[84,98,110].map((y, i) => `<path d="M${40 + (i % 2 ? 4 : -4)} ${y} l-6 -4 v8z M${40 + (i % 2 ? 4 : -4)} ${y} l6 -4 v8z" fill="${['#facc15','#22c55e','#f472b6'][i]}" ${wO(1.5)}/>`).join('')}</g>`),
+  ball: artItem(52, 52, .65, `<g class="wa-bounce"><circle cx="26" cy="26" r="22" fill="#fff" ${wO()}/><path d="M26 16 l9 7 -3 11 h-12 l-3 -11z" fill="${WI}"/><path d="M26 16 V4 M35 23 l11 -3 M32 34 l7 9 M20 34 l-7 9 M17 23 l-11 -3" stroke="${WI}" stroke-width="2"/>${hi('M10 18 q6 -10 16 -12 q-10 6 -14 14z')}</g>`),
+  target: artItem(76, 100, 1, `${ground(38, 96, 30)}<path d="M22 96 l10 -30 M54 96 l-10 -30" ${wO(4)} stroke="#8b5a2b"/>${[34,26,18,10].map((r, i) => `<circle cx="38" cy="36" r="${r}" fill="${i % 2 ? '#fff' : '#ef4444'}" ${wO(2.2)}/>`).join('')}<path d="M38 36 l26 -24" ${wO(3)}/><path d="M60 8 l10 -4 -4 10z" fill="#facc15" ${wO(1.5)}/>`),
+  trophy: artItem(70, 92, .95, `${ground(35, 90, 24)}<g class="wa-glow"><path d="M18 8 h34 v22 q0 22 -17 26 q-17 -4 -17 -26z" fill="#facc15" ${wO()}/><path d="M18 14 q-14 0 -12 12 q2 12 14 12 M52 14 q14 0 12 12 q-2 12 -14 12" fill="none" ${wO(3)}/>
+    <rect x="29" y="56" width="12" height="14" fill="#f59e0b" ${wO(2)}/><rect x="18" y="70" width="34" height="14" rx="3" fill="#7c4a1e" ${wO(2.5)}/>${hi('M24 12 h8 v16 q0 10 -4 16 q-4 -10 -4 -32z')}<path d="M35 22 l3 6 6 1 -5 4 1 6 -5 -3 -5 3 1 -6 -5 -4 6 -1z" fill="#fff"/></g>${sparkle(60, 10, .7)}`),
+  present: artItem(70, 72, .9, `${ground(35, 70, 30)}<rect x="8" y="30" width="54" height="38" rx="3" fill="#a855f7" ${wO()}/><rect x="4" y="20" width="62" height="14" rx="3" fill="#c084fc" ${wO()}/><path d="M32 20 v48 h6 v-48z" fill="#facc15" ${wO(2)}/>
+    <g class="wa-bob"><path d="M35 20 q-24 -18 -18 -2 q4 6 18 2z M35 20 q24 -18 18 -2 q-4 6 -18 2z" fill="#facc15" ${wO(2.5)}/></g>${hi('M10 32 h20 v6 h-20z')}`),
+  cupcake: artItem(56, 66, .75, `${ground(28, 64, 18)}<path d="M10 36 h36 l-5 28 h-26z" fill="#f9a8d4" ${wO()}/>${[18,26,34,42].map(x => `<path d="M${x - 2} 36 l2 28" stroke="#ec4899" stroke-width="2"/>`).join('')}<path d="M6 38 q-2 -16 10 -18 q2 -14 14 -12 q12 -4 16 8 q12 2 8 22z" fill="#fef3c7" ${wO()}/>
+    ${[[18,24,'#ef4444'],[30,18,'#3b82f6'],[40,28,'#22c55e'],[24,32,'#facc15']].map(([x,y,c]) => `<rect x="${x}" y="${y}" width="5" height="2.4" rx="1" fill="${c}" transform="rotate(${x * 7} ${x} ${y})"/>`).join('')}<circle cx="30" cy="6" r="6" fill="#dc2626" ${wO(2)}/>`),
+  treasure: artItem(96, 80, 1.25, `${ground(48, 76, 44)}<g class="wa-glow"><path d="M14 30 q34 -18 68 0" fill="none"/><ellipse cx="48" cy="34" rx="32" ry="10" fill="#fde047" opacity=".9"/>${sparkle(30, 20, .8)}${sparkle(62, 14, 1)}${sparkle(48, 6, .6)}</g>
+    <path d="M10 34 q0 -26 38 -28 q38 2 38 28z" fill="#a16207" ${wO()}/><path d="M10 34 h76 v38 h-76z" fill="#b45309" ${wO()}/><path d="M10 44 h76 M10 62 h76" stroke="#facc15" stroke-width="4"/><path d="M10 34 h76 v38 h-76z" fill="none" ${wO()}/>
+    <rect x="40" y="40" width="16" height="18" rx="3" fill="#facc15" ${wO(2)}/><circle cx="48" cy="48" r="3" fill="${WI}"/>${[[22,28],[34,24],[58,26],[70,30]].map(([x,y]) => `<circle cx="${x}" cy="${y}" r="5" fill="#facc15" ${wO(1.5)}/>`).join('')}`),
+
+  /* ---------- legendary ---------- */
+  lg_dragon: artItem(190, 140, 2.6, `<g class="wa-hover"><g class="wa-wing"><path d="M80 60 q-34 -60 -78 -46 q22 10 16 24 q18 -6 22 12 q18 -8 26 14z" fill="#fbbf24" ${wO()}/>${hi('M10 18 q30 -6 56 30 q-24 -20 -56 -30z')}</g><g class="wa-wing r"><path d="M110 56 q34 -60 78 -46 q-22 10 -16 24 q-18 -6 -22 12 q-18 -8 -26 14z" fill="#fbbf24" ${wO()}/></g>
+    <path d="M40 100 q-30 0 -36 20 q20 -6 30 4 q4 -14 22 -12z" fill="#f59e0b" ${wO()}/><ellipse cx="94" cy="92" rx="48" ry="30" fill="#f59e0b" ${wO()}/><ellipse cx="94" cy="100" rx="30" ry="16" fill="#fef3c7" ${wO(2)}/>${sh('M94 122 q46 -2 48 -30 q-8 22 -48 24z')}
+    <path d="M130 70 q14 -24 30 -26 q18 0 22 14 q2 14 -14 16 q-14 2 -24 16z" fill="#f59e0b" ${wO()}/><path d="M162 46 l4 -18 6 16 M172 50 l10 -14 -2 18" fill="#fef3c7" ${wO(2)}/>${eyes2(168, 168, 54, 3.4)}<path d="M180 64 q-8 4 -14 2" stroke="${WI}" stroke-width="2" fill="none"/>
+    ${[66,84,102,120].map(x => `<path d="M${x} ${66 - (x - 60) * .06} l5 -12 5 12" fill="#fde68a" ${wO(1.8)}/>`).join('')}</g>${sparkle(20, 120, .8, '#fde047')}${sparkle(170, 120, .6, '#fde047')}`),
+  lg_palace: artItem(200, 176, 2.5, `${ground(100, 172, 96)}<g class="wa-glow"><ellipse cx="100" cy="110" rx="96" ry="60" fill="#c4b5fd" opacity=".35"/></g>${[[16,74,30],[154,74,30],[64,40,72]].map(([x,y,w]) => `<path d="M${x} ${y} L${x + w / 2} ${y - 50} L${x + w} ${y}Z" fill="#a5f3fc" ${wO()}/>${hi(`M${x + w / 2} ${y - 50} L${x + 4} ${y} h6z`)}`).join('')}
+    <rect x="16" y="74" width="30" height="98" fill="#e0f2fe" ${wO()}/><rect x="154" y="74" width="30" height="98" fill="#e0f2fe" ${wO()}/><rect x="46" y="96" width="108" height="76" fill="#f0f9ff" ${wO()}/><rect x="64" y="40" width="72" height="70" fill="#e0f2fe" ${wO()}/>
+    ${[[24,96],[162,96],[88,60]].map(([x,y]) => `<path d="M${x} ${y + 18} v-10 a7 7 0 0 1 14 0 v10z" fill="#c084fc" class="wa-win" ${wO(2)}/>`).join('')}<path d="M86 172 v-34 a14 14 0 0 1 28 0 v34z" fill="#a855f7" ${wO(2.5)}/>
+    ${[[30,30],[170,30],[100,-6],[60,90],[140,90]].map(([x,y], i) => sparkle(x, y, i ? .7 : 1, '#fff')).join('')}`),
+  lg_unicorn: artItem(140, 124, 1.9, `${['#ef4444','#f97316','#facc15','#22c55e','#3b82f6','#a855f7'].map((c, i) => `<path d="M${2 + i * 3} ${84 - i * 4} q4 -30 30 -36" stroke="${c}" stroke-width="3.5" fill="none" opacity=".85"/>`).join('')}
+    <g class="wa-hover">${WORLD_ART.unicorn.replace(/^<svg[^>]*>|<\/svg>$/g, '').replace(/<ellipse cx="60" cy="112"[^>]*\/>/, '')}</g>${sparkle(120, 8, .8, '#fde047')}${sparkle(20, 20, .6)}`),
+  lg_phoenix: artItem(170, 150, 2.3, `<g class="wa-hover"><g class="wa-wing"><path d="M72 66 q-30 -60 -70 -50 q24 10 14 24 q22 -4 22 14 q20 -6 26 14z" fill="#f97316" ${wO()}/><path d="M20 22 q26 4 46 36" stroke="#fde047" stroke-width="5" fill="none"/></g><g class="wa-wing r"><path d="M98 66 q30 -60 70 -50 q-24 10 -14 24 q-22 -4 -22 14 q-20 -6 -26 14z" fill="#f97316" ${wO()}/><path d="M150 22 q-26 4 -46 36" stroke="#fde047" stroke-width="5" fill="none"/></g>
+    <g class="wa-flame">${[[70,110,'#ef4444'],[86,118,'#f97316'],[100,110,'#ef4444']].map(([x,y,c]) => `<path d="M${x} 96 q-10 ${y - 96} 2 ${y - 66} q6 -16 0 -30z" fill="${c}" ${wO(2)}/>`).join('')}</g>
+    <ellipse cx="85" cy="80" rx="24" ry="28" fill="#ef4444" ${wO()}/><ellipse cx="85" cy="86" rx="14" ry="16" fill="#fde68a"/><circle cx="85" cy="44" r="18" fill="#ef4444" ${wO()}/><path d="M80 28 q-2 -20 8 -26 q-2 14 6 22 q6 -14 14 -12 q-8 8 -8 20z" fill="#fde047" ${wO(2)}/>
+    <path d="M98 44 l14 4 -14 6z" fill="#facc15" ${wO(2)}/>${eyes2(84, 92, 40, 2.8)}</g>${sparkle(30, 110, .7, '#fde047')}${sparkle(140, 120, .8, '#fde047')}`),
+  lg_whale: artItem(200, 110, 2.7, `<g class="wa-hover"><path d="M150 52 q30 -30 46 -22 q-14 6 -18 18 q16 4 20 16 q-24 -4 -40 0z" fill="#6366f1" ${wO()}/><path d="M8 56 q4 -44 72 -46 q60 0 74 40 q6 28 -22 40 q-30 12 -78 6 q-46 -6 -46 -40z" fill="#818cf8" ${wO()}/>
+    <path d="M14 66 q40 26 120 14 q14 -2 20 -12 q-10 24 -40 28 q-62 8 -100 -30z" fill="#e0e7ff" ${wO(2)}/>${[30,44,58,72,86,100].map(x => `<path d="M${x} 74 q4 10 8 14" stroke="#a5b4fc" stroke-width="2" fill="none"/>`).join('')}
+    ${eyes2(40, 40, 50, 3.6)}<path d="M50 62 q10 6 20 2" stroke="${WI}" stroke-width="2.2" fill="none"/><path d="M70 44 q20 18 40 4" stroke="#4f46e5" stroke-width="4" fill="none"/>
+    <g class="wa-spout"><path d="M56 10 q-10 -10 -4 -16 M56 10 q2 -14 10 -16 M56 10 q12 -8 18 -4" stroke="#7dd3fc" stroke-width="3.5" fill="none" stroke-linecap="round"/></g>${[[100,30],[120,40],[86,26]].map(([x,y]) => `<circle cx="${x}" cy="${y}" r="3" fill="#fff" opacity=".7"/>`).join('')}</g>`),
+  lg_rocket: artItem(96, 176, 1.25, `<g class="wa-hover"><path class="wa-flame" d="M32 140 q16 50 32 0z" fill="#a855f7"/><path class="wa-flame b" d="M40 140 q8 30 16 0z" fill="#f0abfc"/><path d="M20 110 l-16 32 h24z M76 110 l16 32 h-24z" fill="#7c3aed" ${wO()}/>
+    <path d="M48 4 q36 36 30 112 q-2 22 -8 26 h-44 q-6 -4 -8 -26 q-6 -76 30 -112z" fill="#1e1b4b" ${wO()}/>${[[36,40],[60,60],[40,90],[58,110],[46,124]].map(([x,y]) => `<circle cx="${x}" cy="${y}" r="1.8" fill="#fff"/>`).join('')}<path d="M48 4 q18 18 24 40 h-48 q6 -22 24 -40z" fill="#a855f7" ${wO()}/>
+    <circle cx="48" cy="74" r="13" fill="#67e8f9" ${wO()}/><path d="M48 66 l2.5 5.5 6 .5 -4.5 4 1.5 6 -5.5 -3 -5.5 3 1.5 -6 -4.5 -4 6 -.5z" fill="#fde047"/><circle cx="62" cy="20" r="18" fill="none" stroke="#f0abfc" stroke-width="2" opacity=".6"/></g>${sparkle(10, 40, .8, '#fde047')}${sparkle(88, 70, .6)}`),
+  lg_rainbow: artItem(220, 130, 3, `<g class="wa-glow">${['#ef4444','#f97316','#facc15','#22c55e','#3b82f6','#8b5cf6'].map((c, i) => `<path d="M${16 + i * 10} 120 a${94 - i * 10} ${94 - i * 10} 0 0 1 ${188 - i * 20} 0" stroke="${c}" stroke-width="10.5" fill="none"/>`).join('')}</g><path d="M11 120 a99 99 0 0 1 198 0 M66 120 a44 44 0 0 1 88 0" stroke="${WI}" stroke-width="2.5" fill="none"/>
+    ${[[30,60],[110,8],[190,60],[70,26],[150,26]].map(([x,y], i) => sparkle(x, y, i % 2 ? .7 : 1.1, i % 2 ? '#fde047' : '#fff')).join('')}<path d="M98 120 q4 -10 12 -10 q8 0 12 10z" fill="#facc15" ${wO(2)}/>${[100,108,116].map(x => `<circle cx="${x}" cy="112" r="4" fill="#facc15" ${wO(1.5)}/>`).join('')}`),
+  lg_trophy: artItem(100, 140, 1.4, `${ground(50, 136, 36)}<g class="wa-glow"><circle cx="50" cy="44" r="46" fill="#fde047" opacity=".25"/></g><path d="M22 8 h56 v36 q0 34 -28 40 q-28 -6 -28 -40z" fill="#facc15" ${wO()}/>${sh('M50 84 q28 -6 28 -40 v-36 h-14 v36 q0 30 -14 40z')}
+    <path d="M22 18 q-22 0 -18 20 q4 20 22 18 M78 18 q22 0 18 20 q-4 20 -22 18" fill="none" ${wO(3.5)}/><rect x="42" y="84" width="16" height="20" fill="#f59e0b" ${wO(2.5)}/><rect x="24" y="104" width="52" height="26" rx="4" fill="#7c2d12" ${wO()}/><rect x="34" y="112" width="32" height="10" rx="2" fill="#fde68a" ${wO(1.5)}/>
+    <path d="M50 26 l5 11 12 1 -9 8 3 12 -11 -6 -11 6 3 -12 -9 -8 12 -1z" fill="#fff" ${wO(1.5)}/>${hi('M30 14 h10 v26 q0 18 -6 26 q-4 -16 -4 -52z')}${sparkle(88, 10, .9)}${sparkle(10, 70, .7)}${sparkle(92, 90, .6, '#fde047')}`),
+
+  /* ---------- mythic ---------- */
+  my_portal: artItem(120, 140, 1.6, `${ground(60, 136, 46)}<path d="M18 136 V60 a42 42 0 0 1 84 0 v76" fill="#78716c" ${wO()}/><path d="M28 136 V62 a32 32 0 0 1 64 0 v74z" fill="#1e1b4b" ${wO(2.5)}/>
+    <g class="wa-spin"><path d="M60 98 m-24 0 a24 24 0 1 0 48 0 a24 24 0 1 0 -48 0" fill="none" stroke="#a855f7" stroke-width="5" stroke-dasharray="20 10"/><path d="M60 98 m-14 0 a14 14 0 1 0 28 0 a14 14 0 1 0 -28 0" fill="none" stroke="#22d3ee" stroke-width="4" stroke-dasharray="12 8"/></g><circle cx="60" cy="98" r="6" fill="#f0abfc" class="wa-pulse"/>
+    ${[[38,20],[82,24],[60,6]].map(([x,y]) => `<circle cx="${x}" cy="${y + 28}" r="5" fill="#a5f3fc" ${wO(1.5)}/>`).join('')}${sparkle(14, 40, .7, '#c4b5fd')}${sparkle(108, 50, .7, '#c4b5fd')}`),
+  my_planet: artItem(110, 90, 1.5, `<g class="wa-hover"><ellipse cx="55" cy="48" rx="52" ry="14" fill="none" stroke="#fde68a" stroke-width="6" transform="rotate(-14 55 48)"/><circle cx="55" cy="44" r="30" fill="#f472b6" ${wO()}/>${sh('M55 74 a30 30 0 0 0 28 -40 q-6 30 -28 40z')}
+    <path d="M30 34 q20 -6 50 0 M28 50 q26 -4 54 2" stroke="#fbcfe8" stroke-width="4" fill="none"/>${eyes2(46, 62, 42, 3)}<path d="M50 52 q5 4 10 0" stroke="${WI}" stroke-width="2" fill="none"/><path d="M5 56 q50 14 100 -26" stroke="#fde68a" stroke-width="6" fill="none" transform="rotate(-2 55 48)"/><path d="M5 56 q50 14 100 -26" fill="none" ${wO(1.5)}/></g>${sparkle(100, 10, .7)}${sparkle(10, 14, .6)}`),
+  my_star: artItem(140, 100, 1.9, `<g class="wa-hover">${['#f0abfc','#c4b5fd','#93c5fd'].map((c, i) => `<path d="M${74 - i * 6} ${46 + i * 6} q-36 ${20 - i * 6} -70 ${30 - i * 6}" stroke="${c}" stroke-width="${6 - i}" fill="none" stroke-linecap="round" opacity=".8"/>`).join('')}
+    <g class="wa-pulse"><path d="M100 6 l10 22 24 2 -18 16 6 24 -22 -12 -22 12 6 -24 -18 -16 24 -2z" fill="#fde047" ${wO()}/>${eyes2(93, 107, 40, 2.8)}<path d="M96 48 q4 4 8 0" stroke="${WI}" stroke-width="2" fill="none"/></g></g>`),
+  my_genie: artItem(120, 126, 1.6, `${ground(60, 122, 40)}<path d="M18 116 q0 -14 26 -16 h40 q14 0 22 -10 q10 -6 12 4 q-4 18 -30 26 h-60 q-10 0 -10 -4z" fill="#facc15" ${wO()}/><path d="M48 100 q12 -8 24 0" fill="#f59e0b" ${wO(2)}/>
+    <g class="wa-genie"><path d="M60 98 q-24 -10 -10 -30 q-16 -14 4 -26 q22 -8 30 8 q14 18 -6 30 q12 10 -18 18z" fill="#a78bfa" opacity=".85" ${wO(2.5)}/><circle cx="66" cy="34" r="16" fill="#818cf8" ${wO()}/>${eyes2(60, 72, 32, 2.8)}<path d="M60 40 q6 5 12 0" stroke="${WI}" stroke-width="2" fill="none"/><path d="M56 20 q10 -14 22 0z" fill="#ef4444" ${wO(2)}/><circle cx="67" cy="14" r="3" fill="#facc15"/></g>${sparkle(98, 30, .7, '#fde047')}${sparkle(30, 50, .6, '#fde047')}`),
+  my_island: artItem(150, 140, 2, `<g class="wa-hover"><path d="M10 70 q65 -14 130 0 q-10 30 -40 46 q-20 20 -26 22 q-6 -2 -26 -22 q-30 -16 -38 -46z" fill="#a16207" ${wO()}/>${sh('M75 138 q6 -2 26 -22 q30 -16 40 -46 q-30 30 -66 68z')}<path d="M10 70 q65 -14 130 0 q-65 14 -130 0z" fill="#4ade80" ${wO()}/>
+    <path d="M100 66 q-2 -26 4 -40 l6 2 q-6 14 -4 38z" fill="#a0703c" ${wO(2)}/><g class="wa-sway"><path d="M106 28 q-20 -12 -36 2 q18 -4 36 0z M108 28 q18 -14 34 0 q-18 -4 -34 2z M106 28 q-6 -18 -22 -18 q14 6 20 18z" fill="#22c55e" ${wO(2)}/></g>
+    <rect x="30" y="44" width="30" height="22" fill="#fef3c7" ${wO(2.5)}/><path d="M26 46 L45 30 L64 46Z" fill="#ef4444" ${wO(2.5)}/><path class="wa-water" d="M118 96 q4 20 0 40 M126 90 q4 24 2 44" stroke="#7dd3fc" stroke-width="4" fill="none" stroke-linecap="round"/></g>`),
+  my_peacock: artItem(150, 130, 2, `${ground(75, 126, 40)}<g class="wa-fan">${Array.from({ length:11 }, (_, i) => { const a = (-160 + i * 14) * Math.PI / 180, x = 75 + Math.cos(a) * 66, y = 100 + Math.sin(a) * 66;
+      return `<path d="M75 100 L${x.toFixed(1)} ${y.toFixed(1)}" stroke="#16a34a" stroke-width="3"/><ellipse cx="${x.toFixed(1)}" cy="${y.toFixed(1)}" rx="11" ry="14" fill="${['#22c55e','#06b6d4','#a855f7'][i % 3]}" ${wO(2)} transform="rotate(${(-70 + i * 14)} ${x.toFixed(1)} ${y.toFixed(1)})"/><circle cx="${x.toFixed(1)}" cy="${y.toFixed(1)}" r="5" fill="#1e3a8a"/><circle cx="${x.toFixed(1)}" cy="${y.toFixed(1)}" r="2.2" fill="#facc15"/>`; }).join('')}</g>
+    <ellipse cx="75" cy="102" rx="16" ry="22" fill="#2563eb" ${wO()}/><path d="M75 82 q-4 -26 6 -34" stroke="#2563eb" stroke-width="10" fill="none" stroke-linecap="round"/><path d="M75 82 q-4 -26 6 -34" fill="none" ${wO(2)}/><circle cx="82" cy="44" r="9" fill="#2563eb" ${wO(2.5)}/>
+    <path d="M90 44 l8 2 -8 3z" fill="#facc15" ${wO(1.5)}/><g class="wa-blink"><circle cx="84" cy="42" r="2.2" fill="#fff"/></g><path d="M82 36 l-2 -10 M86 36 l2 -10" stroke="#2563eb" stroke-width="2"/><circle cx="80" cy="25" r="2.5" fill="#06b6d4"/><circle cx="88" cy="25" r="2.5" fill="#06b6d4"/>
+    <path d="M68 122 l-2 -6 M82 122 l2 -6" ${wO(2.5)}/>`),
+
+  /* ---------- streets ---------- */
+  trafficlight: artItem(40, 120, .55, `${ground(20, 118, 14)}<path d="M20 118 V64" ${wO(5)} stroke="#475569"/><rect x="6" y="4" width="28" height="64" rx="8" fill="#1f2937" ${wO()}/><circle class="wa-tl r" cx="20" cy="18" r="7" fill="#ef4444"/><circle class="wa-tl y" cx="20" cy="36" r="7" fill="#facc15"/><circle class="wa-tl g" cx="20" cy="54" r="7" fill="#22c55e"/>`),
+  busstop: artItem(110, 104, 1.4, `${ground(55, 100, 50)}<path d="M10 100 V30 M100 100 V30" ${wO(4)} stroke="#475569"/><path d="M4 30 h102 l-6 -12 h-90z" fill="#3b82f6" ${wO()}/><rect x="16" y="36" width="78" height="44" rx="3" fill="#bae6fd" opacity=".55" ${wO(2)}/><rect x="22" y="76" width="66" height="8" rx="2" fill="#8b5a2b" ${wO(2)}/>
+    <circle cx="96" cy="16" r="10" fill="#fff" ${wO(2)}/><text x="96" y="20" text-anchor="middle" font-family="Lilita One,sans-serif" font-size="12" fill="#2563eb">B</text>`),
+  bus: artItem(190, 96, 2.3, `${ground(95, 92, 88)}<rect x="6" y="14" width="176" height="66" rx="12" fill="#facc15" ${wO()}/>${sh('M6 62 h176 v6 q0 12 -12 12 h-152 q-12 0 -12 -12z')}${[18,46,74,102,130].map(x => win(x, 24, 22, 22, '#bae6fd')).join('')}<path d="M156 24 h18 q4 0 4 4 v30 h-22z" fill="#bae6fd" ${wO(2.5)}/>
+    <path d="M10 56 h170" stroke="#1f2937" stroke-width="3"/><rect x="176" y="62" width="8" height="6" rx="2" fill="#fff"/>${[40,146].map(x => `<g class="wa-wheel"><circle cx="${x}" cy="80" r="12" fill="${WI}"/><circle cx="${x}" cy="80" r="5" fill="#cbd5e1"/></g>`).join('')}`),
+  taxi: artItem(136, 76, 1.65, `${ground(68, 72, 60)}<rect x="56" y="2" width="24" height="10" rx="3" fill="#fff" ${wO(2)}/><text x="68" y="10.5" text-anchor="middle" font-family="Lilita One,sans-serif" font-size="8" fill="${WI}">TAXI</text>
+    <path d="M8 54 q0 -16 18 -18 l18 -20 h44 l22 20 q20 2 20 18 v8 h-122z" fill="#facc15" ${wO()}/><path d="M48 20 h18 v18 h-34z M72 20 h14 l18 18 h-32z" fill="#bae6fd" ${wO(2.5)}/><path d="M10 48 h120" stroke="${WI}" stroke-width="5" stroke-dasharray="6 6"/>
+    ${[36,102].map(x => `<g class="wa-wheel"><circle cx="${x}" cy="62" r="12" fill="${WI}"/><circle cx="${x}" cy="62" r="5" fill="#cbd5e1"/></g>`).join('')}`),
+  statue: artItem(80, 150, 1.05, `${ground(40, 146, 34)}<rect x="10" y="118" width="60" height="28" rx="3" fill="#d6d3d1" ${wO()}/><rect x="16" y="110" width="48" height="10" fill="#e7e5e4" ${wO(2.5)}/>
+    <path d="M28 110 q-4 -40 4 -60 q8 -6 16 0 q8 20 4 60z" fill="#5eead4" ${wO()}/><circle cx="40" cy="38" r="12" fill="#5eead4" ${wO()}/><path d="M30 30 l-2 -10 6 6 2 -10 4 10 4 -10 2 10 6 -6 -2 10" fill="#5eead4" ${wO(2)}/><path d="M50 56 q10 -18 6 -40" ${wO(5)} stroke="#5eead4"/><path d="M50 56 q10 -18 6 -40" fill="none" ${wO(2)}/>
+    <path class="wa-flame" d="M56 16 q-8 -8 0 -16 q8 8 0 16z" fill="#fbbf24" ${wO(2)}/><path d="M26 66 h10 v26 h-10z" fill="#99f6e4" ${wO(2)}/>`)
+});
+// shops and restaurants: real storefronts (the shop helper), each with its own colors and sign
+Object.assign(WORLD_ART, {
+  burger:   shop('#fef3c7', '#ef4444', '#facc15', '🍔', 'Burgers'),
+  bakery:   shop('#fdf2f8', '#f472b6', '#fff', '🧁', 'Bakery'),
+  sushi:    shop('#ecfeff', '#0f766e', '#f8fafc', '🍣', 'Sushi'),
+  noodles:  shop('#fff7ed', '#dc2626', '#fde68a', '🍜', 'Noodles'),
+  cafe:     shop('#f5f5f4', '#7c4a1e', '#fef3c7', '☕', 'Café'),
+  candy:    shop('#fdf4ff', '#a855f7', '#f9a8d4', '🍭', 'Candy'),
+  toystore: shop('#eff6ff', '#2563eb', '#facc15', '🧸', 'Toys'),
+  bookstore:shop('#fefce8', '#166534', '#fef3c7', '📚', 'Books'),
+  petshop:  shop('#f0fdf4', '#22c55e', '#fff', '🐾', 'Pets'),
+  flowers:  shop('#fff1f2', '#ec4899', '#bbf7d0', '🌷', 'Flowers'),
+  market:   shop('#fefce8', '#16a34a', '#fef08a', '🍎', 'Market'),
+  arcade:   shop('#1e1b4b', '#7c3aed', '#22d3ee', '🕹️', 'Arcade'),
+  library:  shop('#f5f5f4', '#1e3a8a', '#e0e7ff', '📖', 'Library'),
+  firestation: shop('#fee2e2', '#dc2626', '#fff', '🚒', 'Fire Dept'),
+  police:   shop('#eff6ff', '#1e3a8a', '#fff', '🚓', 'Police'),
+  hospital: shop('#f8fafc', '#ef4444', '#fff', '🏥', 'Hospital')
+});
+Object.assign(TOWN_SVG, WORLD_ART);
 
 WORLD_ITEMS.push(
   ['dream','dreamhouse','🏩','Pink Dream Mansion',80], ['dream','herocar','🦇','Midnight Hero Car',70], ['dream','townhall','🏛️','Town Hall',50],
@@ -3571,7 +3858,7 @@ function screenWorld(visitKid){
           K.cosmicSpent = (K.cosmicSpent||0) + legendCosmic(l); K.legendOwned = (K.legendOwned || []).concat(l.id); save(); bal.textContent = '⭐ ' + balance() + '   💫 ' + cosmicBal();
           await epicReveal(l, 'legendary', 'LEGENDARY SUMMONED!', 'It\'s yours forever. Watch it come alive in your world!');
           putOut(row); checkBadges(); }},
-          el('span',{class:'chip-e' + (open ? '' : ' silhouette')}, l.e),
+          el('span',{class:'chip-e' + (open ? '' : ' silhouette'), html: TOWN_SVG[l.id] || l.e}),
           el('span',{class:'chip-name'}, l.name),
           open ? el('span',{class:'chip-price' + (owned ? '' : ' cosmic')}, owned ? (inWorld(l.id) ? '✓ In world' : 'Place it') : '💫 ' + legendCosmic(l))
                : el('span',{class:'chip-req'}, `🔒 ${label} · ${have}/${need}`)));
@@ -3582,7 +3869,7 @@ function screenWorld(visitKid){
           if (!owned){ say(`Mythic items are only found in Starfall Chests. Great reads can make one fall from the sky!`); return; }
           if (inWorld(m.id)){ say(`Your ${m.name} is already in your world!`); return; }
           putOut(row); }},
-          el('span',{class:'chip-e' + (owned ? '' : ' silhouette')}, owned ? m.e : '❔'),
+          el('span',{class:'chip-e' + (owned ? '' : ' silhouette'), html: owned ? (TOWN_SVG[m.id] || m.e) : '❔'}),
           el('span',{class:'chip-name'}, owned ? m.name : 'Mythic ???'),
           el('span',{class: owned ? 'chip-price' : 'chip-req'}, owned ? (inWorld(m.id) ? '✓ In world' : 'Place it') : `🌠 Starfall Chest only · ${K.chestPity || 0}/${CHEST_ODDS}`)));
       });
@@ -3625,7 +3912,7 @@ function screenWorld(visitKid){
         const it = { id: W.nextId++, k:id, e, x: Math.round(sl + 300 + Math.random()*300), y: GROUND_Y - 80 - Math.round(Math.random()*60), s: /^inf_/.test(id) ? 1.9 : cat==='home' ? 1.6 : cat==='ride' ? 1.2 : 1, f:false, z: W.items.length + 2 };
         W.items.push(it); worldSel = it.id; save(); place(it); refreshSel(); beep('star'); bal.textContent = '⭐ ' + balance() + '   💫 ' + cosmicBal();
         checkBadges(); }},
-        el('span',{class:'chip-e'}, e), el('span',{class:'chip-name'}, name), el('span',{class:'chip-price'}, locked ? `🔒 Lv ${lvl}` : price ? '⭐ ' + price : 'Free')));
+        el('span',{class:'chip-e', html: TOWN_SVG[id] || e}), el('span',{class:'chip-name'}, name), el('span',{class:'chip-price'}, locked ? `🔒 Lv ${lvl}` : price ? '⭐ ' + price : 'Free')));
     });
   };
   if (!readOnly) drawPalette();
@@ -4272,7 +4559,11 @@ const BOSS_LOOKS = {
     5:{ body:'phantom', f:['hood'], skin:'#475569', belly:'#cbd5e1', eye:'#67e8f9' },
     6:{ body:'brute', f:['rock','horns','crown'], skin:'#78716c', belly:'#a8a29e', eye:'#38bdf8' },
     7:{ body:'brute', f:['horns','mane','wings','tail','ice'], skin:'#0891b2', belly:'#cffafe', eye:'#e0f2fe', mane:'#f0f9ff' },
-    8:{ body:'phantom', f:['horns','crown','storm'], skin:'#4c1d95', belly:'#c4b5fd', eye:'#f0abfc' }
+    8:{ body:'phantom', f:['horns','crown','storm'], skin:'#4c1d95', belly:'#c4b5fd', eye:'#f0abfc' },
+    9:{ body:'brute', f:['pirate','cape','mane'], skin:'#0f766e', belly:'#ccfbf1', eye:'#fde047', mane:'#e2e8f0' },
+    10:{ body:'brute', f:['horns','rock','storm','wide'], skin:'#334155', belly:'#94a3b8', eye:'#4ade80' },
+    11:{ body:'phantom', f:['crown','hood'], skin:'#475569', belly:'#cbd5e1', eye:'#7dd3fc' },
+    12:{ body:'brute', f:['horns','wings','tail','crown','ice','cape'], skin:'#7c3aed', belly:'#e9d5ff', eye:'#f0f9ff', mane:'#c4b5fd' }
   }
 };
 let bossSeq = 0;
@@ -4474,7 +4765,7 @@ async function bossResult(){
         el('div',{class:'boss-face big defeated art', html: bossArt(B, 220)}),
         el('h2',{}, 'BOSS DEFEATED!'), el('p',{class:'boss-taunt'}, `"${B.defeat}"`),
         el('p',{style:'font-size:22px;font-weight:700'}, top ? '👑 You beat the FINAL BOSS! You are a reading legend!' : `${TK === 'daughter' ? 'Rank' : 'Level'} ${K.level} unlocked! +10 ⭐ +5 💫`),
-        el('button',{class:'btn big', onclick:async()=>{ ov.remove(); await bossGearDrop(a.level, false); awardChest('gold', 'Boss defeated'); await checkBadges(); run = null; screenHome(); }},'🏆 Victory! Get my loot ▶')));
+        el('button',{class:'btn big', onclick:async()=>{ ov.remove(); await bossGearDrop(a.level, false); awardChest('gold', 'Boss defeated'); if (!top){ awardChest('cosmic', 'Level up'); await levelUpCinematic(K.level, { cosmic:false }); } await checkBadges(); run = null; screenHome(); }},'🏆 Victory! Get my loot ▶')));
     document.body.append(ov); confetti(160); beep('level'); burst('K.O.!');
     say(`You defeated ${B.name}! ${B.defeat}`);
   } else {
@@ -4486,6 +4777,62 @@ async function bossResult(){
       el('p',{}, `Boss power left: ${pw}%. ${tip}`), el('p',{}, 'Every battle makes you stronger. Try again anytime!')), [['💪 Back','',1]]);
     await checkBadges(); run = null; replay ? screenQuestMap() : screenHome();
   }
+}
+
+
+/* ================= LEVEL-UP CELEBRATION =================
+   A full-screen moment: light bursts, the crest flips from the old rank to the new one,
+   then each reward appears one at a time. Resolves when the reader taps Continue. */
+const RANK_COLORS = ['#a16207','#a16207','#64748b','#64748b','#ca8a04','#ca8a04','#7c3aed','#7c3aed','#0f766e','#c2410c','#0284c7','#b91c1c'];
+function rankCrestSVG(n, col){
+  const laurel = side => Array.from({ length:7 }, (_, i) => { const a = (200 + i * 19) * Math.PI / 180, r = 98, x = 120 + side * Math.cos(a) * r * -1, y = 128 + Math.sin(a) * r * -1;
+    return `<ellipse cx="${x.toFixed(1)}" cy="${y.toFixed(1)}" rx="9" ry="18" transform="rotate(${side * (110 - i * 19)} ${x.toFixed(1)} ${y.toFixed(1)})" fill="url(#lvl-leaf)" stroke="#5b3a06" stroke-width="2"/>`; }).join('');
+  return `<svg viewBox="0 0 240 260" class="lv-crest-svg">
+  <defs><linearGradient id="lvl-gold" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#fff7d1"/><stop offset=".45" stop-color="#fbbf24"/><stop offset="1" stop-color="#92400e"/></linearGradient>
+  <linearGradient id="lvl-face" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="${shade(col, .35)}"/><stop offset=".6" stop-color="${col}"/><stop offset="1" stop-color="${shade(col, -.45)}"/></linearGradient>
+  <linearGradient id="lvl-leaf" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#fde68a"/><stop offset="1" stop-color="#b45309"/></linearGradient></defs>
+  ${laurel(1)}${laurel(-1)}
+  <path d="M120 20 L200 50 Q204 150 120 232 Q36 150 40 50Z" fill="url(#lvl-gold)" stroke="#5b3a06" stroke-width="4" stroke-linejoin="round"/>
+  <path d="M120 36 L186 60 Q188 146 120 214 Q52 146 54 60Z" fill="url(#lvl-face)" stroke="#3b2506" stroke-width="2.5"/>
+  <path d="M120 36 L186 60 Q186 80 180 100 Q120 70 60 100 Q54 80 54 60Z" fill="#fff" opacity=".16"/>
+  <path d="M84 14 l10 18 l12 -22 l14 22 l14 -22 l12 22 l10 -18 l-6 30 h-60z" fill="url(#lvl-gold)" stroke="#5b3a06" stroke-width="3" stroke-linejoin="round"/>
+  <circle cx="120" cy="30" r="5" fill="#f0abfc" stroke="#5b3a06" stroke-width="1.5"/>
+  <text x="120" y="160" text-anchor="middle" class="lv-num" font-family="'Cinzel Decorative','Cinzel',serif" font-weight="900" font-size="92" fill="#fff8dc" stroke="#3b2506" stroke-width="3" paint-order="stroke">${n}</text>
+  </svg>`;
+}
+function levelUpCinematic(level, opts = {}){
+  return new Promise(resolve => {
+    const girl = TK === 'daughter', word = girl ? 'Rank' : 'Level', L = levelDef(level), tr = (TROPHIES[TK] || [])[level - 1];
+    const col = RANK_COLORS[(level - 1) % RANK_COLORS.length], S = setForLevel(level), B = bossFor(level);
+    const rewards = [];
+    if (tr) rewards.push([tr[0], `${tr[1]} trophy`, 'Your new trophy is on the shelf']);
+    if (opts.cosmic !== false) rewards.push(['💫', '+5 Cosmic Power', 'Spend it on legendary things']);
+    if (opts.chest !== false) rewards.push(['🎁', 'Cosmic treasure chest', 'Open it on your home screen']);
+    if (L && L.stories && L.stories.length) rewards.push(['📜', `${L.stories.length} new ${girl ? 'chapters' : 'stories'}`, L.stories.slice(0, 2).map(x => x.title).join(' · ')]);
+    if (S) rewards.push(['🛡️', `${S.name} armor revealed`, B ? `Beat ${B.name} to win the pieces` : 'Win the pieces in battle']);
+    if (level === AVATAR_UNLOCK_LEVEL) rewards.push(['🐾', 'New reading buddy', 'Find it in the Star Shop']);
+    if (typeof legendaryAt === 'function' && legendaryAt(level)) rewards.push(['✨', `Legendary ${girl ? 'dragon' : 'Pocket Pal'}`, 'It can now appear when you read']);
+    const sparks = el('div',{class:'lv-sparks'}); for (let i = 0; i < 30; i++) sparks.append(el('i',{style:`left:${(i * 41) % 100}%;animation-delay:-${(i * .37).toFixed(2)}s;animation-duration:${4 + (i % 4)}s`}));
+    const crest = el('div',{class:'lv-crest', html: rankCrestSVG(Math.max(1, level - 1), col)});
+    const list = el('div',{class:'lv-rewards'});
+    const go = el('button',{class:'lv-go', onclick:()=>{ ov.classList.add('out'); setTimeout(() => { ov.remove(); resolve(); }, 450); }}, el('span',{}, 'Continue ▶'));
+    const ov = el('div',{class:'lv-overlay', style:`--rank:${col}`},
+      el('div',{class:'lv-rays'}), el('div',{class:'lv-ring'}), sparks,
+      el('div',{class:'lv-stage'},
+        el('div',{class:'lv-kicker'}, opts.newLevels ? '✦ New adventures unlocked ✦' : '✦ ' + kidName() + ' ✦'),
+        crest,
+        el('h1',{class:'lv-title', 'data-t': girl ? 'RANK UP!' : 'LEVEL UP!'}, girl ? 'RANK UP!' : 'LEVEL UP!'),
+        el('div',{class:'lv-name'}, `${word} ${level} · ${L ? L.title : ''}`),
+        el('div',{class:'lv-hero', html: heroSVG(120)}),
+        list, go));
+    document.body.append(ov);
+    try { beep('level'); } catch(e){}
+    // the crest flips from the old number to the new one
+    setTimeout(() => { crest.classList.add('flip'); setTimeout(() => { crest.innerHTML = rankCrestSVG(level, col); crest.classList.remove('flip'); crest.classList.add('flash'); ov.classList.add('boom'); confetti(140); try { beep('star'); } catch(e){} }, 260); }, 900);
+    setTimeout(() => say(girl ? `Rank up! You are now a ${L ? L.title : 'rank ' + level}!` : `Level up! Welcome to level ${level}, ${L ? L.title : ''}!`), 1100);
+    rewards.forEach((r, i) => setTimeout(() => { list.append(el('div',{class:'lv-rw'}, el('span',{class:'lv-ri'}, r[0]), el('span',{}, el('b',{}, r[1]), el('small',{}, r[2])))); try { beep('tap'); } catch(e){} }, 1700 + i * 420));
+    setTimeout(() => go.classList.add('on'), 1900 + rewards.length * 420);
+  });
 }
 
 /* ================= REAL BOOKS: log the books they read on paper ================= */
@@ -4581,7 +4928,12 @@ const GEAR_SETS = [
   { id:'storm',    tier:5, name:'Stormcaller',     title:'Stormcaller',       motif:'storm',   prim:'#4c1d95', sec:'#6366f1', trim:'#facc15', gem:'#fde047' },
   { id:'shadow',   tier:6, name:'Nightshade',      title:'Nightshade Ranger', motif:'shadow',  prim:'#1f1235', sec:'#7e22ce', trim:'#c084fc', gem:'#e879f9' },
   { id:'starforge',tier:7, name:'Starforged',      title:'Starforged Champion',motif:'star',   prim:'#1e3a8a', sec:'#312e81', trim:'#fbbf24', gem:'#fef08a' },
-  { id:'celestial',tier:8, name:'Celestial',       title:'Celestial Legend',  motif:'wing',    prim:'#f8fafc', sec:'#fde68a', trim:'#f59e0b', gem:'#f0abfc' }
+  { id:'celestial',tier:8, name:'Celestial',       title:'Celestial Legend',  motif:'wing',    prim:'#f8fafc', sec:'#fde68a', trim:'#f59e0b', gem:'#f0abfc' },
+  // ranks 9–12: the legendary sets
+  { id:'tempest',  tier:9, name:'Tempest',         title:'Tempest Warden',    motif:'storm',   prim:'#0f766e', sec:'#5eead4', trim:'#e2e8f0', gem:'#a5f3fc' },
+  { id:'phoenix',  tier:10,name:'Phoenix',         title:'Phoenix Lord',      motif:'flame',   prim:'#9a3412', sec:'#fbbf24', trim:'#fef3c7', gem:'#fde047' },
+  { id:'glacier',  tier:11,name:'Glacier Crown',   title:'Glacier Sovereign', motif:'crystal', prim:'#e0f2fe', sec:'#7dd3fc', trim:'#c0c0d8', gem:'#38bdf8' },
+  { id:'dragonlord',tier:12,name:'Dragonlord',     title:'Dragonlord',        motif:'shadow',  prim:'#111827', sec:'#b91c1c', trim:'#fbbf24', gem:'#f87171' }
 ];
 const ARCHMAGE = { id:'archmage', tier:9, name:'Archmage', title:'Archmage Supreme', motif:'wizard', prim:'#3b0764', sec:'#7c3aed', trim:'#fbbf24', gem:'#67e8f9' };
 const SET_BY_ID = Object.fromEntries(GEAR_SETS.concat([ARCHMAGE]).map(g => [g.id, g]));

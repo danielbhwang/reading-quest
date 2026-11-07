@@ -386,3 +386,215 @@ Max slowly turned to Nora. She was grinning from ear to ear and holding a gold n
 Max laughed and took the Golden Notebook. On the first page, Nora had written: To the Legendary Detective, from his partner. Max wrote just below it: The best detectives remember the details and never forget their friends.`,
       qs:[['Where did the first clue send Max?',['The clock tower','The library','The beach','The zoo'],0],['Why did each clue point to a different place?',['Each place was from one of Max\'s old cases','The Mastermind was lost','They were random places','Nora lived there'],0],['Who was the Mastermind?',['Nora','Professor Puzzle','Mr. Chen','Mayor Bloom'],0],['What does Max\'s last sentence mean?',['Good detectives pay attention to details and value their friends','Detectives should work alone','Notebooks are the best prize','Clues are always gold'],0]] } }
 });
+
+// Gianna's bosses for ranks 9–12 (each guards the next rank)
+Object.assign(BOSSES.daughter, {
+  9: { name:'Captain Gale', e:'🏴‍☠️', color:'#0f766e', taunt:'You cost me three wind dragons, little rider. Now I will take YOURS!', defeat:'Outsmarted by a map and a child... This is not over, Wren of Skyfire!',
+    story:{ title:'The Chase Through the Clouds', emoji:'🏴‍☠️', text:`Wren and Pebble were flying an ordinary evening patrol over the Floating Islands when the sky ship burst out of a cloud directly in front of them.
+
+Its gray sails snapped in the wind. Hooked ropes shot out from its rails like grasping fingers. And at the wheel stood Captain Gale, her silver hair streaming behind her and her coat of stolen dragon scales glittering in the sunset.
+
+"Well, well," she called. "The little rider who stole my dragons. An earth dragon would fetch a fine price at the markets in the south."
+
+Pebble twisted sharply, and a hooked rope whistled past Wren's ear. She ducked low against his neck, her heart hammering.
+
+"We can't outfly her," Pebble said through their bond. "The ship is riding a strong current. It's faster than we are."
+
+Wren's mind raced. They were alone. Mira, Tobin, and Fen were back at the academy. There was no one to call for help.
+
+Then she remembered Mira's notebook.
+
+Two weeks earlier, Mira had shown everyone her map of the island currents, with its swirling arrows and careful notes. Wren had studied it so many times that she could picture it with her eyes closed. And she remembered one warning written in Mira's neat handwriting beside the Twin Spires: DANGER. THE CURRENT BETWEEN THE SPIRES FLOWS BACKWARD AT SUNSET.
+
+It was almost sunset now.
+
+"Pebble," Wren whispered, "fly toward the Twin Spires. Slowly. Let her think she's catching us."
+
+Pebble didn't question her. He banked left and flew toward two tall stone towers rising from the clouds, flapping just slowly enough to seem tired.
+
+Behind them, Captain Gale laughed. "Running out of strength already? Full speed, crew! After them!"
+
+The sky ship surged forward, its sails filled with the powerful current. It was gaining quickly. Fifty lengths behind them. Thirty. Twenty. Wren could hear the creak of its ropes and the shouts of the pirates.
+
+"Now!" Wren cried. "Up!"
+
+Pebble shot straight upward with every ounce of strength he had, rising above the spires just as the last sliver of sun touched the horizon.
+
+The sky ship could not climb that fast. It plunged straight between the Twin Spires at full speed.
+
+At that exact moment, the current reversed.
+
+The wind that had been pushing the ship forward suddenly slammed into it from the front. The sails flapped wildly and then billowed backward. The ship groaned, spun in a slow circle, and began drifting helplessly away in the wrong direction, its crew shouting in confusion.
+
+Captain Gale gripped the wheel, her face pale with fury. She turned it left and right, but the backward current held the ship like a fist.
+
+"How?" she shouted up at Wren. "How did you know?"
+
+"My friend made a map," Wren called down. "She studies the wind instead of stealing from it."
+
+The ship drifted farther and farther away until it was only a dark speck against the purple sky. Captain Gale's voice echoed faintly after them.
+
+"This is not over, Wren of Skyfire!"
+
+Pebble flew slowly home through the twilight, tired but proud. Wren leaned forward and hugged his neck.
+
+"You trusted me without asking a single question," she said.
+
+"Of course," said Pebble. "That's what a bond is."
+
+When they landed, Wren went straight to Mira's room, knocked on the door, and said, "Your map just saved my life."
+
+Mira's mouth fell open. Then she smiled the biggest smile Wren had ever seen.`,
+      qs:[['Why couldn\'t Pebble simply outfly the sky ship?',['The ship was riding a strong current and was faster','Pebble was injured','The ship had wings','It was too dark to fly'],0],['What important information did Wren remember?',['Mira\'s warning that the current between the Twin Spires flows backward at sunset','The pirates\' secret password','Where Captain Gale lived','How to speak to wind dragons'],0],['Why did Wren tell Pebble to fly slowly at first?',['To trick Gale into chasing them into the spires at full speed','Because Pebble was tired','To save energy for later','To let Gale catch them'],0],['What does Wren mean when she says Mira "studies the wind instead of stealing from it"?',['Mira learns about nature respectfully, while Gale takes from it','Mira is a thief','Mira is afraid of wind','Gale is a scientist'],0],['How did Mira feel when Wren thanked her?',['Surprised and very happy','Angry','Bored','Embarrassed and upset'],0]] } },
+  10: { name:'The Iron Tempest', e:'🌩️', color:'#334155', taunt:'My storm engine is rebuilt, ten times stronger! The beacon will call every wind dragon to MY nets!', defeat:'My engine... my storm... the wind will not obey me anymore.',
+    story:{ title:'Battle for the Beacon', emoji:'🌩️', text:`Three days after Vex rescued Ash from the Shattered Cliffs, the beacon at the Sky Lighthouse flickered.
+
+Wren saw it from her bedroom window: the great white light, which had swept the northern clouds every night since Vex and Thunder lit it, stuttered and dimmed. Then it turned a sickly shade of green.
+
+She knew that green. She had seen it crackling from the mast of Captain Gale's ship.
+
+Within an hour, the whole crew was in the air. Wren and Pebble led the way, with Mira and Ripple, Tobin and Blaze, Fen and Breeze, and Lord Vex riding Thunder. Behind them flew dozens of wind dragons from the eastern meadow, their feathered wings beating in rhythm.
+
+When they reached the lighthouse, their hearts sank.
+
+Captain Gale had rebuilt her storm engine, and it was enormous. She had bolted it to the top of the lighthouse itself, wrapping iron cables around the crystal dome. Huge metal fans spun on all sides, and green lightning poured into the crystal, twisting its light into an ugly, pulsing glow.
+
+"She's changing the beacon's call," Vex shouted over the roar of the fans. "Instead of guiding wind dragons to safety, it's pulling them into her nets!"
+
+It was true. Below the lighthouse, enormous nets stretched between the floating islands like spider webs. Already, two confused young wind dragons were flying straight toward them, drawn by the poisoned light.
+
+On the lighthouse balcony stood Captain Gale. "You're too late, Wren of Skyfire," she called. "The Iron Tempest is unstoppable."
+
+The storm engine roared. A wall of wind slammed into the riders, scattering them across the sky. Tobin and Blaze tumbled end over end. Mira barely held onto Ripple's saddle.
+
+"We can't get close!" Fen shouted.
+
+Wren clung to Pebble, thinking desperately. They couldn't fight the wind. They had learned that already. But the Iron Tempest wasn't really a storm. It was a machine. And machines had parts.
+
+"Pebble," she said. "The engine is bolted to the lighthouse. What's the lighthouse made of?"
+
+Pebble's eyes began to glow amber. "Stone," he said. "Old stone. Stone I can feel."
+
+They dove beneath the howling wind, flying low along the lighthouse wall where the fans couldn't reach. Pebble pressed his claws against the ancient stones and closed his eyes.
+
+Deep inside the walls, the stone began to shift. Very gently, Pebble loosened every bolt that held the storm engine to the tower. One by one, they slid free.
+
+At the same moment, Breeze flew straight into the lightning, just as she had before, and drank the green energy until she blazed like a star. The engine sputtered. Its fans slowed.
+
+Then Thunder let out a roar that shook the clouds, and every wind dragon in the sky answered. They flew together in a great circle around the lighthouse, beating their wings in perfect rhythm, creating a wind of their own that pushed against the Iron Tempest.
+
+With nothing holding it in place, the storm engine tipped. It slid off the top of the lighthouse, tumbled through the clouds, and splashed into a lake on the island below with a gigantic, hissing cloud of steam.
+
+The beacon flashed back to pure, clean white.
+
+Captain Gale stood frozen on the balcony, staring at the empty space where her machine had been. For the first time, she looked small.
+
+Lord Vex landed Thunder beside her. "I know what it's like to want power so badly that you can't see anything else," he said quietly. "There is another way. If you want to learn it, Skyfire Academy will teach you."
+
+Captain Gale said nothing. But she didn't run away either.`,
+      qs:[['What had Captain Gale done to the beacon?',['Twisted its light with her storm engine to pull wind dragons into her nets','Broken it into pieces','Stolen the crystal','Painted it green'],0],['Why couldn\'t the riders get close at first?',['The storm engine created a wall of wind that scattered them','The lighthouse was too tall','The pirates had guards','It was too dark'],0],['What important idea did Wren have?',['The engine was a machine bolted to stone that Pebble could loosen','They should fight the wind harder','They should wait until morning','They should ask Gale to stop'],0],['How did the wind dragons help defeat the Iron Tempest?',['They flew together to create a wind of their own','They breathed fire','They attacked the pirates','They carried the lighthouse away'],0],['What does Vex\'s offer to Captain Gale show?',['He believes people can change, as he did','He wants to join the pirates','He is afraid of her','He wants her ship'],0]] } },
+  11: { name:'The Hollow King', e:'👑', color:'#475569', taunt:'Words are easy, child. Face my shadows with the truth, or be lost in the dark forever.', defeat:'Your words... were not hollow. Let the light rise.',
+    story:{ title:'Into the Shadows', emoji:'👑', text:`The shadows of the Hollow King rose up around Wren and Pebble like black water, cold and silent. In moments, the golden glow of the Star Well disappeared. Wren could no longer see her friends, or the walls of the well, or even her own hands.
+
+All she could feel was Pebble's warm scales beneath her, and their bond humming faintly in her mind.
+
+"Speak," said the Hollow King's voice from everywhere at once. "Tell me why I should believe you. But know this: my shadows feed on anything false. One untrue word, and they will swallow you."
+
+Wren swallowed hard. She opened her mouth to say something brave, like "I'm not afraid of you."
+
+Then she stopped. Because that wasn't true. She was very afraid.
+
+"I'm scared," she said instead. Her voice sounded small in the darkness. "I'm really scared right now."
+
+The shadows around her paused.
+
+"Go on," said the Hollow King.
+
+Wren took a shaky breath. "When I first came to Skyfire Academy, I didn't think I belonged there. Everyone else seemed braver and smarter. My dragon couldn't even fly. I used to lie awake at night thinking that someone would discover I was a mistake."
+
+She had never told anyone this. Not even Mira.
+
+"Sometimes I still feel that way," she continued. "Even now. Even after everything. When people call me brave, part of me thinks they're wrong."
+
+The shadows drew back a little. A faint shimmer of gold appeared at their edges.
+
+"Why tell me this?" asked the Hollow King. His voice sounded different now, less like wind and more like a person. "This makes you seem weak."
+
+"Because you asked for the truth," Wren said. "And because I think you know what it feels like. To think you don't matter. To feel invisible."
+
+There was a long, long silence.
+
+Then Pebble spoke. Wren had never heard him speak aloud to anyone but her. His voice was deep and warm, like stones warmed by the sun.
+
+"She is the bravest person I know," he said. "Not because she is never afraid. Because she is afraid, and she keeps going anyway. And because she always tells the truth, even when it's hard."
+
+Wren felt tears sting her eyes.
+
+The shadows began to crumble. Little by little, they broke apart into drifting flakes of darkness that dissolved into light. The golden glow returned, brighter than before. Wren could see her friends again at the edge of the well, staring at her in amazement.
+
+The Hollow King stood before her on the black stone slab. His shadow robe had faded to gray, and his blue eyes no longer blazed. They looked tired and wet.
+
+"A thousand years," he said slowly, "and no rider ever told me the truth about themselves. They only told me what they thought I wanted to hear."
+
+He knelt and pressed his hand against the black slab. A deep crack ran across it. Then another, and another.
+
+"Your words were not hollow, Wren of Skyfire," he said. "Let the light rise."
+
+The slab shattered. Golden starlight exploded upward from the depths of the well, pouring past them in a dazzling river, flying out of the mountain and racing across the sky toward home.
+
+Wren laughed through her tears. Beside her, Pebble glowed gold in the light, and for the first time, the Hollow King smiled.`,
+      qs:[['What would happen if Wren said something untrue?',['The shadows would swallow her','The well would freeze','Pebble would fly away','The Hollow King would leave'],0],['Why did Wren decide not to say "I\'m not afraid of you"?',['It was not true, and only the truth could protect her','She forgot the words','Pebble told her not to','She wanted to make the King angry'],0],['What secret did Wren share?',['She often felt she did not belong and that people were wrong to call her brave','She had stolen a book','She did not like Pebble','She wanted to leave the academy'],0],['According to Pebble, what makes Wren brave?',['She is afraid but keeps going, and she tells the truth','She is never afraid','She is the strongest rider','She can fly the fastest'],0],['Why did the Hollow King finally free the light?',['Wren was the first rider in a thousand years to tell him the truth about herself','Wren gave him treasure','Pebble broke the slab','The other riders attacked him'],0]] } },
+  12: { name:'The Mirror Wyrm', e:'🪞', color:'#7c3aed', taunt:'I am every doubt you have ever had, wearing your own face. How can you defeat YOURSELF?', defeat:'You saw yourself clearly... and you were not afraid. Rise, Dragon Master.',
+    story:{ title:'The Trial of the Dragon Master', emoji:'🪞', text:`One month after the first Festival of the Longest Night, Master Oona called Wren to her study.
+
+The festival had been magnificent. Every rider had carried a lantern into the evening sky, and Lord Vex had led the whole academy in singing Umbra's lullaby, while Mira's enormous painting of the Twilight Queen glowed on the wall of the Great Hall. High above them, Umbra had spread her wings slowly, and the stars had come out one by one, brighter than anyone had ever seen.
+
+Now Master Oona sat behind her desk, looking unusually serious.
+
+"Wren," she said, "the Council of Masters has voted. They believe you are ready for the Trial of the Dragon Master."
+
+Wren's mouth fell open. "But I'm too young. Nobody my age has ever..."
+
+"Nobody your age has ever done what you have done," Master Oona said gently. "But the Trial is not about what you've done. It's about who you are. Only you can decide whether to face it."
+
+That evening, Wren and Pebble stood at the entrance of the Hall of Mirrors, a round chamber beneath the oldest tower of the academy. Its walls were covered with tall, silver mirrors, and the air inside felt cold and still.
+
+"I'll be right beside you," said Pebble.
+
+"I know," said Wren, and they stepped inside.
+
+The door closed behind them. For a moment, nothing happened. Then every mirror began to glow, and from the largest one, something slithered out.
+
+It was a dragon made entirely of mirror glass. Its long, sinuous body reflected the room in a thousand broken pieces. And when it turned its head toward Wren, she saw that its face was her own face, cold and smirking.
+
+"Hello, Wren," said the Mirror Wyrm, in her own voice. "I know everything about you. Every doubt. Every fear. Every mistake."
+
+Its reflections filled the mirrors around her. In one, she saw herself as a scared first-year, crying because Pebble couldn't fly. In another, she saw herself shouting at Tobin during a silly argument last spring. In another, she saw herself lying awake, whispering, "I don't belong here."
+
+"This is who you really are," the Mirror Wyrm hissed. "A frightened little girl pretending to be brave. You're not a Dragon Master. You never will be."
+
+Wren felt her old fears rising up inside her, cold and heavy. For a moment, she almost believed it.
+
+Then she looked at the mirror more carefully.
+
+Yes, there she was, crying as a first-year. But beside her was Pebble, tiny and scared, and she was holding him tightly, promising they'd learn together. Yes, there she was shouting at Tobin. But in the next reflection, she was apologizing, and Tobin was laughing and forgiving her. Yes, there she was lying awake, afraid. But in the morning, she always got up and tried again.
+
+"You're showing me the truth," Wren said slowly. "But only half of it."
+
+The Mirror Wyrm's smile flickered.
+
+"I was scared," Wren said, her voice growing stronger. "I made mistakes. I still have doubts. All of that is true. But I also kept going. I learned. I said sorry. I helped my friends, and they helped me." She stepped toward the glittering dragon. "You're not the whole me. You're just the part that's afraid. And I'm not ashamed of you."
+
+Then she did something the Mirror Wyrm did not expect. She reached out and gently placed her hand on its glass face.
+
+The Wyrm shuddered. Cracks spread across its body like frost on a window. Then, instead of shattering, it melted into soft silver light that flowed up her arm and settled warmly in her heart.
+
+The mirrors went quiet. Every one of them now showed the same reflection: Wren and Pebble, standing side by side, glowing.
+
+The door opened. Master Oona stood there, with Lord Vex, Mira, Tobin, Fen, and all their dragons gathered behind her.
+
+"The Trial is not about defeating your fears," Master Oona said, her eyes shining. "It's about understanding them. Wren of Skyfire, you are a Dragon Master."
+
+The cheering echoed through the whole academy. And far above, in the evening sky, a great violet dragon slowly spread her wings, and the first star of the night began to shine.`,
+      qs:[['What did Master Oona say the Trial is really about?',['Who you are, not what you have done','How fast you can fly','How many bosses you defeated','How strong your dragon is'],0],['What did the Mirror Wyrm try to make Wren believe?',['That she was only a frightened girl pretending to be brave','That Pebble was the real hero','That Master Oona was lying','That she should leave the academy right away'],0],['What did Wren notice when she looked at the mirrors more carefully?',['Each mistake was followed by her learning, apologizing, or trying again','The mirrors were broken','The reflections were of someone else','The mirrors showed the future'],0],['Why did Wren touch the Mirror Wyrm instead of fighting it?',['She accepted her fears as part of herself instead of being ashamed of them','She wanted to break it','She was too tired to fight','Pebble told her to'],0],['What is the main lesson of the final trial?',['Understanding and accepting your fears makes you stronger','Fears should be hidden','Only fearless people succeed','Mirrors are dangerous'],0]] } }
+});
